@@ -2351,5 +2351,20 @@
         location.reload();
     }
 </script>
+<script>
+  // กำหนดรหัสผู้ใช้ที่อนุญาตให้เข้าใช้งาน (สามารถเปลี่ยนรหัสได้ตามต้องการครับ)
+  const validUserIds = ["POL001", "POL002", "INVESTIGATOR"];
+  
+  let userId = prompt("กรุณากรอกรหัสผู้ใช้ (User ID) เพื่อเข้าสู่ระบบ Cyber Investigation Portal:");
+  
+  // ตรวจสอบความถูกต้องของรหัส
+  if (!validUserIds.includes(userId)) {
+      alert("รหัสผู้ใช้ไม่ถูกต้อง หรือคุณไม่มีสิทธิ์เข้าถึงระบบ!");
+      // รีหน้าเว็บเพื่อให้กรอกใหม่ หรือเด้งออก
+      location.reload();
+  } else {
+      alert("ยินดีต้อนรับพนักงานสอบสวน รหัส: " + userId);
+  }
+</script>
 </body>
 </html>
