@@ -2327,12 +2327,12 @@
 </div>
 
 <script>
-  <!-- กล่องกรอกรหัสผ่านบนหน้าเว็บ -->
-<div id="auth-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: flex; justify-content: center; align-items: center; z-index: 9999; font-family: sans-serif;">
+ <!-- กล่องกรอกรหัสผู้ใช้ -->
+<div id="auth-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: flex; justify-content: center; align-items: center; z-index: 99999; font-family: sans-serif;">
     <div style="background: #1e293b; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); text-align: center; color: white; width: 320px;">
         <h3 style="margin-bottom: 15px;">Cyber Investigation Portal</h3>
         <p style="font-size: 14px; color: #94a3b8; margin-bottom: 20px;">กรุณากรอกรหัสผู้ใช้เพื่อเข้าสู่ระบบ</p>
-        <input type="password" id="user-pin" placeholder="ระบุรหัสผู้ใช้..." style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #475569; background: #0f172a; color: white; margin-bottom: 15px; box-sizing: border-box; text-align: center; font-size: 16px;">
+        <input type="text" id="user-pin" placeholder="เช่น POL001" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #475569; background: #0f172a; color: white; margin-bottom: 15px; box-sizing: border-box; text-align: center; font-size: 16px;">
         <button onclick="checkPin()" style="width: 100%; padding: 10px; background: #2563eb; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">เข้าสู่ระบบ</button>
         <p id="error-msg" style="color: #ef4444; font-size: 13px; margin-top: 10px; display: none;">รหัสผู้ใช้ไม่ถูกต้อง!</p>
     </div>
@@ -2340,18 +2340,19 @@
 
 <script>
   function checkPin() {
-      // กำหนดรหัสผ่านที่อนุญาต
+      // รหัสผู้ใช้ที่อนุญาตให้เข้าใช้งาน
       const validPins = ["POL001", "POL002", "INVESTIGATOR"];
-      let inputVal = document.getElementById("user-pin").value;
+      let inputVal = document.getElementById("user-pin").value.trim();
       
       if (validPins.includes(inputVal)) {
-          // ถ้ารหัสถูก ซ่อนกล่องกรอกรหัส
+          // ซ่อนกล่องกรอกรหัสเมื่อกรอกถูกต้อง
           document.getElementById("auth-overlay").style.display = "none";
       } else {
-          // ถ้ารหัสผิด แสดงข้อความเตือน
+          // แสดงข้อความเตือนเมื่อรหัสผิด
           document.getElementById("error-msg").style.display = "block";
       }
   }
+</script>
 </script>
 </script>
 </body>
