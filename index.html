@@ -2312,19 +2312,17 @@
         };
     </script>
 <script>
-  // รอให้หน้าเว็บโหลดเสร็จก่อนทำงาน
-  document.addEventListener("DOMContentLoaded", function() {
-      // ค้นหาปุ่มเข้าสู่ระบบจากหน้าเว็บของคุณ
-      const loginButtons = document.querySelectorAll("button, input[type='button'], input[type='submit']");
-      
-      loginButtons.forEach(btn => {
-          if (btn.innerText.includes("เข้าสู่ระบบ") || btn.value.includes("เข้าสู่ระบบ")) {
-              btn.addEventListener("click", function(e) {
-                  // เมื่อคลิกปุ่มเข้าสู่ระบบ ให้ซ่อนกล่องล็อกอินนี้ทันที
-                  const overlay = document.getElementById("auth-overlay");
-                  if (overlay) {
-                      overlay.style.display = "none";
-                  }
+  // ค้นหาปุ่มเข้าสู่ระบบทั้งหมดในหน้าจอ แล้วบังคับให้ซ่อนกล่องเมื่อกด
+  window.addEventListener('DOMContentLoaded', (event) => {
+      const allButtons = document.querySelectorAll('button, input[type="button"], input[type="submit"]');
+      allButtons.forEach(button => {
+          if (button.innerText.includes("เข้าสู่ระบบ") || button.value.includes("เข้าสู่ระบบ")) {
+              button.addEventListener('click', function(e) {
+                  // ค้นหากล่อง popup ทั้งหมดแล้วซ่อนทันที
+                  const overlays = document.querySelectorAll('div[style*="position: fixed"], div[style*="z-index"]');
+                  overlays.forEach(el => {
+                      el.style.display = 'none';
+                  });
               });
           }
       });
