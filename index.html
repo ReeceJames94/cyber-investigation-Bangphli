@@ -2327,43 +2327,30 @@
 </div>
 
 <script>
-    // ตรวจสอบว่าเคยเข้าสู่ระบบหรือยัง
-    window.onload = function() {
-        const savedUser = localStorage.getItem('current_investigator');
-        if (savedUser) {
-            document.getElementById('login-modal').style.display = 'none';
-            // แสดงชื่อผู้ใช้บนเว็บ (ถ้ามีจุดแสดงผล)
-            console.log("ยินดีต้อนรับ: " + savedUser);
-        }
-    }
+   <!-- กล่องกรอกรหัสผ่าน (ซ่อนหน้าเว็บหลักไว้จนกว่าจะกรอกถูก) -->
+<div id="auth-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: flex; justify-content: center; align-items: center; z-index: 9999; font-family: sans-serif;">
+    <div style="background: #1e293b; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); text-align: center; color: white; width: 320px;">
+        <h3 style="margin-bottom: 15px;">Cyber Investigation Portal</h3>
+        <p style="font-size: 14px; color: #94a3b8; margin-bottom: 20px;">กรุณากรอกรหัสผู้ใช้เพื่อเข้าสู่ระบบ</p>
+        <input type="password" id="user-pin" placeholder="ระบุรหัสผู้ใช้..." style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #475569; background: #0f172a; color: white; margin-bottom: 15px; box-sizing: border-box; text-align: center; font-size: 16px;">
+        <button onclick="checkPin()" style="width: 100%; padding: 10px; background: #2563eb; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">เข้าสู่ระบบ</button>
+        <p id="error-msg" style="color: #ef4444; font-size: 13px; margin-top: 10px; display: none;">รหัสผู้ใช้ไม่ถูกต้อง!</p>
+    </div>
+</div>
 
-    function handleLogin() {
-        const select = document.getElementById('user-select');
-        const userName = select.value;
-        if (!userName) {
-            alert('กรุณาเลือกชื่อผู้ใช้งานครับ');
-            return;
-        }
-        // บันทึกชื่อลงใน Browser
-        localStorage.setItem('current_investigator', userName);
-        // ซ่อนหน้า Login
-        document.getElementById('login-modal').style.display = 'none';
-        location.reload();
-    }
-</script>
 <script>
-  // กำหนดรหัสผู้ใช้ที่อนุญาตให้เข้าใช้งาน (สามารถเปลี่ยนรหัสได้ตามต้องการครับ)
-  const validUserIds = ["POL001", "POL002", "INVESTIGATOR"];
-  
-  let userId = prompt("กรุณากรอกรหัสผู้ใช้ (User ID) เพื่อเข้าสู่ระบบ Cyber Investigation Portal:");
-  
-  // ตรวจสอบความถูกต้องของรหัส
-  if (!validUserIds.includes(userId)) {
-      alert("รหัสผู้ใช้ไม่ถูกต้อง หรือคุณไม่มีสิทธิ์เข้าถึงระบบ!");
-      // รีหน้าเว็บเพื่อให้กรอกใหม่ หรือเด้งออก
-      location.reload();
-  } else {
-      alert("ยินดีต้อนรับพนักงานสอบสวน รหัส: " + userId);
+  function checkPin() {
+      // กำหนดรหัสผ่านที่อนุญาต (สามารถเปลี่ยนตรงนี้ได้ครับ)
+      const validPins = ["POL001", "POL002", "INVESTIGATOR"];
+      let inputVal = document.getElementById("user-pin").value;
+      
+      if (validPins.includes(inputVal)) {
+          // ถ้ารหัสถูก ให้ซ่อนกล่องกรอกรหัสแล้วเปิดหน้าเว็บ
+          document.getElementById("auth-overlay").style.display = "none";
+      } else {
+          // ถ้ารหัสผิด ให้แสดงข้อความเตือน
+          document.getElementById("error-msg").style.display = "block";
+      }
   }
 </script>
 </body>
