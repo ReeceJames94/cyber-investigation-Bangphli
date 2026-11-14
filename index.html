@@ -1,0 +1,1915 @@
+<!DOCTYPE html>
+<html lang="th" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบสนับสนุนงานสืบสวนคดีออนไลน์ (Cyber Investigation Portal) - สภ.บางพลี</title>
+    <!-- Google Fonts: Prompt & Sarabun -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDK (Compat v10 for Single-File Real-time Sync) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Sarabun', 'sans-serif'],
+                        heading: ['Prompt', 'sans-serif'],
+                    },
+                    colors: {
+                        navy: {
+                            50: '#f0f4f8', 100: '#d9e2ec', 200: '#bcccdc', 300: '#9fb3c8',
+                            400: '#829ab1', 500: '#627d98', 600: '#486581', 700: '#334e68',
+                            800: '#1e3a8a', 900: '#0f172a', 950: '#080e1a',
+                        },
+                        police: {
+                            gold: '#f59e0b',
+                            goldDark: '#d97706',
+                            dark: '#091124'
+                        }
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(15, 23, 42, 0.12)',
+                        'gold': '0 4px 14px 0 rgba(245, 158, 11, 0.25)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        h1, h2, h3, h4, .font-heading { font-family: 'Prompt', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.4); border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.7); }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-navy-950 text-slate-800 dark:text-slate-100 antialiased selection:bg-amber-500 selection:text-navy-950">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2.5 pointer-events-none"></div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[90] hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-navy-900 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 transform transition-all">
+            <div class="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-500 flex items-center justify-center text-xl mx-auto">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div class="text-center">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white" id="confirm-title">ยืนยันการทำรายการ</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1" id="confirm-message">คุณแน่ใจหรือไม่ว่าต้องการดำเนินการนี้?</p>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm transition">ยกเลิก</button>
+                <button type="button" id="confirm-yes-btn" class="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm shadow-lg shadow-rose-600/25 transition">ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTH / LOGIN SCREEN -->
+    <div id="auth-screen" class="fixed inset-0 bg-gradient-to-br from-navy-950 via-navy-900 to-slate-900 flex items-center justify-center z-50 p-4">
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute -top-24 -left-24 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl"></div>
+        </div>
+        <div class="relative bg-white/95 dark:bg-navy-900/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-md w-full p-8 sm:p-10 border border-white/20 dark:border-slate-800">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-navy-900 to-blue-900 text-amber-400 rounded-2xl text-3xl mb-4 shadow-xl border border-amber-500/30">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <span class="inline-block px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 mb-2">
+                    ROYAL THAI POLICE • CYBER UNIT
+                </span>
+                <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Cyber Investigation Portal</h1>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">ระบบสนับสนุนงานสืบสวนคดีออนไลน์ สภ.บางพลี</p>
+            </div>
+
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">ชื่อผู้ใช้งาน (Username)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400"><i class="fa-solid fa-user-shield"></i></span>
+                        <input type="text" id="login-username" required class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:outline-none transition" placeholder="กรอกชื่อผู้ใช้งาน">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">รหัสผ่าน (Password)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" id="login-password" required class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:outline-none transition" placeholder="กรอกรหัสผ่าน">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-navy-900 via-blue-900 to-navy-900 hover:from-blue-900 hover:to-blue-800 text-white font-semibold py-3.5 rounded-2xl transition duration-200 shadow-lg shadow-blue-950/30 flex items-center justify-center gap-2 border border-amber-500/20">
+                    <i class="fa-solid fa-right-to-bracket text-amber-400"></i> เข้าสู่ระบบปฏิบัติงาน
+                </button>
+                <div class="text-center pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <p class="text-xs text-slate-400">กรุณาติดต่อผู้ดูแลระบบเพื่อขอรับบัญชีเข้าใช้งาน</p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="app-wrapper" class="hidden min-h-screen flex flex-col lg:flex-row">
+        <!-- LEFT SIDEBAR NAVIGATION -->
+        <aside class="w-full lg:w-72 bg-gradient-to-b from-navy-950 via-navy-900 to-slate-900 text-white flex flex-col shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800/80 shadow-2xl z-30">
+            <!-- Brand Header -->
+            <div class="p-6 border-b border-slate-800/80 flex items-center justify-between lg:justify-start gap-3.5">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-navy-950 flex items-center justify-center text-xl shadow-gold shrink-0">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-heading font-bold text-base tracking-wide text-white leading-tight">CYBER PORTAL</h1>
+                        <p class="text-[11px] text-amber-400 font-medium tracking-wider">สภ.บางพลี • งานสืบสวน</p>
+                    </div>
+                </div>
+                <button onclick="toggleTheme()" class="lg:hidden p-2.5 rounded-xl bg-slate-800/80 text-amber-400 hover:bg-slate-700 transition" title="สลับโหมดสี">
+                    <i class="fa-solid fa-circle-half-stroke"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="flex-1 p-4 flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-y-auto">
+                <div class="hidden lg:block px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">เมนูหลักปฏิบัติการ</div>
+                
+                <button onclick="switchTab('cases')" id="nav-cases" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all whitespace-nowrap bg-gradient-to-r from-amber-500 to-amber-600 text-navy-950 font-bold shadow-gold">
+                    <i class="fa-solid fa-folder-open w-5 text-center"></i>
+                    <span>ฐานข้อมูลเคสออนไลน์</span>
+                </button>
+
+                <button onclick="switchTab('warrants')" id="nav-warrants" class="nav-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap">
+                    <i class="fa-solid fa-file-invoice w-5 text-center text-amber-400/80"></i>
+                    <span>ลิสต์หมายจับ</span>
+                </button>
+
+                <button onclick="switchTab('inquiry')" id="nav-inquiry" class="nav-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap">
+                    <i class="fa-solid fa-clipboard-question w-5 text-center text-sky-400/80"></i>
+                    <span>ประเด็นสอบสวน (14 กลโกง)</span>
+                </button>
+
+                <button onclick="switchTab('reports')" id="nav-reports" class="nav-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap">
+                    <i class="fa-solid fa-pen-nib w-5 text-center text-emerald-400/80"></i>
+                    <span>ร่างรายงานสืบสวน</span>
+                </button>
+
+                <button onclick="switchTab('knowledge')" id="nav-knowledge" class="nav-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap">
+                    <i class="fa-solid fa-book-bookmark w-5 text-center text-purple-400/80"></i>
+                    <span>คลังระเบียบ/ข้อกฎหมาย</span>
+                </button>
+
+                <div class="hidden lg:block px-3 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">ผู้ดูแลระบบ</div>
+
+                <button onclick="switchTab('users')" id="nav-users" class="nav-item flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap">
+                    <i class="fa-solid fa-users-gear w-5 text-center text-rose-400/80"></i>
+                    <span>จัดการบัญชีผู้ใช้</span>
+                </button>
+            </nav>
+
+            <!-- User Profile & Logout Footer -->
+            <div class="p-4 border-t border-slate-800/80 bg-navy-950/60 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-blue-900/80 border border-blue-700/50 text-amber-400 flex items-center justify-center font-bold shrink-0">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p id="user-display-name" class="text-xs font-bold text-white truncate">เจ้าหน้าที่สืบสวน</p>
+                        <p id="user-display-role" class="text-[11px] text-amber-400/90 truncate">พนักงานสอบสวน</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button onclick="toggleTheme()" class="hidden lg:flex p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-amber-400 transition" title="สลับโหมดมืด/สว่าง">
+                        <i class="fa-solid fa-circle-half-stroke"></i>
+                    </button>
+                    <button onclick="handleLogout()" class="p-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-600 text-rose-400 hover:text-white transition" title="ออกจากระบบ">
+                        <i class="fa-solid fa-power-off"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT WORKSPACE -->
+        <main class="flex-1 flex flex-col min-w-0 bg-slate-100/80 dark:bg-navy-950">
+            <!-- Top Status Banner -->
+            <header class="bg-white/80 dark:bg-navy-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-20">
+                <div class="flex items-center gap-3">
+                    <span id="cloud-sync-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="cloud-sync-status" class="text-xs font-semibold text-slate-600 dark:text-slate-300">เชื่อมต่อฐานข้อมูลกลาง Cloud Firestore (cyber-bangphli) • พร้อมปฏิบัติงาน</span>
+                </div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 font-medium" id="header-date-display">
+                    สถานีตำรวจภูธรบางพลี
+                </div>
+            </header>
+
+            <!-- Content Container -->
+            <div class="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
+
+                <!-- TAB 1: CASES DATABASE -->
+                <div id="content-cases" class="tab-content space-y-6">
+                    <div class="relative overflow-hidden bg-gradient-to-r from-navy-900 via-blue-950 to-navy-900 text-white p-6 sm:p-7 rounded-3xl shadow-xl border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="relative z-10">
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30 mb-2">CASE DATABASE</span>
+                            <h2 class="text-xl sm:text-2xl font-bold flex items-center gap-2.5">
+                                <i class="fa-solid fa-folder-open text-amber-400"></i> ฐานข้อมูลเคสคดีออนไลน์ (สภ.บางพลี)
+                            </h2>
+                            <p class="text-xs sm:text-sm text-slate-300 mt-1">บันทึกและจัดการข้อมูลเคส แจ้งความออนไลน์ บัญชีคนร้าย และสถานะการติดตาม</p>
+                        </div>
+                        <div class="relative z-10 flex flex-wrap gap-2.5 shrink-0">
+                            <button onclick="exportCasesToPrint()" class="bg-emerald-500/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 shadow-sm">
+                                <i class="fa-solid fa-print"></i> ส่งออก / พิมพ์รายงาน
+                            </button>
+                            <button onclick="openNewCaseModal()" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-navy-950 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 shadow-gold">
+                                <i class="fa-solid fa-plus"></i> เพิ่มเคสคดีใหม่
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search & Filter Bar: Cases -->
+                    <div class="bg-white dark:bg-navy-900 p-4 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                        <div class="relative md:col-span-4">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            <input type="text" id="searchCasesInput" oninput="loadCases()" placeholder="ค้นหาเลขเคส, ผู้เสียหาย, กลโกง, บัญชี, พงส., สืบสวน..." class="w-full pl-11 pr-4 py-2.5 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
+                        </div>
+                        <div class="md:col-span-4 flex items-center gap-1.5">
+                            <input type="date" id="filterCaseDateStartInput" onchange="loadCases()" title="ตั้งแต่วันที่รับแจ้ง" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs sm:text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
+                            <span class="text-xs font-semibold text-slate-400 shrink-0">ถึง</span>
+                            <input type="date" id="filterCaseDateEndInput" onchange="loadCases()" title="ถึงวันที่รับแจ้ง" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs sm:text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
+                        </div>
+                        <div class="md:col-span-2">
+                            <select id="filterCaseStatusInput" onchange="loadCases()" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
+                                <option value="">สถานะทั้งหมด</option>
+                                <option value="นัดหมาย">นัดหมาย</option>
+                                <option value="พบพงส.">พบพงส.</option>
+                                <option value="สิ้นสุด">สิ้นสุด</option>
+                                <option value="ติดต่อไม่ได้">ติดต่อไม่ได้</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2 flex gap-2">
+                            <button type="button" onclick="loadCases()" class="flex-1 bg-navy-900 hover:bg-blue-900 text-white px-3 py-2.5 rounded-2xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-magnifying-glass text-amber-400"></i> ค้นหา
+                            </button>
+                            <button type="button" onclick="resetCasesFilters()" title="ล้างตัวกรอง" class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Cases Table -->
+                    <div class="bg-white dark:bg-navy-900 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50/90 dark:bg-navy-950/90 text-slate-600 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                                        <th class="p-4">วันที่ / เลขเคส</th>
+                                        <th class="p-4">ผู้เสียหาย & เบอร์ติดต่อ</th>
+                                        <th class="p-4">ประเภทกลโกง</th>
+                                        <th class="p-4">มูลค่า / สถานะคดี</th>
+                                        <th class="p-4">บัญชีคนร้าย</th>
+                                        <th class="p-4">พงส. / สืบสวนผู้รับผิดชอบ</th>
+                                        <th class="p-4 text-center">หมายเรียก/หมายจับ</th>
+                                        <th class="p-4 text-center">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="casesTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80 text-sm">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: WARRANTS -->
+                <div id="content-warrants" class="tab-content space-y-6 hidden">
+                    <div class="relative overflow-hidden bg-gradient-to-r from-navy-900 via-blue-950 to-navy-900 text-white p-6 sm:p-7 rounded-3xl shadow-xl border border-slate-800 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                        <div>
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30 mb-2">WARRANT TRACKER</span>
+                            <h2 class="text-xl sm:text-2xl font-bold flex items-center gap-2.5">
+                                <i class="fa-solid fa-file-invoice text-amber-400"></i> ลิสต์หมายจับ & ติดตามสถานะ
+                            </h2>
+                            <p class="text-xs sm:text-sm text-slate-300 mt-1">บันทึกหมายจับ ศาล ความผิด วันที่ส่งสำนวน วันที่จับกุม พร้อมแนบไฟล์ PDF บันทึกจับกุมและหมายจับ</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2.5 shrink-0">
+                            <button onclick="exportWarrantsToPrint()" class="bg-emerald-500/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold transition flex items-center gap-2">
+                                <i class="fa-solid fa-print"></i> ส่งออก / พิมพ์หมายจับ
+                            </button>
+                            <button onclick="openNewWarrantModal()" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-navy-950 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 shadow-gold">
+                                <i class="fa-solid fa-plus"></i> เพิ่มหมายจับ
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Warrant Status Filter Pills & Search -->
+                    <div class="bg-white dark:bg-navy-900 p-4 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 space-y-3">
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="setWarrantFilter('all')" class="warrant-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-navy-900 text-white transition">ทั้งหมด</button>
+                            <button onclick="setWarrantFilter('arrested')" class="warrant-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-navy-950 text-slate-700 dark:text-slate-300 transition">จับแล้ว</button>
+                            <button onclick="setWarrantFilter('not_arrested')" class="warrant-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-navy-950 text-slate-700 dark:text-slate-300 transition">ยังไม่จับ</button>
+                            <button onclick="setWarrantFilter('filed')" class="warrant-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-navy-950 text-slate-700 dark:text-slate-300 transition">ส่งสำนวนแล้ว</button>
+                            <button onclick="setWarrantFilter('not_filed')" class="warrant-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-navy-950 text-slate-700 dark:text-slate-300 transition">ยังไม่ส่งสำนวน</button>
+                        </div>
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                <input type="text" id="searchWarrantsInput" oninput="loadWarrants()" placeholder="ค้นหาเลขที่หมายจับ, ศาล, ชื่อผู้ต้องหา, ข้อหาความผิด..." class="w-full pl-11 pr-4 py-2.5 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
+                            </div>
+                            <button type="button" onclick="loadWarrants()" class="bg-navy-900 hover:bg-blue-900 text-white px-5 py-2.5 rounded-2xl text-xs font-semibold transition flex items-center gap-2 shrink-0">
+                                <i class="fa-solid fa-magnifying-glass text-amber-400"></i> ค้นหา
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Warrants Table -->
+                    <div class="bg-white dark:bg-navy-900 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50/90 dark:bg-navy-950/90 text-slate-600 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                                        <th class="p-4">เลขที่หมายจับ / ศาล</th>
+                                        <th class="p-4">ชื่อผู้ต้องหา & ข้อหาความผิด</th>
+                                        <th class="p-4">ไฟล์หมายจับ (PDF)</th>
+                                        <th class="p-4">สถานะส่งสำนวน / วันที่</th>
+                                        <th class="p-4">สถานะจับกุม / วันที่ / บันทึกจับกุม</th>
+                                        <th class="p-4 text-center">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="warrantsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80 text-sm">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: 14 INQUIRY POINTS -->
+                <div id="content-inquiry" class="tab-content space-y-6 hidden">
+                    <div class="relative overflow-hidden bg-gradient-to-r from-navy-900 via-blue-950 to-navy-900 text-white p-6 sm:p-7 rounded-3xl shadow-xl border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-500/20 text-sky-400 border border-sky-500/30 mb-2">INQUIRY CHECKLIST</span>
+                            <h2 class="text-xl sm:text-2xl font-bold flex items-center gap-2.5">
+                                <i class="fa-solid fa-clipboard-question text-sky-400"></i> ประเด็นการสอบสวน (14 ประเภทกลโกงออนไลน์)
+                            </h2>
+                            <p class="text-xs sm:text-sm text-slate-300 mt-1">เลือกหัวข้อกลโกงเพื่อดูแนวทางคำถามสอบสวน สามารถกดเพิ่มประเด็นคำถามใหม่หรือลบประเด็นได้ตามต้องการ</p>
+                        </div>
+                    </div>
+
+                    <!-- Search Inquiry -->
+                    <div class="bg-white dark:bg-navy-900 p-4 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex gap-2">
+                        <div class="relative flex-1">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            <input type="text" id="searchInquiryInput" oninput="renderInquiryCards()" placeholder="ค้นหาประเภทกลโกง หรือคำสำคัญในประเด็นคำถามสอบสวน..." class="w-full pl-11 pr-4 py-2.5 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
+                        </div>
+                        <button type="button" onclick="renderInquiryCards()" class="bg-navy-900 hover:bg-blue-900 text-white px-5 py-2.5 rounded-2xl text-xs font-semibold transition flex items-center gap-2 shrink-0">
+                            <i class="fa-solid fa-magnifying-glass text-amber-400"></i> ค้นหา
+                        </button>
+                    </div>
+
+                    <div id="inquiryCardsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- TAB 4: REPORT GENERATOR -->
+                <div id="content-reports" class="tab-content space-y-6 hidden">
+                    <div class="relative overflow-hidden bg-gradient-to-r from-navy-900 via-blue-950 to-navy-900 text-white p-6 sm:p-7 rounded-3xl shadow-xl border border-slate-800">
+                        <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 mb-2">REPORT GENERATOR</span>
+                        <h2 class="text-xl sm:text-2xl font-bold flex items-center gap-2.5">
+                            <i class="fa-solid fa-pen-nib text-emerald-400"></i> เครื่องมือร่างรายงานการสืบสวนอัตโนมัติ
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1">กรอกรายละเอียดคดีด้านซ้าย เพื่อสร้างร่างรายงานการสืบสวนทางราชการด้านขวาอัตโนมัติ</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div class="lg:col-span-5 bg-white dark:bg-navy-900 p-6 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 space-y-4">
+                            <h3 class="font-bold text-base text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">กรอกข้อมูลประกอบรายงาน</h3>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ประเภทแบบฟอร์มรายงาน</label>
+                                <select id="repTemplate" onchange="updateReportPreview()" class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm">
+                                    <option value="bank">รายงานสืบสวนเส้นทางการเงินและบัญชีม้า</option>
+                                    <option value="telco">รายงานสืบสวนข้อมูลหมายเลขโทรศัพท์ / IP Address</option>
+                                    <option value="arrest">รายงานสืบสวนติดตามจับกุมผู้ต้องหาตามหมายจับ</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">เลขคดี / Case ID</label>
+                                    <input type="text" id="repCaseNo" oninput="updateReportPreview()" placeholder="เช่น 125/2568" class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">วันที่รายงาน</label>
+                                    <input type="text" id="repDate" oninput="updateReportPreview()" placeholder="เช่น 14 พ.ย. 2569" class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ชื่อผู้เสียหาย</label>
+                                <input type="text" id="repVictim" oninput="updateReportPreview()" placeholder="ระบุชื่อ-นามสกุลผู้เสียหาย" class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ข้อมูลเป้าหมาย (บัญชีธนาคาร / เบอร์โทร / ผู้ต้องหา)</label>
+                                <input type="text" id="repTarget" oninput="updateReportPreview()" placeholder="ระบุธนาคาร เลขบัญชี และชื่อเจ้าของบัญชี" class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ผลการสืบสวนเพิ่มเติม</label>
+                                <textarea id="repDetail" rows="4" oninput="updateReportPreview()" placeholder="ระบุพฤติการณ์หรือรายละเอียดผลการสืบสวน..." class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-7 bg-white dark:bg-navy-900 p-6 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col">
+                            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+                                <h3 class="font-bold text-base text-slate-900 dark:text-white">ตัวอย่างร่างเอกสารราชการ</h3>
+                                <button onclick="copyReportText()" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-navy-950 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-gold">
+                                    <i class="fa-solid fa-copy"></i> คัดลอกข้อความ
+                                </button>
+                            </div>
+                            <textarea id="repOutputBox" rows="16" class="w-full flex-1 p-5 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm leading-relaxed font-sans focus:outline-none"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: KNOWLEDGE & PDF -->
+                <div id="content-knowledge" class="tab-content space-y-6 hidden">
+                    <div class="relative overflow-hidden bg-gradient-to-r from-navy-900 via-blue-950 to-navy-900 text-white p-6 sm:p-7 rounded-3xl shadow-xl border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30 mb-2">LEGAL & REGULATIONS</span>
+                            <h2 class="text-xl sm:text-2xl font-bold flex items-center gap-2.5">
+                                <i class="fa-solid fa-book-bookmark text-purple-400"></i> คลังระเบียบ ข้อกฎหมาย และเอกสาร PDF
+                            </h2>
+                            <p class="text-xs sm:text-sm text-slate-300 mt-1">จัดเก็บไฟล์ระเบียบ พ.ร.ก.มาตรการป้องกันและปราบปรามอาชญากรรมทางเทคโนโลยี และคู่มือปฏิบัติงาน</p>
+                        </div>
+                        <label class="cursor-pointer bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-navy-950 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 shadow-gold shrink-0">
+                            <i class="fa-solid fa-file-arrow-up"></i> เพิ่มไฟล์ PDF ใหม่
+                            <input type="file" id="knowledgePdfUpload" accept=".pdf" class="hidden" onchange="handleKnowledgePdfUpload(event)">
+                        </label>
+                    </div>
+
+                    <!-- Search Knowledge -->
+                    <div class="bg-white dark:bg-navy-900 p-4 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex gap-2">
+                        <div class="relative flex-1">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            <input type="text" id="searchKnowledgeInput" oninput="renderKnowledgeList()" placeholder="ค้นหาชื่อเอกสาร PDF, ระเบียบ, ข้อกฎหมาย..." class="w-full pl-11 pr-4 py-2.5 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
+                        </div>
+                        <button type="button" onclick="renderKnowledgeList()" class="bg-navy-900 hover:bg-blue-900 text-white px-5 py-2.5 rounded-2xl text-xs font-semibold transition flex items-center gap-2 shrink-0">
+                            <i class="fa-solid fa-magnifying-glass text-amber-400"></i> ค้นหา
+                        </button>
+                    </div>
+
+                    <div id="knowledgeGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- TAB 6: USER MANAGEMENT -->
+                <div id="content-users" class="tab-content space-y-6 hidden">
+                    <div class="relative overflow-hidden bg-gradient-to-r from-navy-900 via-blue-950 to-navy-900 text-white p-6 sm:p-7 rounded-3xl shadow-xl border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 mb-2">USER ADMINISTRATION</span>
+                            <h2 class="text-xl sm:text-2xl font-bold flex items-center gap-2.5">
+                                <i class="fa-solid fa-users-gear text-rose-400"></i> จัดการบัญชีผู้ใช้งานระบบ
+                            </h2>
+                            <p class="text-xs sm:text-sm text-slate-300 mt-1">เพิ่ม ลบ และส่งลิงก์ซิงค์บัญชีผู้ใช้งานให้เจ้าหน้าที่ในหน่วยงานเข้าสู่ระบบบนเครื่องอื่นได้ทันที</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2.5 shrink-0">
+                            <button onclick="copyUsersSyncLink()" class="bg-sky-500/20 hover:bg-sky-600 text-sky-300 hover:text-white border border-sky-500/40 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold transition flex items-center gap-2">
+                                <i class="fa-solid fa-share-nodes"></i> คัดลอกลิงก์ซิงค์บัญชีให้ทีมงาน
+                            </button>
+                            <button onclick="openNewUserModal()" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-navy-950 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 shadow-gold">
+                                <i class="fa-solid fa-user-plus"></i> เพิ่มบัญชีผู้ใช้ใหม่
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search Users -->
+                    <div class="bg-white dark:bg-navy-900 p-4 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex gap-2">
+                        <div class="relative flex-1">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            <input type="text" id="searchUsersInput" oninput="renderUsersTable()" placeholder="ค้นหาชื่อ-ยศ, Username, หรือสิทธิ์การใช้งาน..." class="w-full pl-11 pr-4 py-2.5 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none transition">
+                        </div>
+                        <button type="button" onclick="renderUsersTable()" class="bg-navy-900 hover:bg-blue-900 text-white px-5 py-2.5 rounded-2xl text-xs font-semibold transition flex items-center gap-2 shrink-0">
+                            <i class="fa-solid fa-magnifying-glass text-amber-400"></i> ค้นหา
+                        </button>
+                    </div>
+
+                    <div class="bg-white dark:bg-navy-900 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50/90 dark:bg-navy-950/90 text-slate-600 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                                        <th class="p-4">ยศ - ชื่อ - สกุล</th>
+                                        <th class="p-4">ชื่อผู้ใช้งาน (Username)</th>
+                                        <th class="p-4">รหัสผ่าน (Password)</th>
+                                        <th class="p-4">สิทธิ์การใช้งาน</th>
+                                        <th class="p-4 text-center">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80 text-sm">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL: NEW / EDIT CASE -->
+    <div id="newCaseModal" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 hidden items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-navy-900 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 my-8">
+            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
+                <h3 id="caseModalTitle" class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-folder-plus text-amber-500"></i> บันทึกเคสคดีออนไลน์ใหม่
+                </h3>
+                <button onclick="closeNewCaseModal()" class="text-slate-400 hover:text-rose-500 p-1.5 rounded-xl transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="newCaseForm" onsubmit="handleCaseSubmit(event)" class="space-y-4">
+                <input type="hidden" id="editCaseIdInput" value="">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">เลขรับแจ้ง / Case ID</label>
+                        <input type="text" id="caseNoInput" required class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm" placeholder="CR-69/001">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">วันที่รับแจ้ง</label>
+                        <input type="date" id="caseDateInput" required class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ชื่อผู้เสียหาย & เบอร์ติดต่อ</label>
+                        <input type="text" id="caseVictimInput" required class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm" placeholder="นายสมชาย ใจดี (081-xxx-xxxx)">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ประเภทกลโกงออนไลน์</label>
+                        <select id="caseTypeInput" class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm">
+                            <option value="หลอกลวงซื้อขายสินค้าออนไลน์">1. หลอกลวงซื้อขายสินค้าออนไลน์</option>
+                            <option value="หลอกให้โอนเงินเพื่อทำงาน (หารายได้พิเศษ)">2. หลอกให้โอนเงินเพื่อทำงาน</option>
+                            <option value="หลอกให้กู้เงินออนไลน์">3. หลอกให้กู้เงินออนไลน์</option>
+                            <option value="ข่มขู่ทางโทรศัพท์ (Call Center)">4. ข่มขู่ทางโทรศัพท์ (Call Center)</option>
+                            <option value="หลอกให้ลงทุนผ่านระบบคอมพิวเตอร์">5. หลอกให้ลงทุนผ่านระบบคอมพิวเตอร์</option>
+                            <option value="หลอกให้รักแล้วโอนเงิน (Romance Scam)">6. หลอกให้รักแล้วโอนเงิน</option>
+                            <option value="แฮ็กบัญชีโซเชียลมีเดียหลอกยืมเงิน">7. แฮ็กบัญชีโซเชียลหลอกยืมเงิน</option>
+                            <option value="หลอกให้ติดตั้งโปรแกรมควบคุมระบบ (รีโมท)">8. หลอกให้ติดตั้งแอปดูดเงิน</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">มูลค่าความเสียหาย (บาท)</label>
+                        <input type="number" id="caseAmountInput" required class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm" placeholder="50000">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สถานะคดี</label>
+                        <select id="caseStatusInput" class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm">
+                            <option value="นัดหมาย">นัดหมาย</option>
+                            <option value="พบพงส.">พบพงส.</option>
+                            <option value="สิ้นสุด">สิ้นสุด</option>
+                            <option value="ติดต่อไม่ได้">ติดต่อไม่ได้</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">พนักงานสอบสวนผู้รับผิดชอบ (พงส.)</label>
+                        <input type="text" id="caseInvestigatorInput" required class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm" placeholder="ร.ต.อ.ธนากร พิศุจน์">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สืบสวนผู้รับผิดชอบ (ชุดสืบสวน)</label>
+                        <input type="text" id="caseDetectiveInput" required class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm" placeholder="ร.ต.ต.ธนกฤต ไทยกมล">
+                    </div>
+                </div>
+
+                <!-- Suspect Bank Accounts Section -->
+                <div class="bg-slate-50 dark:bg-navy-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-slate-700 dark:text-slate-300">บัญชีธนาคารคนร้าย (เพิ่มได้หลายบัญชี)</label>
+                        <button type="button" onclick="addAccountInput()" class="text-xs bg-navy-900 text-amber-400 px-3 py-1 rounded-xl font-semibold hover:bg-blue-900 transition">
+                            + เพิ่มบัญชี
+                        </button>
+                    </div>
+                    <div id="suspectAccountsContainer" class="space-y-2">
+                        <!-- Account rows -->
+                    </div>
+                </div>
+
+                <!-- Summons & Warrant Status -->
+                <div class="bg-slate-50 dark:bg-navy-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">สถานะหมายเรียก / หมายจับ</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="summons1Check" class="rounded text-amber-500">
+                            <span>หมายเรียกครั้งที่ 1</span>
+                            <input type="date" id="summons1Date" class="p-1.5 bg-white dark:bg-navy-900 border rounded-lg text-xs">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="summons2Check" class="rounded text-amber-500">
+                            <span>หมายเรียกครั้งที่ 2</span>
+                            <input type="date" id="summons2Date" class="p-1.5 bg-white dark:bg-navy-900 border rounded-lg text-xs">
+                        </div>
+                    </div>
+                    <div class="pt-2 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-3 text-xs">
+                        <label class="flex items-center gap-2 font-semibold text-rose-600">
+                            <input type="checkbox" id="warrantCheck" class="rounded text-rose-600">
+                            <span>ออกหมายจับแล้ว</span>
+                        </label>
+                        <input type="file" id="caseWarrantPdfInput" accept=".pdf" class="text-xs text-slate-500">
+                        <span id="existingWarrantPdfLabel" class="text-[11px] text-blue-600"></span>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-3">
+                    <button type="button" onclick="closeNewCaseModal()" class="px-5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold">ยกเลิก</button>
+                    <button type="submit" class="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-navy-950 text-sm font-bold shadow-gold">บันทึกข้อมูลเคส</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: NEW WARRANT -->
+    <div id="newWarrantModal" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 hidden items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-navy-900 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 my-8">
+            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-4 mb-5">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-file-circle-plus text-amber-500"></i> เพิ่มรายการหมายจับใหม่
+                </h3>
+                <button onclick="closeNewWarrantModal()" class="text-slate-400 hover:text-rose-500 p-1.5 rounded-xl transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="newWarrantForm" onsubmit="handleWarrantSubmit(event)" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">เลขที่หมายจับ</label>
+                        <input type="text" id="warrantNoInput" required class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm" placeholder="จ.123/2569">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ศาลที่ออกหมาย</label>
+                        <input type="text" id="warrantCourtInput" required class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm" placeholder="ศาลจังหวัดสมุทรปราการ">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ชื่อผู้ต้องหา & ข้อหาความผิด</label>
+                    <textarea id="warrantSuspectInput" rows="2" required class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm" placeholder="นายสมหมาย หมายปอง - ร่วมกันฉ้อโกงประชาชนและนำเข้าข้อมูลอันเป็นเท็จฯ"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">แนบไฟล์หมายจับ (PDF)</label>
+                    <input type="file" id="warrantPdfFileInput" accept=".pdf" class="w-full p-2.5 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div class="bg-slate-50 dark:bg-navy-950 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
+                        <label class="flex items-center gap-2 text-xs font-bold text-blue-600">
+                            <input type="checkbox" id="warrantFiledCheck"> ส่งสำนวนแล้ว
+                        </label>
+                        <input type="date" id="warrantFiledDate" class="w-full p-2 bg-white dark:bg-navy-900 border rounded-xl text-xs">
+                    </div>
+                    <div class="bg-slate-50 dark:bg-navy-950 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
+                        <label class="flex items-center gap-2 text-xs font-bold text-emerald-600">
+                            <input type="checkbox" id="warrantArrestedCheck"> จับกุมแล้ว
+                        </label>
+                        <input type="date" id="warrantArrestedDate" class="w-full p-2 bg-white dark:bg-navy-900 border rounded-xl text-xs">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">แนบไฟล์บันทึกจับกุม (PDF - ถ้ามี)</label>
+                    <input type="file" id="warrantArrestPdfInput" accept=".pdf" class="w-full p-2.5 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs">
+                </div>
+                <div class="flex justify-end gap-3 pt-3">
+                    <button type="button" onclick="closeNewWarrantModal()" class="px-5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold">ยกเลิก</button>
+                    <button type="submit" class="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-navy-950 text-sm font-bold shadow-gold">บันทึกหมายจับ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD INQUIRY POINT -->
+    <div id="addInquiryModal" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-navy-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white">เพิ่มประเด็นคำถามสอบสวนใหม่</h3>
+            <p class="text-xs text-slate-500" id="addInquiryCategoryTitle"></p>
+            <input type="hidden" id="addInquiryCatIndex">
+            <textarea id="newInquiryQuestionText" rows="3" class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm" placeholder="พิมพ์ประเด็นคำถามที่ต้องการเพิ่ม..."></textarea>
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="closeAddInquiryModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-sm font-semibold">ยกเลิก</button>
+                <button type="button" onclick="saveNewInquiryQuestion()" class="px-5 py-2 rounded-xl bg-amber-500 text-navy-950 text-sm font-bold">เพิ่มประเด็น</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD USER -->
+    <div id="newUserModal" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-navy-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white">เพิ่มบัญชีผู้ใช้งานใหม่</h3>
+            <form onsubmit="handleAddUser(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold mb-1">ยศ - ชื่อ - สกุล</label>
+                    <input type="text" id="newUserFullname" required class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm" placeholder="ร.ต.อ.สมชาย รักชาติ">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1">ชื่อผู้ใช้งาน (Username)</label>
+                    <input type="text" id="newUserUsername" required class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm" placeholder="somchai">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1">รหัสผ่าน (Password)</label>
+                    <input type="password" id="newUserPassword" required class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm" placeholder="••••••">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1">สิทธิ์การใช้งาน</label>
+                    <select id="newUserRole" class="w-full p-3 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm">
+                        <option value="พนักงานสอบสวน">พนักงานสอบสวน</option>
+                        <option value="ชุดสืบสวน">ชุดสืบสวน</option>
+                        <option value="Admin (ผู้ดูแลระบบ)">Admin (ผู้ดูแลระบบ)</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeNewUserModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-sm font-semibold">ยกเลิก</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-amber-500 text-navy-950 text-sm font-bold">บันทึกบัญชี</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- FIREBASE CLOUD FIRESTORE INITIALIZATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBzATE8CXW0MneaQOOIginihWzpG12cHT0",
+            authDomain: "cyber-bangphli.firebaseapp.com",
+            projectId: "cyber-bangphli",
+            storageBucket: "cyber-bangphli.firebasestorage.app",
+            messagingSenderId: "985266461210",
+            appId: "1:985266461210:web:9bea811dfdffcd6f5c0fa3",
+            measurementId: "G-VKZWQZNXRQ"
+        };
+
+        let db = null;
+        try {
+            if (typeof firebase !== 'undefined') {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                db = firebase.firestore();
+            }
+        } catch (e) {
+            console.error('Firebase init error:', e);
+        }
+
+        // --- INITIAL DATA & STATE ---
+        let users = JSON.parse(localStorage.getItem('cyber_users')) || [
+            { id: 'u_1', name: 'ร.ต.ต.ธนกฤต ไทยกมล', username: 'thanakrit', password: 'gg4102563', role: 'Admin (ผู้ดูแลระบบสูงสุด)' },
+            { id: 'u_2', name: 'ร.ต.อ.ธนากร พิศุจน์', username: 'investigator', password: '1234', role: 'พนักงานสอบสวน' }
+        ];
+
+        // ฟังก์ชันซิงค์ข้อมูลกับ Cloud Firestore แบบ Real-time
+        function setupCloudListeners() {
+            if (!db) return;
+
+            // 1. ซิงค์บัญชีผู้ใช้งาน (Users)
+            db.collection('cyber_users').onSnapshot((snapshot) => {
+                if (!snapshot.empty) {
+                    const cloudUsers = [];
+                    snapshot.forEach(doc => cloudUsers.push({ id: doc.id, ...doc.data() }));
+                    users = cloudUsers;
+                    localStorage.setItem('cyber_users', JSON.stringify(users));
+                    if (document.getElementById('usersTableBody')) renderUsersTable();
+                } else {
+                    // อัปโหลดบัญชีเริ่มต้นขึ้น Cloud ครั้งแรก
+                    users.forEach(u => db.collection('cyber_users').doc(u.id).set(u));
+                }
+            }, (err) => {
+                console.warn('Firestore users listener error:', err);
+                const statusEl = document.getElementById('cloud-sync-status');
+                const dotEl = document.getElementById('cloud-sync-dot');
+                if (statusEl) statusEl.textContent = 'โหมดออฟไลน์ (กรุณาตรวจสอบ Firestore Rules)';
+                if (dotEl) dotEl.className = 'w-2.5 h-2.5 rounded-full bg-amber-500';
+            });
+
+            // 2. ซิงค์ฐานข้อมูลเคสออนไลน์ (Cases)
+            db.collection('cyber_cases').onSnapshot((snapshot) => {
+                if (!snapshot.empty) {
+                    const cloudCases = [];
+                    snapshot.forEach(doc => cloudCases.push({ id: doc.id, ...doc.data() }));
+                    cloudCases.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+                    localStorage.setItem('cyber_cases', JSON.stringify(cloudCases));
+                    if (currentUser) loadCases();
+                } else {
+                    const localCases = JSON.parse(localStorage.getItem('cyber_cases')) || [];
+                    localCases.forEach(c => db.collection('cyber_cases').doc(c.id).set(c));
+                }
+            });
+
+            // 3. ซิงค์ลิสต์หมายจับ (Warrants)
+            db.collection('cyber_warrants').onSnapshot((snapshot) => {
+                if (!snapshot.empty) {
+                    const cloudWarrants = [];
+                    snapshot.forEach(doc => cloudWarrants.push({ id: doc.id, ...doc.data() }));
+                    localStorage.setItem('cyber_warrants', JSON.stringify(cloudWarrants));
+                    if (currentUser) loadWarrants();
+                } else {
+                    const localWarrants = JSON.parse(localStorage.getItem('cyber_warrants')) || [];
+                    localWarrants.forEach(w => db.collection('cyber_warrants').doc(w.id).set(w));
+                }
+            });
+
+            // 4. ซิงค์ประเด็นสอบสวน (Inquiry Points)
+            db.collection('cyber_settings').doc('inquiry_data').onSnapshot((docSnap) => {
+                if (docSnap.exists && docSnap.data().categories) {
+                    inquiryData = docSnap.data().categories;
+                    localStorage.setItem('cyber_inquiry_data', JSON.stringify(inquiryData));
+                    if (currentUser) renderInquiryCards();
+                } else {
+                    db.collection('cyber_settings').doc('inquiry_data').set({ categories: inquiryData });
+                }
+            });
+
+            // 5. ซิงค์คลังระเบียบ/ข้อกฎหมาย (Knowledge Docs)
+            db.collection('cyber_knowledge_docs').onSnapshot((snapshot) => {
+                if (!snapshot.empty) {
+                    const cloudDocs = [];
+                    snapshot.forEach(doc => cloudDocs.push({ id: doc.id, ...doc.data() }));
+                    localStorage.setItem('cyber_knowledge_docs', JSON.stringify(cloudDocs));
+                    if (currentUser) renderKnowledgeList();
+                }
+            });
+        }
+
+        function syncCollectionToCloud(colName, items) {
+            if (!db) return;
+            try {
+                items.forEach(item => {
+                    if (item && item.id) {
+                        db.collection(colName).doc(item.id).set(item).catch(e => console.warn(e));
+                    }
+                });
+            } catch (e) { console.warn(e); }
+        }
+
+        function deleteDocFromCloud(colName, docId) {
+            if (!db || !docId) return;
+            db.collection(colName).doc(docId).delete().catch(e => console.warn(e));
+        }
+
+        setupCloudListeners();
+
+        // ตรวจสอบและซิงค์รายชื่อผู้ใช้จาก URL หากเปิดผ่านลิงก์ซิงค์ของแอดมิน
+        (function syncUsersFromUrl() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const syncData = params.get('sync_users');
+                if (syncData) {
+                    const decoded = JSON.parse(decodeURIComponent(escape(atob(syncData))));
+                    if (Array.isArray(decoded) && decoded.length > 0) {
+                        decoded.forEach(incoming => {
+                            const idx = users.findIndex(u => u.username.toLowerCase() === incoming.username.toLowerCase());
+                            if (idx !== -1) {
+                                users[idx] = incoming;
+                            } else {
+                                users.push(incoming);
+                            }
+                        });
+                        localStorage.setItem('cyber_users', JSON.stringify(users));
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                }
+            } catch (e) {
+                console.error('Sync users error:', e);
+            }
+        })();
+
+        localStorage.setItem('cyber_users', JSON.stringify(users));
+
+        let currentUser = JSON.parse(localStorage.getItem('cyber_current_user')) || null;
+        let currentWarrantFilter = 'all';
+
+        const defaultInquiryCategories = [
+            { title: '1. หลอกลวงซื้อขายสินค้าออนไลน์', points: ['สั่งซื้อสินค้าผ่านช่องทางใด (Facebook, Line, TikTok, เว็บไซต์)', 'ตรวจสอบหลักฐานการโอนเงิน สลิป และบัญชีปลายทาง', 'วันเวลาที่ตกลงส่งสินค้าและช่องทางการติดต่อที่ถูกบล็อก'] },
+            { title: '2. หลอกให้โอนเงินเพื่อทำงาน (หารายได้พิเศษ)', points: ['พบเห็นโฆษณาชักชวนทำงานจากที่ใด', 'ขั้นตอนการโอนเงินสำรองจ่ายเพื่อรับค่าคอมมิชชั่นแต่ละรอบ', 'ลิงก์เว็บไซต์หรือแอปพลิเคชันที่คนร้ายให้สมัครสมาชิก'] },
+            { title: '3. หลอกให้กู้เงินออนไลน์', points: ['ช่องทางที่ติดต่อขอกู้เงินและวงเงินที่ขอกู้', 'เหตุผลที่คนร้ายอ้างให้โอนเงินค่ามัดจำ ค่าปลดล็อกระบบ หรือค่าแก้ไขเลขบัญชี', 'ตรวจสอบสลิปการโอนเงินทุกครั้งที่โอนให้คนร้าย'] },
+            { title: '4. ข่มขู่ทางโทรศัพท์ (Call Center)', points: ['เบอร์โทรศัพท์ที่โทรเข้ามาแอบอ้างเป็นเจ้าหน้าที่หน่วยงานใด', 'พฤติการณ์การข่มขู่ว่าเกี่ยวข้องกับการฟอกเงินหรือคดียาเสพติด', 'ช่องทางที่ให้แอดไลน์พูดคุยและโอนเงินเพื่อตรวจสอบ'] },
+            { title: '5. หลอกให้ลงทุนผ่านระบบคอมพิวเตอร์', points: ['แพลตฟอร์มหรือแอปพลิเคชันที่ชักชวนให้ลงทุน (หุ้น, คริปโต, ทองคำ)', 'ช่วงแรกได้รับผลตอบแทนจริงหรือไม่ จำนวนเท่าใด', 'ยอดเงินลงทุนทั้งหมดและบัญชีม้าที่รับโอนเงิน'] },
+            { title: '6. หลอกให้รักแล้วโอนเงิน (Romance Scam)', points: ['รู้จักกันผ่านแอปพลิเคชันใด โปรไฟล์คนร้ายอ้างเป็นใคร', 'เหตุผลที่ขอให้โอนเงิน (ส่งพัสดุติดด่านศุลกากร, ค่ารักษาพยาบาล, ลงทุนร่วมกัน)'] },
+            { title: '7. หลอกให้รักแล้วลงทุน (Hybrid Scam)', points: ['ความสัมพันธ์และการชักชวนให้ลงทุนควบคู่กัน', 'แพลตฟอร์มเทรดปลอมที่คนร้ายส่งลิงก์ให้ดาวน์โหลด'] },
+            { title: '8. แฮ็กบัญชีโซเชียลมีเดียหลอกยืมเงิน', points: ['บัญชีโซเชียลที่ถูกแฮ็กเป็นของใคร และคนร้ายทักมายืมเงินอย่างไร', 'บัญชีธนาคารปลายทางที่โอนเงินไปให้'] },
+            { title: '9. หลอกให้ติดตั้งโปรแกรมควบคุมระบบ (รีโมท/แอปดูดเงิน)', points: ['คนร้ายแอบอ้างเป็นหน่วยงานใดหลอกให้กดลิงก์ติดตั้งไฟล์ .apk', 'ช่วงเวลาที่หน้าจอโทรศัพท์ค้างและเงินถูกโอนออกจากบัญชีอัตโนมัติ', 'ตรวจสอบรายการเดินบัญชี (Statement) ปลายทางที่เงินถูกดูดไป'] },
+            { title: '10. หลอกลวงเกี่ยวกับสินทรัพย์ดิจิทัล (Crypto)', points: ['กระเป๋าเงินดิจิทัล (Wallet Address) ต้นทางและปลายทาง', 'รหัสธุรกรรม (TxID / Hash) ที่โอนเหรียญออกไป'] },
+            { title: '11. หลอกลวงให้โอนเงินโดยแอบอ้างเป็นบุคคลอื่น', points: ['แอบอ้างเป็นญาติ ผู้บังคับบัญชา หรือคนรู้จัก', 'เบอร์โทรหรือบัญชีไลน์ที่ใช้ติดต่อขอยืมเงิน'] },
+            { title: '12. หลอกลวงให้ทำประกัน/รับรางวัล/โชคลาภ', points: ['ข้อความ SMS หรือโทรศัพท์แจ้งว่าได้รับรางวัลใหญ่', 'เงื่อนไขให้โอนเงินค่าภาษีหรือค่าธรรมเนียมก่อนรับรางวัล'] },
+            { title: '13. หลอกลวงเกี่ยวกับการจองที่พัก/ตั๋วเครื่องบิน', points: ['เพจปลอมที่แอบอ้างชื่อโรงแรม รีสอร์ท หรือสายการบิน', 'ตรวจสอบความแตกต่างของชื่อบัญชีรับโอนกับชื่อสถานประกอบการ'] },
+            { title: '14. คดีอาชญากรรมทางเทคโนโลยีประเภทอื่นๆ', points: ['รายละเอียดพฤติการณ์แห่งคดีโดยละเอียด', 'พยานหลักฐานทางอิเล็กทรอนิกส์ที่รวบรวมได้'] }
+        ];
+        let inquiryData = JSON.parse(localStorage.getItem('cyber_inquiry_data')) || defaultInquiryCategories;
+
+        // --- TOAST & CONFIRM HELPERS ---
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const colors = {
+                success: 'bg-emerald-600 text-white border-emerald-400/30',
+                error: 'bg-rose-600 text-white border-rose-400/30',
+                info: 'bg-navy-900 text-white border-amber-500/40'
+            };
+            const icons = {
+                success: 'fa-circle-check text-emerald-200',
+                error: 'fa-circle-exclamation text-rose-200',
+                info: 'fa-shield-halved text-amber-400'
+            };
+            const el = document.createElement('div');
+            el.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs sm:text-sm font-medium transition-all transform translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+            el.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i><span>${msg}</span>`;
+            container.appendChild(el);
+            requestAnimationFrame(() => el.classList.remove('translate-y-2', 'opacity-0'));
+            setTimeout(() => {
+                el.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => el.remove(), 300);
+            }, 3000);
+        }
+
+        let confirmCallback = null;
+        function openConfirmModal(title, message, onConfirm) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            confirmCallback = onConfirm;
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        function closeConfirmModal() {
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            confirmCallback = null;
+        }
+        document.getElementById('confirm-yes-btn').onclick = () => {
+            if (confirmCallback) confirmCallback();
+            closeConfirmModal();
+        };
+
+        // --- FILE READER & DOWNLOAD HELPERS ---
+        function readFileAsBase64(file) {
+            return new Promise((resolve) => {
+                if (!file) return resolve('');
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => resolve('');
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function downloadAttachedFile(fileName, base64Data) {
+            if (!base64Data) {
+                showToast(`ไม่พบข้อมูลไฟล์ต้นฉบับสำหรับ "${fileName}"`, 'error');
+                return;
+            }
+            const link = document.createElement('a');
+            link.href = base64Data;
+            link.download = fileName || 'document.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast(`กำลังดาวน์โหลดไฟล์ ${fileName}`, 'success');
+        }
+
+        // --- AUTHENTICATION ---
+        async function handleLogin(event) {
+            event.preventDefault();
+            const uInput = document.getElementById('login-username').value.trim().toLowerCase();
+            const pInput = document.getElementById('login-password').value.trim();
+
+            // ดึงข้อมูลผู้ใช้ล่าสุดจาก Cloud Firestore ก่อนตรวจสอบล็อกอิน
+            if (db) {
+                try {
+                    const snap = await db.collection('cyber_users').get();
+                    if (!snap.empty) {
+                        const cloudUsers = [];
+                        snap.forEach(doc => cloudUsers.push({ id: doc.id, ...doc.data() }));
+                        users = cloudUsers;
+                        localStorage.setItem('cyber_users', JSON.stringify(users));
+                    }
+                } catch (e) {
+                    console.warn('Cloud fetch on login failed, using local cache:', e);
+                }
+            } else {
+                users = JSON.parse(localStorage.getItem('cyber_users')) || users;
+            }
+
+            const foundUser = users.find(u => u.username.trim().toLowerCase() === uInput && u.password.trim() === pInput);
+            if (foundUser) {
+                currentUser = foundUser;
+                localStorage.setItem('cyber_current_user', JSON.stringify(currentUser));
+                initApp();
+                showToast(`ยินดีต้อนรับ ${currentUser.name} เข้าสู่ระบบ`, 'success');
+            } else {
+                showToast('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง', 'error');
+            }
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem('cyber_current_user');
+            document.getElementById('app-wrapper').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('login-form').reset();
+            showToast('ออกจากระบบเรียบร้อยแล้ว', 'info');
+        }
+
+        function initApp() {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('app-wrapper').classList.remove('hidden');
+            document.getElementById('user-display-name').textContent = currentUser.name;
+            document.getElementById('user-display-role').textContent = currentUser.role;
+            document.getElementById('header-date-display').textContent = 'สถานีตำรวจภูธรบางพลี • ' + new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+            loadCases();
+            loadWarrants();
+            renderInquiryCards();
+            updateReportPreview();
+            renderKnowledgeList();
+            renderUsersTable();
+        }
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('content-' + tabName).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('bg-gradient-to-r', 'from-amber-500', 'to-amber-600', 'text-navy-950', 'font-bold', 'shadow-gold');
+                btn.classList.add('text-slate-300', 'hover:text-white', 'hover:bg-white/5');
+            });
+            const activeBtn = document.getElementById('nav-' + tabName);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-300', 'hover:text-white', 'hover:bg-white/5');
+                activeBtn.classList.add('bg-gradient-to-r', 'from-amber-500', 'to-amber-600', 'text-navy-950', 'font-bold', 'shadow-gold');
+            }
+        }
+
+        // --- CASES MANAGEMENT ---
+        function getFilteredCases() {
+            let casesList = JSON.parse(localStorage.getItem('cyber_cases'));
+            if (!casesList) {
+                casesList = [
+                    { id: 'c_1', date: '2026-03-01', caseNo: 'CR-68/001', victim: 'นายสมชาย ใจดี (0812345678)', type: 'หลอกลวงซื้อขายสินค้าออนไลน์', status: 'นัดหมาย', amount: '25000', accounts: [{ bank: 'กสิกร', no: '1234567890', name: 'น.ส.มารศรี ดีงาม' }], investigator: 'ร.ต.อ.ธนากร พิศุจน์', detective: 'ร.ต.ต.ธนกฤต ไทยกมล', summons1: true, summons1Date: '2026-03-05', summons2: false, summons2Date: '', warrant: false, warrantPdf: '', warrantPdfData: '' }
+                ];
+                localStorage.setItem('cyber_cases', JSON.stringify(casesList));
+            }
+
+            const query = (document.getElementById('searchCasesInput')?.value || '').trim().toLowerCase();
+            const startDateFilter = document.getElementById('filterCaseDateStartInput')?.value || '';
+            const endDateFilter = document.getElementById('filterCaseDateEndInput')?.value || '';
+            const statusFilter = document.getElementById('filterCaseStatusInput')?.value || '';
+
+            return casesList.filter(c => {
+                if (startDateFilter && c.date < startDateFilter) return false;
+                if (endDateFilter && c.date > endDateFilter) return false;
+                if (statusFilter && c.status !== statusFilter) return false;
+                if (query) {
+                    const accText = (c.accounts || []).map(a => `${a.bank} ${a.no} ${a.name}`).join(' ');
+                    const hay = `${c.caseNo} ${c.date} ${c.victim} ${c.type} ${c.status} ${c.investigator || ''} ${c.detective || ''} ${accText}`.toLowerCase();
+                    if (!hay.includes(query)) return false;
+                }
+                return true;
+            });
+        }
+
+        function resetCasesFilters() {
+            if (document.getElementById('searchCasesInput')) document.getElementById('searchCasesInput').value = '';
+            if (document.getElementById('filterCaseDateStartInput')) document.getElementById('filterCaseDateStartInput').value = '';
+            if (document.getElementById('filterCaseDateEndInput')) document.getElementById('filterCaseDateEndInput').value = '';
+            if (document.getElementById('filterCaseStatusInput')) document.getElementById('filterCaseStatusInput').value = '';
+            loadCases();
+        }
+
+        function toggleCaseDocStatus(id, field, checked) {
+            const casesList = JSON.parse(localStorage.getItem('cyber_cases')) || [];
+            const item = casesList.find(c => c.id === id);
+            if (item) {
+                item[field] = checked;
+                localStorage.setItem('cyber_cases', JSON.stringify(casesList));
+                if (db) db.collection('cyber_cases').doc(id).set(item).catch(e => console.warn(e));
+                loadCases();
+                showToast('อัปเดตสถานะหมายเรียบร้อยแล้ว', 'success');
+            }
+        }
+
+        function loadCases() {
+            const tbody = document.getElementById('casesTableBody');
+            const casesList = getFilteredCases();
+
+            tbody.innerHTML = '';
+            if (casesList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400 text-xs">ไม่พบข้อมูลเคสคดีตามเงื่อนไขที่ค้นหา/กรอง</td></tr>`;
+                return;
+            }
+
+            casesList.forEach(c => {
+                const statusColors = {
+                    'นัดหมาย': 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+                    'พบพงส.': 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+                    'สิ้นสุด': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+                    'ติดต่อไม่ได้': 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300'
+                };
+                const accountsHtml = (c.accounts || []).map(acc => `
+                    <div class="text-xs bg-slate-50 dark:bg-navy-950 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-800 mb-1">
+                        <span class="font-bold text-blue-900 dark:text-blue-400">${acc.bank}</span>: <span class="font-mono">${acc.no}</span> (${acc.name})
+                    </div>
+                `).join('');
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-navy-950/60 transition">
+                        <td class="p-4 align-top">
+                            <div class="font-bold text-slate-900 dark:text-white">${c.caseNo}</div>
+                            <div class="text-xs text-slate-500">${c.date}</div>
+                        </td>
+                        <td class="p-4 align-top font-medium text-slate-800 dark:text-slate-200">${c.victim}</td>
+                        <td class="p-4 align-top text-xs text-slate-600 dark:text-slate-300">${c.type}</td>
+                        <td class="p-4 align-top">
+                            <div class="font-bold text-rose-600 dark:text-rose-400 mb-1">${Number(c.amount).toLocaleString()} ฿</div>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusColors[c.status] || 'bg-slate-100 text-slate-700'}">${c.status}</span>
+                        </td>
+                        <td class="p-4 align-top">${accountsHtml || '<span class="text-xs text-slate-400">-</span>'}</td>
+                        <td class="p-4 align-top text-xs space-y-1">
+                            <div class="text-slate-700 dark:text-slate-300"><span class="font-bold text-blue-900 dark:text-blue-400">พงส.:</span> ${c.investigator || '-'}</div>
+                            <div class="text-slate-700 dark:text-slate-300"><span class="font-bold text-amber-600 dark:text-amber-400">สืบสวน:</span> ${c.detective || '-'}</div>
+                        </td>
+                        <td class="p-4 align-top text-left space-y-1.5 text-xs">
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" ${c.summons1 ? 'checked' : ''} onchange="toggleCaseDocStatus('${c.id}', 'summons1', this.checked)" class="rounded text-amber-500">
+                                <span class="${c.summons1 ? 'text-emerald-600 font-bold' : 'text-slate-400'}">หมายเรียก 1 ${c.summons1Date ? `(${c.summons1Date})` : ''}</span>
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" ${c.summons2 ? 'checked' : ''} onchange="toggleCaseDocStatus('${c.id}', 'summons2', this.checked)" class="rounded text-amber-500">
+                                <span class="${c.summons2 ? 'text-emerald-600 font-bold' : 'text-slate-400'}">หมายเรียก 2 ${c.summons2Date ? `(${c.summons2Date})` : ''}</span>
+                            </label>
+                            <div>
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" ${c.warrant ? 'checked' : ''} onchange="toggleCaseDocStatus('${c.id}', 'warrant', this.checked)" class="rounded text-rose-600">
+                                    <span class="${c.warrant ? 'text-rose-600 font-bold' : 'text-slate-400'}">ออกหมายจับแล้ว</span>
+                                </label>
+                                ${c.warrantPdf ? `<div class="mt-0.5 pl-5"><button type="button" onclick="downloadAttachedFile('${c.warrantPdf.replace(/'/g, "\\'")}', '${c.warrantPdfData || ''}')" class="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 underline cursor-pointer"><i class="fa-solid fa-download"></i> ${c.warrantPdf}</button></div>` : ''}
+                            </div>
+                        </td>
+                        <td class="p-4 align-top text-center">
+                            <div class="inline-flex items-center gap-1">
+                                <button onclick="openEditCaseModal('${c.id}')" class="text-amber-600 hover:text-amber-700 p-2 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-950/40 transition" title="แก้ไขข้อมูลเคส">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button onclick="deleteCase('${c.id}')" class="text-rose-500 hover:text-rose-700 p-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition" title="ลบเคส">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openNewCaseModal() {
+            document.getElementById('newCaseForm').reset();
+            document.getElementById('editCaseIdInput').value = '';
+            document.getElementById('caseModalTitle').innerHTML = `<i class="fa-solid fa-folder-plus text-amber-500"></i> บันทึกเคสคดีออนไลน์ใหม่`;
+            document.getElementById('existingWarrantPdfLabel').textContent = '';
+            document.getElementById('suspectAccountsContainer').innerHTML = '';
+            addAccountInput();
+            const m = document.getElementById('newCaseModal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+        }
+
+        function openEditCaseModal(id) {
+            const casesList = JSON.parse(localStorage.getItem('cyber_cases')) || [];
+            const c = casesList.find(item => item.id === id);
+            if (!c) return;
+
+            document.getElementById('newCaseForm').reset();
+            document.getElementById('editCaseIdInput').value = c.id;
+            document.getElementById('caseModalTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-amber-500"></i> แก้ไขข้อมูลเคสคดี (${c.caseNo})`;
+
+            document.getElementById('caseNoInput').value = c.caseNo || '';
+            document.getElementById('caseDateInput').value = c.date || '';
+            document.getElementById('caseVictimInput').value = c.victim || '';
+            document.getElementById('caseTypeInput').value = c.type || '';
+            document.getElementById('caseAmountInput').value = c.amount || '';
+            document.getElementById('caseStatusInput').value = c.status || 'นัดหมาย';
+            document.getElementById('caseInvestigatorInput').value = c.investigator || '';
+            document.getElementById('caseDetectiveInput').value = c.detective || '';
+
+            document.getElementById('summons1Check').checked = !!c.summons1;
+            document.getElementById('summons1Date').value = c.summons1Date || '';
+            document.getElementById('summons2Check').checked = !!c.summons2;
+            document.getElementById('summons2Date').value = c.summons2Date || '';
+            document.getElementById('warrantCheck').checked = !!c.warrant;
+            document.getElementById('existingWarrantPdfLabel').textContent = c.warrantPdf ? `ไฟล์เดิม: ${c.warrantPdf}` : '';
+
+            const container = document.getElementById('suspectAccountsContainer');
+            container.innerHTML = '';
+            if (c.accounts && c.accounts.length > 0) {
+                c.accounts.forEach(acc => addAccountInput(acc));
+            } else {
+                addAccountInput();
+            }
+
+            const m = document.getElementById('newCaseModal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+        }
+
+        function closeNewCaseModal() {
+            const m = document.getElementById('newCaseModal');
+            m.classList.add('hidden');
+            m.classList.remove('flex');
+        }
+
+        function addAccountInput(acc = { bank: '', no: '', name: '' }) {
+            const container = document.getElementById('suspectAccountsContainer');
+            const row = document.createElement('div');
+            row.className = 'grid grid-cols-1 sm:grid-cols-3 gap-2 account-row';
+            row.innerHTML = `
+                <input type="text" placeholder="ธนาคาร (เช่น กสิกร)" value="${acc.bank || ''}" class="acc-bank p-2.5 bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs">
+                <input type="text" placeholder="เลขที่บัญชี" value="${acc.no || ''}" class="acc-no p-2.5 bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono">
+                <div class="flex gap-1">
+                    <input type="text" placeholder="ชื่อเจ้าของบัญชี" value="${acc.name || ''}" class="acc-name flex-1 p-2.5 bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs">
+                    <button type="button" onclick="this.closest('.account-row').remove()" class="px-2.5 text-rose-500 hover:bg-rose-50 rounded-xl"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            `;
+            container.appendChild(row);
+        }
+
+        async function handleCaseSubmit(event) {
+            event.preventDefault();
+            const accounts = [];
+            document.querySelectorAll('#suspectAccountsContainer .account-row').forEach(row => {
+                const bank = row.querySelector('.acc-bank').value.trim();
+                const no = row.querySelector('.acc-no').value.trim();
+                const name = row.querySelector('.acc-name').value.trim();
+                if (bank || no || name) accounts.push({ bank, no, name });
+            });
+
+            const editId = document.getElementById('editCaseIdInput').value;
+            const casesList = JSON.parse(localStorage.getItem('cyber_cases')) || [];
+            const existingCase = editId ? casesList.find(item => item.id === editId) : null;
+
+            const pdfFile = document.getElementById('caseWarrantPdfInput').files[0];
+            const warrantPdfName = pdfFile ? pdfFile.name : (existingCase ? existingCase.warrantPdf : '');
+            const warrantPdfData = pdfFile ? await readFileAsBase64(pdfFile) : (existingCase ? existingCase.warrantPdfData : '');
+
+            const caseData = {
+                id: editId || ('c_' + Date.now()),
+                caseNo: document.getElementById('caseNoInput').value.trim(),
+                date: document.getElementById('caseDateInput').value,
+                victim: document.getElementById('caseVictimInput').value.trim(),
+                type: document.getElementById('caseTypeInput').value,
+                amount: document.getElementById('caseAmountInput').value,
+                status: document.getElementById('caseStatusInput').value,
+                investigator: document.getElementById('caseInvestigatorInput').value.trim(),
+                detective: document.getElementById('caseDetectiveInput').value.trim(),
+                accounts,
+                summons1: document.getElementById('summons1Check').checked,
+                summons1Date: document.getElementById('summons1Date').value,
+                summons2: document.getElementById('summons2Check').checked,
+                summons2Date: document.getElementById('summons2Date').value,
+                warrant: document.getElementById('warrantCheck').checked,
+                warrantPdf: warrantPdfName,
+                warrantPdfData: warrantPdfData
+            };
+
+            if (editId) {
+                const idx = casesList.findIndex(item => item.id === editId);
+                if (idx !== -1) casesList[idx] = caseData;
+                showToast('อัปเดตแก้ไขข้อมูลเคสคดีเรียบร้อยแล้ว', 'success');
+            } else {
+                casesList.unshift(caseData);
+                showToast('บันทึกข้อมูลเคสคดีเรียบร้อยแล้ว', 'success');
+            }
+
+            localStorage.setItem('cyber_cases', JSON.stringify(casesList));
+            if (db) db.collection('cyber_cases').doc(caseData.id).set(caseData).catch(e => console.warn(e));
+            closeNewCaseModal();
+            loadCases();
+        }
+
+        function deleteCase(id) {
+            openConfirmModal('ลบเคสคดี', 'คุณต้องการลบข้อมูลเคสคดีนี้ใช่หรือไม่?', () => {
+                let casesList = JSON.parse(localStorage.getItem('cyber_cases')) || [];
+                casesList = casesList.filter(c => c.id !== id);
+                localStorage.setItem('cyber_cases', JSON.stringify(casesList));
+                deleteDocFromCloud('cyber_cases', id);
+                loadCases();
+                showToast('ลบข้อมูลเคสเรียบร้อยแล้ว', 'info');
+            });
+        }
+
+        // --- WARRANTS MANAGEMENT ---
+        function setWarrantFilter(filter) {
+            currentWarrantFilter = filter;
+            document.querySelectorAll('.warrant-filter-btn').forEach(btn => {
+                btn.classList.remove('bg-navy-900', 'text-white');
+                btn.classList.add('bg-slate-100', 'dark:bg-navy-950', 'text-slate-700', 'dark:text-slate-300');
+            });
+            if (event && event.target) {
+                event.target.classList.remove('bg-slate-100', 'dark:bg-navy-950', 'text-slate-700', 'dark:text-slate-300');
+                event.target.classList.add('bg-navy-900', 'text-white');
+            }
+            loadWarrants();
+        }
+
+        function loadWarrants() {
+            const tbody = document.getElementById('warrantsTableBody');
+            let warrantsList = JSON.parse(localStorage.getItem('cyber_warrants'));
+            if (!warrantsList) {
+                warrantsList = [
+                    { id: 'w_1', warrantNo: 'จ.452/2568', court: 'ศาลจังหวัดสมุทรปราการ', suspect: 'น.ส.มารศรี ดีงาม - ร่วมกันฉ้อโกงประชาชนและ พ.ร.บ.คอมพิวเตอร์ฯ', warrantPdf: '', warrantPdfData: '', filed: true, filedDate: '2026-03-10', arrested: false, arrestedDate: '', arrestPdf: '', arrestPdfData: '' }
+                ];
+                localStorage.setItem('cyber_warrants', JSON.stringify(warrantsList));
+            }
+
+            if (currentWarrantFilter === 'arrested') warrantsList = warrantsList.filter(w => w.arrested);
+            if (currentWarrantFilter === 'not_arrested') warrantsList = warrantsList.filter(w => !w.arrested);
+            if (currentWarrantFilter === 'filed') warrantsList = warrantsList.filter(w => w.filed);
+            if (currentWarrantFilter === 'not_filed') warrantsList = warrantsList.filter(w => !w.filed);
+
+            const query = (document.getElementById('searchWarrantsInput')?.value || '').trim().toLowerCase();
+            if (query) {
+                warrantsList = warrantsList.filter(w => `${w.warrantNo} ${w.court} ${w.suspect} ${w.warrantPdf || ''} ${w.arrestPdf || ''}`.toLowerCase().includes(query));
+            }
+
+            tbody.innerHTML = '';
+            if (warrantsList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 text-xs">ไม่พบรายการหมายจับตามเงื่อนไขที่เลือก</td></tr>`;
+                return;
+            }
+
+            warrantsList.forEach(w => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-navy-950/60 transition">
+                        <td class="p-4 align-top">
+                            <div class="font-bold text-rose-600 dark:text-rose-400">${w.warrantNo}</div>
+                            <div class="text-xs text-slate-500">${w.court}</div>
+                        </td>
+                        <td class="p-4 align-top font-medium text-slate-800 dark:text-slate-200 max-w-xs">${w.suspect}</td>
+                        <td class="p-4 align-top text-xs">
+                            ${w.warrantPdf
+                                ? `<button type="button" onclick="downloadAttachedFile('${w.warrantPdf.replace(/'/g, "\\'")}', '${w.warrantPdfData || ''}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold transition"><i class="fa-solid fa-file-pdf text-rose-500"></i> ${w.warrantPdf}</button>`
+                                : '<span class="text-slate-400">ไม่มีไฟล์แนบ</span>'}
+                        </td>
+                        <td class="p-4 align-top space-y-1.5 text-xs">
+                            <label class="flex items-center gap-2 font-semibold ${w.filed ? 'text-blue-600' : 'text-slate-500'} cursor-pointer">
+                                <input type="checkbox" ${w.filed ? 'checked' : ''} onchange="toggleWarrantField('${w.id}', 'filed', this.checked)">
+                                <span>${w.filed ? 'ส่งสำนวนแล้ว' : 'ยังไม่ส่งสำนวน'}</span>
+                            </label>
+                            <input type="date" value="${w.filedDate || ''}" onchange="updateWarrantDate('${w.id}', 'filedDate', this.value)" class="p-1.5 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs">
+                        </td>
+                        <td class="p-4 align-top space-y-1.5 text-xs">
+                            <label class="flex items-center gap-2 font-semibold ${w.arrested ? 'text-emerald-600' : 'text-slate-500'} cursor-pointer">
+                                <input type="checkbox" ${w.arrested ? 'checked' : ''} onchange="toggleWarrantField('${w.id}', 'arrested', this.checked)">
+                                <span>${w.arrested ? 'จับกุมแล้ว' : 'ยังไม่จับกุม'}</span>
+                            </label>
+                            <input type="date" value="${w.arrestedDate || ''}" onchange="updateWarrantDate('${w.id}', 'arrestedDate', this.value)" class="p-1.5 bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs block">
+                            <div class="pt-1">
+                                ${w.arrestPdf
+                                    ? `<button type="button" onclick="downloadAttachedFile('${w.arrestPdf.replace(/'/g, "\\'")}', '${w.arrestPdfData || ''}')" class="inline-flex items-center gap-1 text-emerald-600 hover:underline font-semibold"><i class="fa-solid fa-download"></i> ${w.arrestPdf}</button>`
+                                    : `<label class="cursor-pointer inline-flex items-center gap-1 text-slate-500 hover:text-blue-600"><i class="fa-solid fa-paperclip"></i> แนบบันทึกจับกุม<input type="file" accept=".pdf" class="hidden" onchange="attachArrestPdfToRow('${w.id}', event)"></label>`}
+                            </div>
+                        </td>
+                        <td class="p-4 align-top text-center">
+                            <button onclick="deleteWarrant('${w.id}')" class="text-rose-500 hover:text-rose-700 p-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition" title="ลบหมายจับ">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function toggleWarrantField(id, field, value) {
+            const list = JSON.parse(localStorage.getItem('cyber_warrants')) || [];
+            const item = list.find(w => w.id === id);
+            if (item) {
+                item[field] = value;
+                localStorage.setItem('cyber_warrants', JSON.stringify(list));
+                if (db) db.collection('cyber_warrants').doc(id).set(item).catch(e => console.warn(e));
+                loadWarrants();
+            }
+        }
+
+        function updateWarrantDate(id, field, value) {
+            const list = JSON.parse(localStorage.getItem('cyber_warrants')) || [];
+            const item = list.find(w => w.id === id);
+            if (item) {
+                item[field] = value;
+                localStorage.setItem('cyber_warrants', JSON.stringify(list));
+                if (db) db.collection('cyber_warrants').doc(id).set(item).catch(e => console.warn(e));
+            }
+        }
+
+        async function attachArrestPdfToRow(id, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const data = await readFileAsBase64(file);
+            const list = JSON.parse(localStorage.getItem('cyber_warrants')) || [];
+            const item = list.find(w => w.id === id);
+            if (item) {
+                item.arrestPdf = file.name;
+                item.arrestPdfData = data;
+                localStorage.setItem('cyber_warrants', JSON.stringify(list));
+                if (db) db.collection('cyber_warrants').doc(id).set(item).catch(e => console.warn(e));
+                loadWarrants();
+                showToast('แนบไฟล์บันทึกจับกุมเรียบร้อยแล้ว', 'success');
+            }
+        }
+
+        function openNewWarrantModal() {
+            document.getElementById('newWarrantForm').reset();
+            const m = document.getElementById('newWarrantModal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+        }
+        function closeNewWarrantModal() {
+            const m = document.getElementById('newWarrantModal');
+            m.classList.add('hidden');
+            m.classList.remove('flex');
+        }
+
+        async function handleWarrantSubmit(event) {
+            event.preventDefault();
+            const wFile = document.getElementById('warrantPdfFileInput').files[0];
+            const aFile = document.getElementById('warrantArrestPdfInput').files[0];
+            const newWarrant = {
+                id: 'w_' + Date.now(),
+                warrantNo: document.getElementById('warrantNoInput').value.trim(),
+                court: document.getElementById('warrantCourtInput').value.trim(),
+                suspect: document.getElementById('warrantSuspectInput').value.trim(),
+                warrantPdf: wFile ? wFile.name : '',
+                warrantPdfData: wFile ? await readFileAsBase64(wFile) : '',
+                filed: document.getElementById('warrantFiledCheck').checked,
+                filedDate: document.getElementById('warrantFiledDate').value,
+                arrested: document.getElementById('warrantArrestedCheck').checked,
+                arrestedDate: document.getElementById('warrantArrestedDate').value,
+                arrestPdf: aFile ? aFile.name : '',
+                arrestPdfData: aFile ? await readFileAsBase64(aFile) : ''
+            };
+            const list = JSON.parse(localStorage.getItem('cyber_warrants')) || [];
+            list.unshift(newWarrant);
+            localStorage.setItem('cyber_warrants', JSON.stringify(list));
+            if (db) db.collection('cyber_warrants').doc(newWarrant.id).set(newWarrant).catch(e => console.warn(e));
+            closeNewWarrantModal();
+            loadWarrants();
+            showToast('เพิ่มข้อมูลหมายจับเรียบร้อยแล้ว', 'success');
+        }
+
+        function deleteWarrant(id) {
+            openConfirmModal('ลบรายการหมายจับ', 'คุณแน่ใจหรือไม่ว่าต้องการลบหมายจับรายการนี้?', () => {
+                let list = JSON.parse(localStorage.getItem('cyber_warrants')) || [];
+                list = list.filter(w => w.id !== id);
+                localStorage.setItem('cyber_warrants', JSON.stringify(list));
+                deleteDocFromCloud('cyber_warrants', id);
+                loadWarrants();
+                showToast('ลบรายการหมายจับแล้ว', 'info');
+            });
+        }
+
+        // --- INQUIRY POINTS (14 CATEGORIES) ---
+        function renderInquiryCards() {
+            const container = document.getElementById('inquiryCardsContainer');
+            const query = (document.getElementById('searchInquiryInput')?.value || '').trim().toLowerCase();
+            container.innerHTML = '';
+
+            inquiryData.forEach((cat, catIndex) => {
+                const matchCat = cat.title.toLowerCase().includes(query) || cat.points.some(p => p.toLowerCase().includes(query));
+                if (query && !matchCat) return;
+
+                const pointsHtml = cat.points.map((pt, ptIndex) => `
+                    <li class="flex items-start justify-between gap-2 bg-slate-50 dark:bg-navy-950 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
+                        <span>• ${pt}</span>
+                        <button type="button" onclick="deleteInquiryQuestion(${catIndex}, ${ptIndex})" class="text-rose-400 hover:text-rose-600 shrink-0 px-1" title="ลบประเด็นนี้">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </li>
+                `).join('');
+
+                container.innerHTML += `
+                    <div class="bg-white dark:bg-navy-900 p-5 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4">
+                        <div class="space-y-3">
+                            <div class="flex items-start justify-between gap-2">
+                                <h3 class="font-bold text-sm sm:text-base text-navy-900 dark:text-amber-400">${cat.title}</h3>
+                                <button type="button" onclick="openAddInquiryModal(${catIndex})" class="shrink-0 bg-blue-50 dark:bg-navy-950 hover:bg-amber-500 hover:text-navy-950 text-blue-700 dark:text-amber-400 px-3 py-1 rounded-xl text-xs font-bold transition">
+                                    + เพิ่มประเด็น
+                                </button>
+                            </div>
+                            <ul class="space-y-1.5">${pointsHtml}</ul>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openAddInquiryModal(catIndex) {
+            document.getElementById('addInquiryCatIndex').value = catIndex;
+            document.getElementById('addInquiryCategoryTitle').textContent = inquiryData[catIndex].title;
+            document.getElementById('newInquiryQuestionText').value = '';
+            const m = document.getElementById('addInquiryModal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+        }
+        function closeAddInquiryModal() {
+            const m = document.getElementById('addInquiryModal');
+            m.classList.add('hidden');
+            m.classList.remove('flex');
+        }
+        function saveNewInquiryQuestion() {
+            const catIndex = parseInt(document.getElementById('addInquiryCatIndex').value, 10);
+            const text = document.getElementById('newInquiryQuestionText').value.trim();
+            if (!text) return;
+            inquiryData[catIndex].points.push(text);
+            localStorage.setItem('cyber_inquiry_data', JSON.stringify(inquiryData));
+            if (db) db.collection('cyber_settings').doc('inquiry_data').set({ categories: inquiryData }).catch(e => console.warn(e));
+            closeAddInquiryModal();
+            renderInquiryCards();
+            showToast('เพิ่มประเด็นคำถามสอบสวนแล้ว', 'success');
+        }
+        function deleteInquiryQuestion(catIndex, ptIndex) {
+            inquiryData[catIndex].points.splice(ptIndex, 1);
+            localStorage.setItem('cyber_inquiry_data', JSON.stringify(inquiryData));
+            if (db) db.collection('cyber_settings').doc('inquiry_data').set({ categories: inquiryData }).catch(e => console.warn(e));
+            renderInquiryCards();
+            showToast('ลบประเด็นคำถามแล้ว', 'info');
+        }
+
+        // --- REPORT GENERATOR ---
+        function updateReportPreview() {
+            const tpl = document.getElementById('repTemplate').value;
+            const caseNo = document.getElementById('repCaseNo').value || '......../2569';
+            const date = document.getElementById('repDate').value || '.... ............ 2569';
+            const victim = document.getElementById('repVictim').value || '....................';
+            const target = document.getElementById('repTarget').value || '....................';
+            const detail = document.getElementById('repDetail').value || 'ได้ทำการสืบสวนรวบรวมพยานหลักฐานทางอิเล็กทรอนิกส์ที่เกี่ยวข้องเรียบร้อยแล้ว';
+
+            let subject = 'รายงานผลการสืบสวนเส้นทางการเงินและบัญชีธนาคาร';
+            if (tpl === 'telco') subject = 'รายงานผลการสืบสวนข้อมูลหมายเลขโทรศัพท์และข้อมูลจราจรทางคอมพิวเตอร์';
+            if (tpl === 'arrest') subject = 'รายงานผลการสืบสวนติดตามจับกุมผู้ต้องหาตามหมายจับ';
+
+            const text = `บันทึกข้อความ
+ส่วนราชการ  งานสืบสวน สถานีตำรวจภูธรบางพลี
+ที่  ตช 0016.(สม)4(สส.)/........          วันที่  ${date}
+เรื่อง  ${subject} (คดีอาญาที่ ${caseNo})
+
+เรียน  ผู้กำกับการสถานีตำรวจภูธรบางพลี (ผ่าน พนักงานสอบสวนผู้รับผิดชอบ)
+
+          ตามที่ ${victim} ผู้เสียหาย ได้มาแจ้งความร้องทุกข์ต่อพนักงานสอบสวน สภ.บางพลี ตามคดีอาญาที่ ${caseNo} นั้น
+          บัดนี้ เจ้าหน้าที่ตำรวจชุดสืบสวน สภ.บางพลี ได้ทำการสืบสวนตรวจสอบข้อมูลเป้าหมาย ได้แก่ ${target} ปรากฏรายละเอียดผลการสืบสวนดังนี้
+          ${detail}
+
+          จึงเรียนมาเพื่อโปรดพิจารณาประกอบสำนวนการสอบสวนต่อไป
+
+                                        (ลงชื่อ)....................................................
+                                                 ( ${currentUser ? currentUser.name : 'เจ้าหน้าที่ชุดสืบสวน'} )
+                                                   ตำแหน่ง เจ้าพนักงานตำรวจชุดสืบสวน สภ.บางพลี`;
+            document.getElementById('repOutputBox').value = text;
+        }
+
+        function copyReportText() {
+            const box = document.getElementById('repOutputBox');
+            box.select();
+            document.execCommand('copy');
+            showToast('คัดลอกร่างรายงานการสืบสวนลงคลิปบอร์ดแล้ว', 'success');
+        }
+
+        // --- KNOWLEDGE BASE & PDF ---
+        function renderKnowledgeList() {
+            const grid = document.getElementById('knowledgeGrid');
+            let docs = JSON.parse(localStorage.getItem('cyber_knowledge_docs')) || [
+                { id: 'k_1', name: 'พ.ร.ก. มาตรการป้องกันและปราบปรามอาชญากรรมทางเทคโนโลยี พ.ศ. 2566.pdf', date: 'เอกสารมาตรฐานระบบ', data: '' },
+                { id: 'k_2', name: 'แนวทางการอายัดบัญชีม้าและการประสานงานธนาคาร.pdf', date: 'เอกสารมาตรฐานระบบ', data: '' }
+            ];
+            const query = (document.getElementById('searchKnowledgeInput')?.value || '').trim().toLowerCase();
+            if (query) {
+                docs = docs.filter(d => `${d.name} ${d.date}`.toLowerCase().includes(query));
+            }
+            grid.innerHTML = '';
+            docs.forEach(doc => {
+                grid.innerHTML += `
+                    <div class="bg-white dark:bg-navy-900 p-5 rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between gap-4">
+                        <div class="flex items-start gap-3.5">
+                            <div class="w-11 h-11 rounded-2xl bg-rose-500/15 text-rose-500 flex items-center justify-center text-xl shrink-0">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="font-bold text-sm text-slate-900 dark:text-white line-clamp-2">${doc.name}</h4>
+                                <p class="text-[11px] text-slate-400 mt-1">${doc.date}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                            <button type="button" onclick="downloadAttachedFile('${doc.name.replace(/'/g, "\\'")}', '${doc.data || ''}')" class="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5">
+                                <i class="fa-solid fa-download"></i> ดาวน์โหลด PDF
+                            </button>
+                            <button type="button" onclick="deleteKnowledgeDoc('${doc.id}')" class="text-xs text-rose-500 hover:text-rose-700 p-1.5 rounded-lg">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function handleKnowledgePdfUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const data = await readFileAsBase64(file);
+            const docs = JSON.parse(localStorage.getItem('cyber_knowledge_docs')) || [];
+            const newDoc = {
+                id: 'k_' + Date.now(),
+                name: file.name,
+                date: 'อัปโหลดเมื่อ ' + new Date().toLocaleDateString('th-TH'),
+                data
+            };
+            docs.unshift(newDoc);
+            localStorage.setItem('cyber_knowledge_docs', JSON.stringify(docs));
+            if (db) db.collection('cyber_knowledge_docs').doc(newDoc.id).set(newDoc).catch(e => console.warn(e));
+            renderKnowledgeList();
+            showToast('เพิ่มไฟล์เอกสาร PDF เข้าคลังเรียบร้อยแล้ว', 'success');
+        }
+
+        function deleteKnowledgeDoc(id) {
+            openConfirmModal('ลบเอกสาร PDF', 'ต้องการลบเอกสารนี้ออกจากคลังใช่หรือไม่?', () => {
+                let docs = JSON.parse(localStorage.getItem('cyber_knowledge_docs')) || [];
+                docs = docs.filter(d => d.id !== id);
+                localStorage.setItem('cyber_knowledge_docs', JSON.stringify(docs));
+                deleteDocFromCloud('cyber_knowledge_docs', id);
+                renderKnowledgeList();
+                showToast('ลบเอกสารเรียบร้อยแล้ว', 'info');
+            });
+        }
+
+        // --- USER MANAGEMENT ---
+        function renderUsersTable() {
+            const tbody = document.getElementById('usersTableBody');
+            const query = (document.getElementById('searchUsersInput')?.value || '').trim().toLowerCase();
+            const filtered = users.filter(u => !query || `${u.name} ${u.username} ${u.role}`.toLowerCase().includes(query));
+            tbody.innerHTML = '';
+            filtered.forEach(u => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-navy-950/60 transition">
+                        <td class="p-4 font-bold text-slate-900 dark:text-white">${u.name}</td>
+                        <td class="p-4 font-mono text-xs text-slate-600 dark:text-slate-300">${u.username}</td>
+                        <td class="p-4 font-mono text-xs text-slate-500 dark:text-slate-400">${u.password}</td>
+                        <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400">${u.role}</span></td>
+                        <td class="p-4 text-center">
+                            <button onclick="deleteUser('${u.id}')" class="text-rose-500 hover:text-rose-700 p-2 rounded-xl hover:bg-rose-50 transition" title="ลบบัญชีผู้ใช้">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function copyUsersSyncLink() {
+            try {
+                const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(users))));
+                const url = `${window.location.origin}${window.location.pathname}?sync_users=${encoded}`;
+                const tempInput = document.createElement('textarea');
+                tempInput.value = url;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                showToast('คัดลอกลิงก์ซิงค์รายชื่อผู้ใช้แล้ว! ส่งลิงก์นี้ให้เจ้าหน้าที่เปิดเพื่อเข้าสู่ระบบได้ทันที', 'success');
+            } catch (e) {
+                showToast('ไม่สามารถสร้างลิงก์ซิงค์ได้', 'error');
+            }
+        }
+
+        function openNewUserModal() {
+            const m = document.getElementById('newUserModal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+        }
+        function closeNewUserModal() {
+            const m = document.getElementById('newUserModal');
+            m.classList.add('hidden');
+            m.classList.remove('flex');
+        }
+        function handleAddUser(event) {
+            event.preventDefault();
+            const usernameVal = document.getElementById('newUserUsername').value.trim();
+            if (users.some(u => u.username.toLowerCase() === usernameVal.toLowerCase())) {
+                showToast(`ชื่อผู้ใช้งาน "${usernameVal}" มีอยู่ในระบบแล้ว กรุณาใช้ชื่ออื่น`, 'error');
+                return;
+            }
+            const newUser = {
+                id: 'u_' + Date.now(),
+                name: document.getElementById('newUserFullname').value.trim(),
+                username: usernameVal,
+                password: document.getElementById('newUserPassword').value.trim(),
+                role: document.getElementById('newUserRole').value
+            };
+            users.push(newUser);
+            localStorage.setItem('cyber_users', JSON.stringify(users));
+            if (db) db.collection('cyber_users').doc(newUser.id).set(newUser).catch(e => console.warn(e));
+            document.getElementById('newUserFullname').value = '';
+            document.getElementById('newUserUsername').value = '';
+            document.getElementById('newUserPassword').value = '';
+            closeNewUserModal();
+            renderUsersTable();
+            showToast('สร้างบัญชีผู้ใช้งานและบันทึกลง Cloud Firestore เรียบร้อยแล้ว! สามารถล็อกอินได้ทุกเครื่องทันที', 'success');
+        }
+        function deleteUser(id) {
+            if (users.length <= 1) {
+                showToast('ไม่สามารถลบบัญชีผู้ใช้งานคนสุดท้ายได้', 'error');
+                return;
+            }
+            openConfirmModal('ลบบัญชีผู้ใช้งาน', 'ยืนยันการลบบัญชีผู้ใช้งานนี้ออกจากระบบ?', () => {
+                users = users.filter(u => u.id !== id);
+                localStorage.setItem('cyber_users', JSON.stringify(users));
+                deleteDocFromCloud('cyber_users', id);
+                renderUsersTable();
+                showToast('ลบบัญชีผู้ใช้แล้ว', 'info');
+            });
+        }
+
+        // --- EXPORT TO PRINTABLE REPORT ---
+        function openPrintWindow(title, subtitle, tableHeaders, tableRowsHtml) {
+            const printWin = window.open('', '_blank', 'width=1100,height=750');
+            if (!printWin) {
+                showToast('กรุณาอนุญาตป๊อปอัป (Pop-up) เพื่อเปิดหน้าต่างพิมพ์เอกสาร', 'error');
+                return;
+            }
+            const nowStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const headersHtml = tableHeaders.map(h => `<th>${h}</th>`).join('');
+            printWin.document.write(`
+                <!DOCTYPE html>
+                <html lang="th">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${title}</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+                    <style>
+                        body { font-family: 'Sarabun', sans-serif; padding: 24px; color: #0f172a; font-size: 13px; }
+                        .header { text-align: center; margin-bottom: 18px; border-bottom: 2px solid #1e3a8a; padding-bottom: 12px; }
+                        .header h1 { margin: 0; font-size: 20px; color: #0f172a; }
+                        .header p { margin: 4px 0 0; color: #475569; font-size: 13px; }
+                        .meta { display: flex; justify-content: space-between; font-size: 12px; color: #475569; margin-bottom: 12px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+                        th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; vertical-align: top; }
+                        th { background-color: #f1f5f9; font-weight: 700; color: #0f172a; }
+                        tr:nth-child(even) { background-color: #f8fafc; }
+                        .no-print { text-align: right; margin-bottom: 16px; }
+                        .btn-print { background: #1e3a8a; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-weight: 600; }
+                        @media print { .no-print { display: none; } body { padding: 0; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="no-print">
+                        <button class="btn-print" onclick="window.print()">🖨️ สั่งพิมพ์เอกสาร / บันทึกเป็น PDF</button>
+                    </div>
+                    <div class="header">
+                        <h1>${title}</h1>
+                        <p>${subtitle}</p>
+                    </div>
+                    <div class="meta">
+                        <span>หน่วยงาน: สถานีตำรวจภูธรบางพลี (สภ.บางพลี)</span>
+                        <span>พิมพ์เมื่อ: ${nowStr}</span>
+                    </div>
+                    <table>
+                        <thead><tr>${headersHtml}</tr></thead>
+                        <tbody>${tableRowsHtml}</tbody>
+                    </table>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
+        }
+
+        function exportCasesToPrint() {
+            const list = getFilteredCases();
+            if (list.length === 0) {
+                showToast('ไม่มีข้อมูลเคสคดีสำหรับส่งออกพิมพ์', 'info');
+                return;
+            }
+            const headers = ['ลำดับ', 'วันที่รับแจ้ง / เลขเคส', 'ผู้เสียหาย', 'ประเภทกลโกง', 'มูลค่า (บาท)', 'สถานะคดี', 'บัญชีคนร้าย', 'พงส. / สืบสวนผู้รับผิดชอบ', 'หมายเรียก / หมายจับ'];
+            const rowsHtml = list.map((c, idx) => {
+                const accText = (c.accounts || []).map(a => `${a.bank}: ${a.no} (${a.name})`).join('<br>') || '-';
+                const statusDocs = [
+                    `หมายเรียก 1: ${c.summons1 ? (c.summons1Date || 'ออกแล้ว') : 'ยัง'}`,
+                    `หมายเรียก 2: ${c.summons2 ? (c.summons2Date || 'ออกแล้ว') : 'ยัง'}`,
+                    `หมายจับ: ${c.warrant ? 'ออกแล้ว' : 'ยัง'}`
+                ].join('<br>');
+                return `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td><strong>${c.caseNo}</strong><br>${c.date}</td>
+                        <td>${c.victim}</td>
+                        <td>${c.type}</td>
+                        <td>${Number(c.amount).toLocaleString()}</td>
+                        <td>${c.status}</td>
+                        <td>${accText}</td>
+                        <td><strong>พงส.:</strong> ${c.investigator || '-'}<br><strong>สืบสวน:</strong> ${c.detective || '-'}</td>
+                        <td>${statusDocs}</td>
+                    </tr>
+                `;
+            }).join('');
+            openPrintWindow(
+                'รายงานฐานข้อมูลเคสคดีอาชญากรรมทางเทคโนโลยี',
+                `จำนวนทั้งหมด ${list.length} คดี`,
+                headers,
+                rowsHtml
+            );
+        }
+
+        function exportWarrantsToPrint() {
+            let warrantsList = JSON.parse(localStorage.getItem('cyber_warrants')) || [];
+            if (currentWarrantFilter === 'arrested') warrantsList = warrantsList.filter(w => w.arrested);
+            if (currentWarrantFilter === 'not_arrested') warrantsList = warrantsList.filter(w => !w.arrested);
+            if (currentWarrantFilter === 'filed') warrantsList = warrantsList.filter(w => w.filed);
+            if (currentWarrantFilter === 'not_filed') warrantsList = warrantsList.filter(w => !w.filed);
+
+            const query = (document.getElementById('searchWarrantsInput')?.value || '').trim().toLowerCase();
+            if (query) {
+                warrantsList = warrantsList.filter(w => `${w.warrantNo} ${w.court} ${w.suspect} ${w.warrantPdf || ''} ${w.arrestPdf || ''}`.toLowerCase().includes(query));
+            }
+
+            if (warrantsList.length === 0) {
+                showToast('ไม่มีข้อมูลหมายจับสำหรับส่งออกพิมพ์', 'info');
+                return;
+            }
+
+            const headers = ['ลำดับ', 'เลขที่หมายจับ', 'ศาลที่ออกหมาย', 'ชื่อผู้ต้องหา & ข้อหาความผิด', 'สถานะส่งสำนวน', 'สถานะการจับกุม'];
+            const rowsHtml = warrantsList.map((w, idx) => `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td><strong>${w.warrantNo}</strong></td>
+                    <td>${w.court}</td>
+                    <td>${w.suspect}</td>
+                    <td>${w.filed ? `ส่งสำนวนแล้ว (${w.filedDate || '-'})` : 'ยังไม่ส่งสำนวน'}</td>
+                    <td>${w.arrested ? `จับกุมแล้ว (${w.arrestedDate || '-'})` : 'ยังไม่จับกุม'}</td>
+                </tr>
+            `).join('');
+            openPrintWindow(
+                'รายงานติดตามสถานะหมายจับ (Warrant Tracker)',
+                `จำนวนทั้งหมด ${warrantsList.length} หมาย`,
+                headers,
+                rowsHtml
+            );
+        }
+
+        // --- GLOBAL WINDOW BINDINGS & INIT ---
+        window.handleLogin = handleLogin;
+        window.handleLogout = handleLogout;
+        window.switchTab = switchTab;
+        window.toggleTheme = toggleTheme;
+        window.openNewCaseModal = openNewCaseModal;
+        window.openEditCaseModal = openEditCaseModal;
+        window.closeNewCaseModal = closeNewCaseModal;
+        window.addAccountInput = addAccountInput;
+        window.toggleCaseDocStatus = toggleCaseDocStatus;
+        window.handleCaseSubmit = handleCaseSubmit;
+        window.deleteCase = deleteCase;
+        window.resetCasesFilters = resetCasesFilters;
+        window.exportCasesToPrint = exportCasesToPrint;
+        window.exportWarrantsToPrint = exportWarrantsToPrint;
+        window.setWarrantFilter = setWarrantFilter;
+        window.openNewWarrantModal = openNewWarrantModal;
+        window.closeNewWarrantModal = closeNewWarrantModal;
+        window.handleWarrantSubmit = handleWarrantSubmit;
+        window.deleteWarrant = deleteWarrant;
+        window.toggleWarrantField = toggleWarrantField;
+        window.updateWarrantDate = updateWarrantDate;
+        window.attachArrestPdfToRow = attachArrestPdfToRow;
+        window.openAddInquiryModal = openAddInquiryModal;
+        window.closeAddInquiryModal = closeAddInquiryModal;
+        window.saveNewInquiryQuestion = saveNewInquiryQuestion;
+        window.deleteInquiryQuestion = deleteInquiryQuestion;
+        window.updateReportPreview = updateReportPreview;
+        window.copyReportText = copyReportText;
+        window.handleKnowledgePdfUpload = handleKnowledgePdfUpload;
+        window.deleteKnowledgeDoc = deleteKnowledgeDoc;
+        window.openNewUserModal = openNewUserModal;
+        window.closeNewUserModal = closeNewUserModal;
+        window.handleAddUser = handleAddUser;
+        window.deleteUser = deleteUser;
+        window.copyUsersSyncLink = copyUsersSyncLink;
+        window.downloadAttachedFile = downloadAttachedFile;
+        window.closeConfirmModal = closeConfirmModal;
+
+        window.onload = function() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('sync_users')) {
+                showToast('ซิงค์รายชื่อผู้ใช้งานเข้าสู่เครื่องนี้เรียบร้อยแล้ว สามารถล็อกอินได้ทันที', 'success');
+            }
+            if (currentUser) {
+                initApp();
+            } else {
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('app-wrapper').classList.add('hidden');
+            }
+        };
+    </script>
+</body>
+</html>
