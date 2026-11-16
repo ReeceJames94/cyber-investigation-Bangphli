@@ -248,7 +248,7 @@ window.CyberExport = (function() {
 
                 <!-- Police Header -->
                 <div class="text-center">
-                    <div style="font-size: 26px; line-height: 1;">🛡️</div>
+                    <img src="assets/police_logo_transparent.png" style="height: 65px; margin: 0 auto 6px; display: block;" alt="ตราพระแสงดาบเขนและโล่ สำนักงานตำรวจแห่งชาติ">
                     <h2 style="margin: 4px 0 2px; font-size: 17px; font-weight: bold;">แบบรายงานผลการสืบสวนติดตามจับกุมบุคคลตามหมายจับ</h2>
                     <p style="margin: 0; font-size: 13px;">งานสืบสวน สถานีตำรวจภูธรบางพลี กองบังคับการตำรวจภูธรจังหวัดสมุทรปราการ</p>
                     <p style="margin: 2px 0 10px; font-size: 11.5px; color: #475569;">วันที่พิมพ์เอกสาร: ${printDate}</p>

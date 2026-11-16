@@ -1,0 +1,19 @@
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Local Secure Database & Master Keys
+data/.secret_key
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Scratch & Temp Files
+scratch/
+*.log
+.DS_Store
+Thumbs.db

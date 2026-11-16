@@ -1,0 +1,25 @@
+{
+  "name": "cyber-investigation-bangphli",
+  "version": "1.0.0",
+  "description": "โครงสร้างโปรเจกต์เวอร์ชันแยกโมดูล (Modular Architecture) เพื่อให้พัฒนา แก้ไข และต่อยอดฟีเจอร์ได้ง่าย เป็นระเบียบ ไม่ซับซ้อน",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ReeceJames94/cyber-investigation-Bangphli.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ReeceJames94/cyber-investigation-Bangphli/issues"
+  },
+  "homepage": "https://github.com/ReeceJames94/cyber-investigation-Bangphli#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.119.0"
+  }
+}

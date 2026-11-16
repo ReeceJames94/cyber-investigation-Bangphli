@@ -397,7 +397,7 @@ window.CyberRegistry = (function() {
             list.forEach(d => {
                 const statusClass = d.status.includes('เสร็จสิ้น') || d.status.includes('ตอบกลับ') ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : (d.status.includes('ยกเลิก') ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20');
                 const fileHtml = d.file ? `
-                    <a href="javascript:void(0)" onclick="window.CyberUI.showToast('เปิดเอกสาร: ' + '${d.file}', 'info')" class="inline-flex items-center gap-1 text-blue-500 hover:underline max-w-[140px] truncate" title="${d.file}">
+                    <a href="javascript:void(0)" onclick="window.openDispatchAttachment ? window.openDispatchAttachment('${d.id}') : (window.CyberRegistry.openDispatchAttachment ? window.CyberRegistry.openDispatchAttachment('${d.id}') : window.CyberUI.showToast('เปิดเอกสาร: ' + '${d.file}', 'info'))" class="inline-flex items-center gap-1 text-blue-500 hover:underline max-w-[140px] truncate" title="${d.file}">
                         <i class="fa-solid fa-file-pdf text-rose-500"></i> <span class="truncate">${d.file}</span>
                     </a>
                 ` : '<span class="text-slate-400 text-[11px]">ไม่มีไฟล์</span>';
@@ -481,7 +481,7 @@ window.CyberRegistry = (function() {
             list.forEach(r => {
                 const statusClass = r.status.includes('แล้วเสร็จ') ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : (r.status.includes('สืบสวน') ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20' : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20');
                 const fileHtml = r.file ? `
-                    <a href="javascript:void(0)" onclick="window.CyberUI.showToast('เปิดเอกสาร: ' + '${r.file}', 'info')" class="inline-flex items-center gap-1 text-blue-500 hover:underline max-w-[140px] truncate" title="${r.file}">
+                    <a href="javascript:void(0)" onclick="window.openReceiptAttachment ? window.openReceiptAttachment('${r.id}') : (window.CyberRegistry.openReceiptAttachment ? window.CyberRegistry.openReceiptAttachment('${r.id}') : window.CyberUI.showToast('เปิดเอกสาร: ' + '${r.file}', 'info'))" class="inline-flex items-center gap-1 text-blue-500 hover:underline max-w-[140px] truncate" title="${r.file}">
                         <i class="fa-solid fa-file-pdf text-rose-500"></i> <span class="truncate">${r.file}</span>
                     </a>
                 ` : '<span class="text-slate-400 text-[11px]">ไม่มีไฟล์</span>';
