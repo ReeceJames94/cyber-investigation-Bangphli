@@ -202,7 +202,17 @@ if (countUsers === 0) {
         const { hash, salt } = hashPassword(defaultPassword);
         insertUser.run(u.username, u.badge_no, u.rank_name, u.position, u.department, u.role, hash, salt, now);
     }
-    console.log('[SECURITY] Pre-seeded 5 police accounts with AES & PBKDF2 security.');
+    console.log('[SECURITY] Pre-seeded police accounts with AES & PBKDF2 security.');
+}
+
+// Ensure 'thanakrit' account always exists
+const hasThanakrit = db.prepare("SELECT id FROM users WHERE username = 'thanakrit';").get();
+if (!hasThanakrit) {
+    const { hash, salt } = hashPassword('Police@2569');
+    db.prepare(`
+        INSERT INTO users (username, badge_no, rank_name, position, department, role, password_hash, salt, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+    `).run('thanakrit', '10000', 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล', 'รอง สว.(สส.) สภ.บางพลี (Admin)', 'ฝ่ายสืบสวน', 'admin', hash, salt, new Date().toISOString());
 }
 
 // Pre-seed sample encrypted arrest record if empty
