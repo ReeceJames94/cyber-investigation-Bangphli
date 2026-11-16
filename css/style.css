@@ -1,0 +1,46 @@
+/* Custom CSS for Cyber Investigation Portal (สภ.บางพลี) */
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --police-blue: #1e3a8a;
+    --police-gold: #f59e0b;
+}
+
+body {
+    font-family: 'Sarabun', sans-serif;
+}
+
+h1, h2, h3, h4, .font-heading {
+    font-family: 'Prompt', sans-serif;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.4);
+    border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.7);
+}
+
+/* Print Styling */
+@media print {
+    aside, header, .no-print, button, form {
+        display: none !important;
+    }
+    body {
+        background: white !important;
+        color: black !important;
+        padding: 0 !important;
+    }
+}
