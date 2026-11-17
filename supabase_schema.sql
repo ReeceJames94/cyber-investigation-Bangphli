@@ -8,6 +8,53 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- =========================================================================================
+-- 0. ตาราง users: ระบบยืนยันตัวตนเจ้าหน้าที่ตำรวจ (PBKDF2-SHA512 100,000 รอบ)
+-- รองรับการล็อกอินข้ามเครื่อง คอมพิวเตอร์ มือถือ และแท็บเล็ต
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS public.users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    salt TEXT NOT NULL,
+    full_name TEXT NOT NULL,
+    rank TEXT,
+    badge_no TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'detective' CHECK (role IN ('admin', 'detective', 'inquiry', 'clerk')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_username ON public.users(username);
+CREATE INDEX IF NOT EXISTS idx_users_badge_no ON public.users(badge_no);
+
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "users_select_all" ON public.users;
+DROP POLICY IF EXISTS "users_insert_all" ON public.users;
+DROP POLICY IF EXISTS "users_update_all" ON public.users;
+DROP POLICY IF EXISTS "users_delete_all" ON public.users;
+
+CREATE POLICY "users_select_all"
+ON public.users FOR SELECT
+TO anon, authenticated
+USING (true);
+
+CREATE POLICY "users_insert_all"
+ON public.users FOR INSERT
+TO anon, authenticated
+WITH CHECK (length(trim(username)) > 0 AND length(trim(password_hash)) > 0);
+
+CREATE POLICY "users_update_all"
+ON public.users FOR UPDATE
+TO anon, authenticated
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "users_delete_all"
+ON public.users FOR DELETE
+TO anon, authenticated
+USING (true);
+
+-- =========================================================================================
 -- 1. ตาราง cases: เก็บข้อมูลคดี, เลขคดี, รหัสสถานีตำรวจ และสถานะคดี
 -- =========================================================================================
 CREATE TABLE IF NOT EXISTS public.cases (

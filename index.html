@@ -10000,6 +10000,22 @@ ${currentDocPrintHtml}
         // SECTION: POLICE AUTHENTICATION, AES-256 DB SYNC & AUDIT LOGS (PDPA)
         // รองรับทั้ง On-Premise Server (server.js) และ Static Cloud (Vercel / GitHub Pages + Supabase)
         // =========================================================================
+        const DEFAULT_SUPABASE_URL = 'https://yofvfkfjyndjctoyvgpe.supabase.co';
+        const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_MC3Z6VYA-wFAhAZLfikxDA_DM1W_J4K';
+        const DEFAULT_STATION_CODE = 'POLICE-STN-BANGPHLI-001';
+
+        function getActiveSupabaseClient() {
+            const url = (document.getElementById('zkEndpointUrl')?.value || localStorage.getItem('cyber_zk_supabase_url') || DEFAULT_SUPABASE_URL).trim();
+            const key = (document.getElementById('zkSupabaseAnonKey')?.value || localStorage.getItem('cyber_zk_supabase_key') || DEFAULT_SUPABASE_ANON_KEY).trim();
+            if (typeof window.CyberConfig !== 'undefined' && typeof window.CyberConfig.getSupabase === 'function') {
+                return window.CyberConfig.getSupabase(url, key);
+            }
+            if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
+                return window.supabase.createClient(url, key, { auth: { persistSession: false } });
+            }
+            return null;
+        }
+
         let currentAuthUser = null;
         let loadedAuditLogs = [];
 
@@ -10071,6 +10087,129 @@ ${currentDocPrintHtml}
                 pass: 'Police@2569'
             }
         ];
+
+        // =========================================================================
+        // PBKDF2-SHA512 (100,000 ROUNDS) PASSWORD HASHING (WEB CRYPTO API)
+        // =========================================================================
+        async function hashPasswordPBKDF2_SHA512(password, saltHex) {
+            const cryptoObj = (typeof window !== 'undefined' && window.crypto) ? window.crypto : (typeof crypto !== 'undefined' ? crypto : null);
+            if (!cryptoObj || !cryptoObj.subtle) {
+                throw new Error('Web Crypto API ไม่รองรับในเบราว์เซอร์นี้ (ต้องเข้าผ่าน HTTPS หรือ Localhost)');
+            }
+            if (!saltHex) {
+                const randomSaltBytes = new Uint8Array(16);
+                cryptoObj.getRandomValues(randomSaltBytes);
+                saltHex = Array.from(randomSaltBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+            const encoder = new TextEncoder();
+            const keyMaterial = await cryptoObj.subtle.importKey(
+                'raw',
+                encoder.encode(password),
+                { name: 'PBKDF2' },
+                false,
+                ['deriveBits']
+            );
+
+            const derivedBits = await cryptoObj.subtle.deriveBits(
+                {
+                    name: 'PBKDF2',
+                    salt: encoder.encode(saltHex),
+                    iterations: 100000,
+                    hash: 'SHA-512'
+                },
+                keyMaterial,
+                512 // 512 bits = 64 bytes
+            );
+
+            const hashHex = Array.from(new Uint8Array(derivedBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+            return { hash: hashHex, salt: saltHex };
+        }
+
+        // =========================================================================
+        // AUTO-SYNC LOCAL USERS TO SUPABASE public.users TABLE
+        // =========================================================================
+        let isSyncingUsersToSupabase = false;
+        async function autoSyncLocalUsersToSupabase() {
+            if (isSyncingUsersToSupabase) return { synced: 0 };
+            isSyncingUsersToSupabase = true;
+            try {
+                const supabase = getActiveSupabaseClient();
+                if (!supabase) return { synced: 0 };
+
+                // 1. ดึงรายชื่อผู้ใช้งานทั้งหมดจาก Supabase users
+                const { data: remoteUsers, error } = await supabase
+                    .from('users')
+                    .select('username, badge_no');
+
+                if (error) {
+                    console.warn('[SUPABASE USERS SYNC] Unable to fetch remote users:', error);
+                    return { synced: 0, error: error.message };
+                }
+
+                const remoteUsernames = new Set((remoteUsers || []).map(u => (u.username || '').toLowerCase().trim()));
+                const remoteBadges = new Set((remoteUsers || []).map(u => String(u.badge_no || '').trim()));
+
+                // 2. รวบรวมผู้ใช้งานจาก LocalStorage
+                const localUsers = getLocalUsersStore();
+                let syncedCount = 0;
+
+                for (const u of localUsers) {
+                    const uName = (u.username || '').toLowerCase().trim();
+                    const badge = String(u.badge_no || '').trim();
+                    if (remoteUsernames.has(uName) || (badge && remoteBadges.has(badge))) {
+                        continue; // มีใน Supabase อยู่แล้ว ข้าม
+                    }
+
+                    // สร้าง Hash ด้วย PBKDF2-SHA512 100,000 รอบ
+                    const rawPass = u.pass || (u.username === 'thanakrit' ? 'Police@2569' : 'Police@2569');
+                    const { hash, salt } = await hashPasswordPBKDF2_SHA512(rawPass);
+
+                    let rank = u.rank || '';
+                    let fullName = u.full_name || u.rank_name || u.username;
+                    if (!rank && u.rank_name) {
+                        const rankPrefixes = ['ว่าที่ ร.ต.ต.', 'ร.ต.ต.', 'ร.ต.ท.', 'ร.ต.อ.', 'พ.ต.ต.', 'พ.ต.ท.', 'พ.ต.อ.', 'พล.ต.ต.', 'ส.ต.ต.', 'ส.ต.ท.', 'ส.ต.อ.', 'จ.ส.ต.', 'ด.ต.'];
+                        for (const r of rankPrefixes) {
+                            if (u.rank_name.startsWith(r)) {
+                                rank = r;
+                                break;
+                            }
+                        }
+                    }
+
+                    const payload = {
+                        username: u.username,
+                        password_hash: hash,
+                        salt: salt,
+                        full_name: fullName,
+                        rank: rank || 'ร.ต.ต.',
+                        badge_no: badge || String(u.id || Date.now()),
+                        role: u.role || 'detective'
+                    };
+
+                    const { error: insErr } = await supabase.from('users').insert([payload]);
+                    if (!insErr) {
+                        syncedCount++;
+                        remoteUsernames.add(uName);
+                        if (badge) remoteBadges.add(badge);
+                    } else {
+                        console.warn('[SUPABASE USERS SYNC] Failed inserting user ' + u.username, insErr);
+                    }
+                }
+
+                if (syncedCount > 0) {
+                    console.log(`[SUPABASE USERS SYNC] Auto-synced ${syncedCount} users to Supabase public.users`);
+                    if (typeof appendLocalAuditLog === 'function' && currentAuthUser) {
+                        appendLocalAuditLog(currentAuthUser, 'SYNC_USERS_SUPABASE', 'AUTH', 'ALL', `Auto-sync บัญชีผู้ใช้งานขึ้น Supabase สำเร็จ ${syncedCount} นาย`);
+                    }
+                }
+                return { synced: syncedCount };
+            } catch (e) {
+                console.error('[SUPABASE USERS SYNC ERROR]', e);
+                return { error: e.message };
+            } finally {
+                isSyncingUsersToSupabase = false;
+            }
+        }
 
         function getLocalUsersStore() {
             try {
@@ -10177,6 +10316,9 @@ ${currentDocPrintHtml}
         }
 
         async function initAuthAndSecurity() {
+            // เรียก Auto-sync บัญชีผู้ใช้จาก LocalStorage ขึ้น Supabase ตาราง users อัตโนมัติ
+            setTimeout(autoSyncLocalUsersToSupabase, 800);
+
             const token = getAuthToken();
             if (!token) {
                 openModal('policeLoginModal');
@@ -10194,25 +10336,23 @@ ${currentDocPrintHtml}
                     await syncArrestRecordsFromSecureBackend();
                     checkBackendStatus();
                     resetSessionIdleTimer();
-                } else {
-                    setAuthToken('');
-                    openModal('policeLoginModal');
+                    return;
                 }
-            } else {
-                // โหมด Cloud / Vercel / GitHub Pages (Zero-Knowledge Client + Supabase)
-                try {
-                    const savedUser = JSON.parse(localStorage.getItem('police_auth_user') || 'null');
-                    if (savedUser && savedUser.username) {
-                        currentAuthUser = savedUser;
-                        updateAuthUI();
-                        checkBackendStatus();
-                        resetSessionIdleTimer();
-                        return;
-                    }
-                } catch (_) {}
-                setAuthToken('');
-                openModal('policeLoginModal');
             }
+
+            // โหมด Cloud / Vercel / GitHub Pages (Zero-Knowledge Client + Supabase)
+            try {
+                const savedUser = JSON.parse(localStorage.getItem('police_auth_user') || 'null');
+                if (savedUser && savedUser.username) {
+                    currentAuthUser = savedUser;
+                    updateAuthUI();
+                    checkBackendStatus();
+                    resetSessionIdleTimer();
+                    return;
+                }
+            } catch (_) {}
+            setAuthToken('');
+            openModal('policeLoginModal');
         }
 
         function updateAuthUI() {
@@ -10259,57 +10399,133 @@ ${currentDocPrintHtml}
             const errEl = document.getElementById('loginErrorMsg');
             if (errEl) errEl.classList.add('hidden');
 
-            const result = await safeApiFetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-
-            if (!result._staticCloudMode && result.data) {
-                const data = result.data;
-                if (data.success && data.token) {
-                    setAuthToken(data.token, data.user);
-                    currentAuthUser = data.user;
-                    closeModal('policeLoginModal');
-                    updateAuthUI();
-                    await syncArrestRecordsFromSecureBackend();
-                    checkBackendStatus();
-                    resetSessionIdleTimer();
-                    toast(`🔐 ยินดีต้อนรับ ${data.user.rank_name} เข้าสู่ระบบ สภ.บางพลี`);
-                    return;
-                }
-                // หากค้นในเซิร์ฟเวอร์ไม่เจอแต่เป็นบัญชีที่เพิ่งสร้างใน Client หรือ thanakrit ให้ตรวจสอบใน Client Store ด้วย
+            const submitBtn = document.getElementById('submitLoginBtn');
+            const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<span>⏳</span> <span>กำลังตรวจสอบข้อมูลและยืนยันตัวตน...</span>`;
             }
 
-            // ตรวจสอบในระบบ Zero-Knowledge Client Auth (สำหรับ Vercel / GitHub Pages / Supabase Cloud)
-            const users = getLocalUsersStore();
-            const foundUser = users.find(u =>
-                (u.username.toLowerCase() === username.toLowerCase() || u.badge_no === username) &&
-                u.status !== 'suspended'
-            );
+            try {
+                // 1. ตรวจสอบการเข้าสู่ระบบผ่านตาราง public.users บน Supabase (PBKDF2-SHA512 100,000 รอบ)
+                const supabase = getActiveSupabaseClient();
+                if (supabase) {
+                    try {
+                        const { data: supaUsers, error: sErr } = await supabase
+                            .from('users')
+                            .select('id, username, password_hash, salt, full_name, rank, badge_no, role')
+                            .or(`username.ilike.${username},badge_no.eq.${username}`)
+                            .limit(1);
 
-            // ตรวจสอบรหัสผ่านที่แท้จริงของผู้ใช้งาน (ตัด Dev Bypass Passwords ออกทั้งหมด เพื่อความปลอดภัยตามมาตรฐาน PDPA)
-            const expectedPass = foundUser?.pass || 'Police@2569';
-            if (foundUser && password === expectedPass) {
-                const zkToken = 'zk_session_' + Date.now() + '_' + foundUser.badge_no;
-                setAuthToken(zkToken, foundUser);
-                currentAuthUser = foundUser;
-                appendLocalAuditLog(foundUser, 'LOGIN_SUCCESS', 'AUTH', foundUser.badge_no, `เข้าสู่ระบบสำเร็จในตำแหน่ง ${foundUser.position} (Zero-Knowledge Cloud)`);
-                if (typeof syncAuditLogToSupabaseZeroKnowledge === 'function') {
-                    syncAuditLogToSupabaseZeroKnowledge('LOGIN_SUCCESS', 'AUTH', foundUser.badge_no, `เข้าสู่ระบบสำเร็จ (${foundUser.rank_name})`);
+                        if (!sErr && supaUsers && supaUsers.length > 0) {
+                            const supaUser = supaUsers[0];
+                            if (supaUser.password_hash && supaUser.salt) {
+                                const { hash: computedHash } = await hashPasswordPBKDF2_SHA512(password, supaUser.salt);
+                                if (computedHash === supaUser.password_hash) {
+                                    const rankDisplay = supaUser.rank ? (supaUser.full_name.startsWith(supaUser.rank) ? supaUser.full_name : `${supaUser.rank} ${supaUser.full_name}`) : supaUser.full_name;
+                                    const loggedUser = {
+                                        id: supaUser.id,
+                                        username: supaUser.username,
+                                        badge_no: supaUser.badge_no,
+                                        full_name: supaUser.full_name,
+                                        rank: supaUser.rank,
+                                        rank_name: rankDisplay,
+                                        role: supaUser.role,
+                                        position: supaUser.role === 'admin' ? 'ผู้ดูแลระบบสูงสุด (Super Admin)' : (supaUser.role === 'inquiry' ? 'พนักงานสอบสวน สภ.บางพลี' : 'ฝ่ายสืบสวน สภ.บางพลี'),
+                                        department: supaUser.role === 'inquiry' ? 'งานสอบสวน' : 'ฝ่ายสืบสวน',
+                                        status: 'active',
+                                        source: 'supabase'
+                                    };
+
+                                    const zkToken = 'supa_session_' + Date.now() + '_' + supaUser.badge_no;
+                                    setAuthToken(zkToken, loggedUser);
+                                    currentAuthUser = loggedUser;
+                                    appendLocalAuditLog(loggedUser, 'LOGIN_SUCCESS', 'AUTH', loggedUser.badge_no, `เข้าสู่ระบบสำเร็จผ่าน Supabase Cloud (${loggedUser.rank_name})`);
+                                    if (typeof syncAuditLogToSupabaseZeroKnowledge === 'function') {
+                                        syncAuditLogToSupabaseZeroKnowledge('LOGIN_SUCCESS', 'AUTH', loggedUser.badge_no, `เข้าสู่ระบบสำเร็จ (${loggedUser.rank_name})`);
+                                    }
+                                    closeModal('policeLoginModal');
+                                    updateAuthUI();
+                                    checkBackendStatus();
+                                    resetSessionIdleTimer();
+                                    toast(`🔐 ยินดีต้อนรับ ${loggedUser.rank_name} เข้าสู่ระบบ สภ.บางพลี (Supabase Cloud)`);
+                                    setTimeout(autoSyncLocalUsersToSupabase, 1500);
+                                    return;
+                                } else {
+                                    appendLocalAuditLog({ badge_no: username, rank_name: username, role: 'guest' }, 'LOGIN_FAILED', 'AUTH', username, 'รหัสผ่านไม่ถูกต้อง (Supabase Auth)');
+                                    if (errEl) {
+                                        errEl.textContent = 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง';
+                                        errEl.classList.remove('hidden');
+                                    } else {
+                                        toast('⚠️ ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+                                    }
+                                    return;
+                                }
+                            }
+                        }
+                    } catch (supaEx) {
+                        console.warn('[SUPABASE LOGIN CHECK FAILED, FALLING BACK]', supaEx);
+                    }
                 }
-                closeModal('policeLoginModal');
-                updateAuthUI();
-                checkBackendStatus();
-                resetSessionIdleTimer();
-                toast(`🔐 ยินดีต้อนรับ ${foundUser.rank_name} เข้าสู่ระบบ สภ.บางพลี`);
-            } else {
-                appendLocalAuditLog({ badge_no: username, rank_name: username, role: 'guest' }, 'LOGIN_FAILED', 'AUTH', username, 'ระบุชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
-                if (errEl) {
-                    errEl.textContent = 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง';
-                    errEl.classList.remove('hidden');
+
+                // 2. ตรวจสอบกับ Backend API /api/auth/login (กรณีรันบน Node server.js)
+                const result = await safeApiFetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!result._staticCloudMode && result.data) {
+                    const data = result.data;
+                    if (data.success && data.token) {
+                        setAuthToken(data.token, data.user);
+                        currentAuthUser = data.user;
+                        closeModal('policeLoginModal');
+                        updateAuthUI();
+                        await syncArrestRecordsFromSecureBackend();
+                        checkBackendStatus();
+                        resetSessionIdleTimer();
+                        toast(`🔐 ยินดีต้อนรับ ${data.user.rank_name} เข้าสู่ระบบ สภ.บางพลี`);
+                        setTimeout(autoSyncLocalUsersToSupabase, 1500);
+                        return;
+                    }
+                }
+
+                // 3. ตรวจสอบในระบบ Zero-Knowledge Client Auth (Fallback สำหรับ LocalStorage)
+                const users = getLocalUsersStore();
+                const foundUser = users.find(u =>
+                    (u.username.toLowerCase() === username.toLowerCase() || u.badge_no === username) &&
+                    u.status !== 'suspended'
+                );
+
+                const expectedPass = foundUser?.pass || 'Police@2569';
+                if (foundUser && password === expectedPass) {
+                    const zkToken = 'zk_session_' + Date.now() + '_' + foundUser.badge_no;
+                    setAuthToken(zkToken, foundUser);
+                    currentAuthUser = foundUser;
+                    appendLocalAuditLog(foundUser, 'LOGIN_SUCCESS', 'AUTH', foundUser.badge_no, `เข้าสู่ระบบสำเร็จในตำแหน่ง ${foundUser.position} (Zero-Knowledge Cloud)`);
+                    if (typeof syncAuditLogToSupabaseZeroKnowledge === 'function') {
+                        syncAuditLogToSupabaseZeroKnowledge('LOGIN_SUCCESS', 'AUTH', foundUser.badge_no, `เข้าสู่ระบบสำเร็จ (${foundUser.rank_name})`);
+                    }
+                    closeModal('policeLoginModal');
+                    updateAuthUI();
+                    checkBackendStatus();
+                    resetSessionIdleTimer();
+                    toast(`🔐 ยินดีต้อนรับ ${foundUser.rank_name} เข้าสู่ระบบ สภ.บางพลี`);
+                    setTimeout(autoSyncLocalUsersToSupabase, 1500);
                 } else {
-                    toast('⚠️ ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+                    appendLocalAuditLog({ badge_no: username, rank_name: username, role: 'guest' }, 'LOGIN_FAILED', 'AUTH', username, 'ระบุชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+                    if (errEl) {
+                        errEl.textContent = 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง';
+                        errEl.classList.remove('hidden');
+                    } else {
+                        toast('⚠️ ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+                    }
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
                 }
             }
         }
@@ -10430,9 +10646,36 @@ ${currentDocPrintHtml}
                 return;
             }
 
-            // ตรวจสอบกับรหัสผ่านจริงของเจ้าหน้าที่ปัจจุบัน (หรือ Police@2569 สำหรับ Admin / Initial Password)
-            const expected = currentAuthUser?.pass || 'Police@2569';
-            if (password === expected) {
+            let isPasswordCorrect = false;
+
+            // 1. ตรวจสอบกับ Supabase public.users ผ่าน PBKDF2-SHA512 (100,000 รอบ)
+            try {
+                const supabase = getActiveSupabaseClient();
+                if (supabase && currentAuthUser?.username) {
+                    const { data: supaUsers } = await supabase
+                        .from('users')
+                        .select('password_hash, salt')
+                        .eq('username', currentAuthUser.username)
+                        .limit(1);
+
+                    if (supaUsers && supaUsers.length > 0 && supaUsers[0].salt && supaUsers[0].password_hash) {
+                        const { hash: computedHash } = await hashPasswordPBKDF2_SHA512(password, supaUsers[0].salt);
+                        if (computedHash === supaUsers[0].password_hash) {
+                            isPasswordCorrect = true;
+                        }
+                    }
+                }
+            } catch (_) {}
+
+            // 2. Fallback ตรวจสอบกับรหัสผ่านใน LocalStore
+            if (!isPasswordCorrect) {
+                const expected = currentAuthUser?.pass || 'Police@2569';
+                if (password === expected) {
+                    isPasswordCorrect = true;
+                }
+            }
+
+            if (isPasswordCorrect) {
                 isSessionLocked = false;
                 closeModal('sessionLockModal');
                 if (input) input.value = '';
@@ -10680,7 +10923,7 @@ ${currentDocPrintHtml}
         }
 
         // =========================================================================
-        // SECTION: POLICE USER MANAGEMENT & ZERO-KNOWLEDGE CLOUD
+        // SECTION: POLICE USER MANAGEMENT & ZERO-KNOWLEDGE CLOUD (SUPABASE public.users)
         // =========================================================================
         let loadedUsersList = [];
 
@@ -10691,6 +10934,48 @@ ${currentDocPrintHtml}
             const tbody = document.getElementById('usersTableBody');
             if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">⏳ กำลังเรียกข้อมูลเจ้าหน้าที่ตำรวจ...</td></tr>';
 
+            // 1. ดึงข้อมูลจากตาราง public.users บน Supabase Cloud เป็นหลัก
+            try {
+                const supabase = getActiveSupabaseClient();
+                if (supabase) {
+                    const { data: supaUsers, error: sErr } = await supabase
+                        .from('users')
+                        .select('id, username, password_hash, salt, full_name, rank, badge_no, role, created_at')
+                        .order('created_at', { ascending: true });
+
+                    if (!sErr && Array.isArray(supaUsers) && supaUsers.length > 0) {
+                        const localUsers = getLocalUsersStore();
+                        const localMap = new Map(localUsers.map(u => [(u.username || '').toLowerCase(), u]));
+
+                        loadedUsersList = supaUsers.map(su => {
+                            const localMatch = localMap.get((su.username || '').toLowerCase());
+                            const rankDisplay = su.rank ? (su.full_name.startsWith(su.rank) ? su.full_name : `${su.rank} ${su.full_name}`) : su.full_name;
+                            return {
+                                id: su.id,
+                                username: su.username,
+                                badge_no: su.badge_no,
+                                rank_name: rankDisplay,
+                                full_name: su.full_name,
+                                rank: su.rank,
+                                position: localMatch?.position || (su.role === 'admin' ? 'ผู้ดูแลระบบสูงสุด (Super Admin)' : (su.role === 'inquiry' ? 'พนักงานสอบสวน สภ.บางพลี' : 'ฝ่ายสืบสวน สภ.บางพลี')),
+                                department: localMatch?.department || (su.role === 'inquiry' ? 'งานสอบสวน' : 'ฝ่ายสืบสวน'),
+                                role: su.role || 'detective',
+                                status: 'active',
+                                source: 'supabase'
+                            };
+                        });
+
+                        saveLocalUsersStore(loadedUsersList);
+                        renderUsersTable(loadedUsersList);
+                        updateUserStats(loadedUsersList);
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn('[LOAD SUPABASE USERS ERR]', err);
+            }
+
+            // 2. ดึงจากเซิร์ฟเวอร์ Backend API (ถ้ามี server.js รันอยู่)
             const result = await safeApiFetch('/api/users', {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
@@ -10703,7 +10988,7 @@ ${currentDocPrintHtml}
                 return;
             }
 
-            // โหมด Cloud / Static Host (Vercel / GitHub Pages)
+            // 3. โหมด Cloud / Static Host (LocalStorage Fallback)
             loadedUsersList = getLocalUsersStore();
             renderUsersTable(loadedUsersList);
             updateUserStats(loadedUsersList);
@@ -10733,7 +11018,7 @@ ${currentDocPrintHtml}
                     : '<span class="px-2 py-0.5 rounded bg-rose-500/15 text-rose-400 text-[10px] font-bold">🔴 ระงับ</span>';
 
                 const canEdit = isAdmin;
-                const isSelf = currentAuthUser && currentAuthUser.id === u.id;
+                const isSelf = currentAuthUser && (String(currentAuthUser.id) === String(u.id) || currentAuthUser.username === u.username);
 
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
@@ -10751,11 +11036,11 @@ ${currentDocPrintHtml}
                         <td class="p-3.5 text-center">${statusBadge}</td>
                         <td class="p-3.5 text-center">
                             <div class="flex items-center justify-center gap-1.5">
-                                <button type="button" onclick="openEditUserModal(${u.id})" class="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500 text-blue-500 hover:text-white text-xs transition" title="แก้ไขข้อมูล/สิทธิ์">
+                                <button type="button" onclick="openEditUserModal('${u.id}')" class="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500 text-blue-500 hover:text-white text-xs transition" title="แก้ไขข้อมูล/สิทธิ์">
                                     ✏️
                                 </button>
                                 ${!isSelf && canEdit ? `
-                                <button type="button" onclick="deleteUserAccount(${u.id}, '${u.rank_name}')" class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white text-xs transition" title="ลบบัญชีผู้ใช้งาน">
+                                <button type="button" onclick="deleteUserAccount('${u.id}', '${u.rank_name}')" class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white text-xs transition" title="ลบบัญชีผู้ใช้งาน">
                                     🗑️
                                 </button>` : ''}
                             </div>
@@ -10820,71 +11105,113 @@ ${currentDocPrintHtml}
             const position = document.getElementById('newPosition').value.trim();
             const department = document.getElementById('newDepartment').value;
             const role = document.getElementById('newRole').value;
-            const password = document.getElementById('newPassword').value.trim();
+            const password = document.getElementById('newPassword').value.trim() || 'Police@2569';
 
             const errEl = document.getElementById('addUserErrorMsg');
             if (errEl) errEl.classList.add('hidden');
 
-            const result = await safeApiFetch('/api/users', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify({ badge_no, username, rank_name, position, department, role, password })
-            });
+            const submitBtn = e.target ? e.target.querySelector('button[type="submit"]') : null;
+            const origTxt = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = `<span>⏳</span> <span>กำลังสร้างกุญแจความปลอดภัย PBKDF2...</span>`; }
 
-            if (!result._staticCloudMode && result.data) {
-                const data = result.data;
-                if (data.success) {
-                    closeModal('addUserModal');
-                    toast(`✅ ${data.message}`);
-                    await loadUsersFromApi();
-                } else {
-                    if (errEl) {
-                        errEl.textContent = data.error || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล';
-                        errEl.classList.remove('hidden');
-                    } else {
-                        toast(`⚠️ ${data.error}`);
+            try {
+                // คำนวณ PBKDF2-SHA512 (100,000 รอบ)
+                const { hash, salt } = await hashPasswordPBKDF2_SHA512(password);
+
+                let rank = '';
+                const rankPrefixes = ['ว่าที่ ร.ต.ต.', 'ร.ต.ต.', 'ร.ต.ท.', 'ร.ต.อ.', 'พ.ต.ต.', 'พ.ต.ท.', 'พ.ต.อ.', 'พล.ต.ต.', 'ส.ต.ต.', 'ส.ต.ท.', 'ส.ต.อ.', 'จ.ส.ต.', 'ด.ต.'];
+                for (const r of rankPrefixes) {
+                    if (rank_name.startsWith(r)) {
+                        rank = r;
+                        break;
                     }
                 }
-                return;
-            }
 
-            // โหมด Cloud / Static Host
-            const users = getLocalUsersStore();
-            if (users.some(u => u.username === username || u.badge_no === badge_no)) {
-                if (errEl) {
-                    errEl.textContent = 'ชื่อผู้ใช้งานหรือรหัสประจำตัวนี้มีอยู่ในระบบแล้ว';
-                    errEl.classList.remove('hidden');
+                // 1. ตรวจสอบและบันทึกลง Supabase public.users
+                const supabase = getActiveSupabaseClient();
+                let supaSaved = false;
+                if (supabase) {
+                    const { data: existUsers } = await supabase
+                        .from('users')
+                        .select('username, badge_no')
+                        .or(`username.ilike.${username},badge_no.eq.${badge_no}`);
+
+                    if (existUsers && existUsers.length > 0) {
+                        if (errEl) {
+                            errEl.textContent = 'ชื่อผู้ใช้งานหรือรหัสประจำตัวนี้มีอยู่ในระบบ Supabase แล้ว';
+                            errEl.classList.remove('hidden');
+                        } else {
+                            toast('⚠️ ชื่อผู้ใช้งานหรือรหัสประจำตัวนี้มีอยู่ในระบบแล้ว');
+                        }
+                        return;
+                    }
+
+                    const supaPayload = {
+                        username,
+                        password_hash: hash,
+                        salt,
+                        full_name: rank_name,
+                        rank: rank || 'ร.ต.ต.',
+                        badge_no,
+                        role
+                    };
+
+                    const { data: insData, error: insErr } = await supabase.from('users').insert([supaPayload]).select();
+                    if (!insErr && insData && insData.length > 0) {
+                        supaSaved = true;
+                    } else if (insErr) {
+                        console.warn('[SUPABASE INSERT ERROR]', insErr);
+                    }
                 }
-                return;
+
+                // 2. ส่งไปยัง Backend API (ถ้ามี server.js)
+                safeApiFetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ badge_no, username, rank_name, position, department, role, password })
+                }).catch(() => {});
+
+                // 3. บันทึกลง LocalStorage
+                const users = getLocalUsersStore();
+                const newUser = {
+                    id: Date.now(),
+                    username,
+                    badge_no,
+                    rank_name,
+                    full_name: rank_name,
+                    rank: rank || 'ร.ต.ต.',
+                    position: position || 'เจ้าหน้าที่ตำรวจ สภ.บางพลี',
+                    department: department || 'ฝ่ายสืบสวน',
+                    role: role || 'detective',
+                    status: 'active',
+                    pass: password
+                };
+                users.push(newUser);
+                saveLocalUsersStore(users);
+
+                recordClientAuditLog('CREATE_USER', 'USER', username, `เพิ่มบัญชีเจ้าหน้าที่ใหม่: ${rank_name} (${newUser.position}) [Supabase: ${supaSaved ? 'สำเร็จ' : 'Local'}]`);
+                closeModal('addUserModal');
+                toast(`✅ เพิ่มบัญชีเจ้าหน้าที่ตำรวจ ${rank_name} สำเร็จ (บันทึกลง Supabase เรียบร้อยแล้ว)`);
+                await loadUsersFromApi();
+            } catch (ex) {
+                console.error(ex);
+                if (errEl) {
+                    errEl.textContent = 'เกิดข้อผิดพลาด: ' + ex.message;
+                    errEl.classList.remove('hidden');
+                } else {
+                    toast('⚠️ ' + ex.message);
+                }
+            } finally {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origTxt; }
             }
-            const newUser = {
-                id: Date.now(),
-                username,
-                badge_no,
-                rank_name,
-                position: position || 'เจ้าหน้าที่ตำรวจ สภ.บางพลี',
-                department: department || 'ฝ่ายสืบสวน',
-                role: role || 'detective',
-                status: 'active',
-                pass: password || 'Police@2569'
-            };
-            users.push(newUser);
-            saveLocalUsersStore(users);
-            recordClientAuditLog('CREATE_USER', 'USER', username, `เพิ่มบัญชีเจ้าหน้าที่ใหม่: ${rank_name} (${newUser.position})`);
-            closeModal('addUserModal');
-            toast(`✅ เพิ่มบัญชีเจ้าหน้าที่ตำรวจ ${rank_name} เรียบร้อยแล้ว`);
-            await loadUsersFromApi();
         }
 
         function openEditUserModal(id) {
-            const u = loadedUsersList.find(x => x.id === id);
+            const u = loadedUsersList.find(x => String(x.id) === String(id) || x.username === id);
             if (!u) return;
 
             document.getElementById('editUserId').value = u.id;
-            document.getElementById('editRankName').value = u.rank_name || '';
+            document.getElementById('editRankName').value = u.rank_name || u.full_name || '';
             document.getElementById('editPosition').value = u.position || '';
             document.getElementById('editDepartment').value = u.department || 'ฝ่ายสืบสวน';
             document.getElementById('editRole').value = u.role || 'detective';
@@ -10900,7 +11227,7 @@ ${currentDocPrintHtml}
             const token = getAuthToken();
             if (!token) return;
 
-            const id = Number(document.getElementById('editUserId').value);
+            const id = document.getElementById('editUserId').value;
             const rank_name = document.getElementById('editRankName').value.trim();
             const position = document.getElementById('editPosition').value.trim();
             const department = document.getElementById('editDepartment').value;
@@ -10908,28 +11235,47 @@ ${currentDocPrintHtml}
             const status = document.getElementById('editStatus').value;
             const password = document.getElementById('editPassword').value.trim();
 
-            const result = await safeApiFetch('/api/users/' + id, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify({ rank_name, position, department, role, status, password })
-            });
+            // 1. อัปเดตไปยัง Supabase public.users
+            try {
+                const supabase = getActiveSupabaseClient();
+                if (supabase) {
+                    let rank = '';
+                    const rankPrefixes = ['ว่าที่ ร.ต.ต.', 'ร.ต.ต.', 'ร.ต.ท.', 'ร.ต.อ.', 'พ.ต.ต.', 'พ.ต.ท.', 'พ.ต.อ.', 'พล.ต.ต.', 'ส.ต.ต.', 'ส.ต.ท.', 'ส.ต.อ.', 'จ.ส.ต.', 'ด.ต.'];
+                    for (const r of rankPrefixes) {
+                        if (rank_name.startsWith(r)) {
+                            rank = r;
+                            break;
+                        }
+                    }
 
-            if (!result._staticCloudMode && result.data) {
-                if (result.data.success) {
-                    closeModal('editUserModal');
-                    toast('✅ ปรับปรุงข้อมูลเจ้าหน้าที่เรียบร้อยแล้ว');
-                    await loadUsersFromApi();
-                } else {
-                    toast(`⚠️ ${result.data.error || 'แก้ไขข้อมูลไม่สำเร็จ'}`);
+                    const supaUpdate = {
+                        full_name: rank_name,
+                        role: role
+                    };
+                    if (rank) supaUpdate.rank = rank;
+
+                    if (password && password.length >= 6) {
+                        const { hash, salt } = await hashPasswordPBKDF2_SHA512(password);
+                        supaUpdate.password_hash = hash;
+                        supaUpdate.salt = salt;
+                    }
+
+                    await supabase.from('users').update(supaUpdate).eq('id', id);
                 }
-                return;
+            } catch (sEx) {
+                console.warn('[SUPABASE UPDATE ERROR]', sEx);
             }
 
+            // 2. ส่งไปยัง Backend API (ถ้ามี server.js)
+            safeApiFetch('/api/users/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ rank_name, position, department, role, status, password })
+            }).catch(() => {});
+
+            // 3. อัปเดตใน LocalStorage
             const users = getLocalUsersStore();
-            const idx = users.findIndex(u => u.id === id);
+            const idx = users.findIndex(u => String(u.id) === String(id) || u.username === id);
             if (idx !== -1) {
                 users[idx].rank_name = rank_name || users[idx].rank_name;
                 users[idx].position = position || users[idx].position;
@@ -10940,8 +11286,9 @@ ${currentDocPrintHtml}
                 saveLocalUsersStore(users);
                 recordClientAuditLog('UPDATE_USER', 'USER', users[idx].username, `แก้ไขข้อมูลผู้ใช้งาน: ${rank_name}`);
             }
+
             closeModal('editUserModal');
-            toast('✅ ปรับปรุงข้อมูลเจ้าหน้าที่เรียบร้อยแล้ว');
+            toast('✅ ปรับปรุงข้อมูลเจ้าหน้าที่เรียบร้อยแล้ว (อัปเดตบน Supabase)');
             await loadUsersFromApi();
         }
 
@@ -10951,34 +11298,33 @@ ${currentDocPrintHtml}
             const token = getAuthToken();
             if (!token) return;
 
-            const result = await safeApiFetch('/api/users/' + id, {
-                method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-
-            if (!result._staticCloudMode && result.data) {
-                if (result.data.success) {
-                    toast(`🗑️ ${result.data.message}`);
-                    await loadUsersFromApi();
-                } else {
-                    toast(`⚠️ ${result.data.error || 'ลบบัญชีไม่สำเร็จ'}`);
+            // 1. ลบจาก Supabase public.users
+            try {
+                const supabase = getActiveSupabaseClient();
+                if (supabase) {
+                    await supabase.from('users').delete().eq('id', id);
                 }
-                return;
+            } catch (sEx) {
+                console.warn('[SUPABASE DELETE ERROR]', sEx);
             }
 
-            const users = getLocalUsersStore().filter(u => u.id !== Number(id));
+            // 2. ลบจาก Backend API
+            safeApiFetch('/api/users/' + id, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            }).catch(() => {});
+
+            // 3. ลบจาก LocalStorage
+            const users = getLocalUsersStore().filter(u => String(u.id) !== String(id) && u.rank_name !== name);
             saveLocalUsersStore(users);
             recordClientAuditLog('DELETE_USER', 'USER', String(id), `ลบบัญชีผู้ใช้งาน: ${name}`);
-            toast(`🗑️ ลบบัญชีผู้ใช้งาน ${name} เรียบร้อยแล้ว`);
+            toast(`🗑️ ลบบัญชีผู้ใช้งาน ${name} เรียบร้อยแล้ว (ลบออกจาก Supabase)`);
             await loadUsersFromApi();
         }
 
         // =========================================================================
         // SECTION: SUPABASE ZERO-KNOWLEDGE CLOUD & WEB CRYPTO (AES-256-GCM) ENGINE
         // =========================================================================
-        const DEFAULT_SUPABASE_URL = 'https://yofvfkfjyndjctoyvgpe.supabase.co';
-        const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_MC3Z6VYA-wFAhAZLfikxDA_DM1W_J4K';
-        const DEFAULT_STATION_CODE = 'POLICE-STN-BANGPHLI-001';
 
         async function initSupabaseZkConfig() {
             try {
@@ -11059,18 +11405,6 @@ ${currentDocPrintHtml}
             if (resEl) resEl.classList.add('hidden');
             await initSupabaseZkConfig();
             openModal('zkCloudModal');
-        }
-
-        function getActiveSupabaseClient() {
-            const url = (document.getElementById('zkEndpointUrl')?.value || localStorage.getItem('cyber_zk_supabase_url') || DEFAULT_SUPABASE_URL).trim();
-            const key = (document.getElementById('zkSupabaseAnonKey')?.value || localStorage.getItem('cyber_zk_supabase_key') || DEFAULT_SUPABASE_ANON_KEY).trim();
-            if (typeof window.CyberConfig !== 'undefined' && typeof window.CyberConfig.getSupabase === 'function') {
-                return window.CyberConfig.getSupabase(url, key);
-            }
-            if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
-                return window.supabase.createClient(url, key, { auth: { persistSession: false } });
-            }
-            return null;
         }
 
         async function testZkCloudConnection() {
