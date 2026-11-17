@@ -660,7 +660,7 @@ const server = http.createServer(async (req, res) => {
             }
 
             // 4c-3. NEWPOLICE MASTER UPDATE SERVER (SERVE VERSION INFO & INSTALLER EXE TO CLIENT PCS)
-            if (pathname === '/api/updates/info' && req.method === 'GET') {
+            if (pathname === '/api/updates/info' && (req.method === 'GET' || req.method === 'HEAD')) {
                 try {
                     const npRoot = path.join(__dirname, '../Newpolice');
                     const verFile = path.join(npRoot, 'public/version.json');
@@ -675,6 +675,11 @@ const server = http.createServer(async (req, res) => {
                         files.sort();
                         if (files.length > 0) installerName = files[files.length - 1];
                     }
+                    if (req.method === 'HEAD') {
+                        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                        res.end();
+                        return;
+                    }
                     return sendJson(res, 200, {
                         success: true,
                         ...verData,
@@ -687,7 +692,7 @@ const server = http.createServer(async (req, res) => {
                 }
             }
 
-            if (pathname === '/api/updates/download' && req.method === 'GET') {
+            if (pathname === '/api/updates/download' && (req.method === 'GET' || req.method === 'HEAD')) {
                 try {
                     const releaseDir = path.join(__dirname, '../Newpolice/release');
                     if (!fs.existsSync(releaseDir)) {
@@ -706,6 +711,10 @@ const server = http.createServer(async (req, res) => {
                         'Content-Length': stat.size,
                         'Content-Disposition': `attachment; filename="${encodeURIComponent(targetFile)}"`
                     });
+                    if (req.method === 'HEAD') {
+                        res.end();
+                        return;
+                    }
                     fs.createReadStream(fullPath).pipe(res);
                     return;
                 } catch (e) {
