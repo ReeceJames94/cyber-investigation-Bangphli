@@ -940,8 +940,11 @@
                             <p class="text-xs text-slate-300 mt-1">บันทึกและจัดการข้อมูลเคส แจ้งความออนไลน์ บัญชีคนร้าย และสถานะการติดตาม</p>
                         </div>
                         <div class="flex flex-wrap gap-2.5 shrink-0">
-                            <button onclick="exportCasesPrint()" class="bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 px-4 py-2.5 rounded-2xl text-xs font-semibold transition flex items-center gap-1.5">
+                            <button onclick="exportCasesPrint()" class="bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 px-4 py-2.5 rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm" title="พิมพ์หรือบันทึก PDF รายงานข้อมูลคดีตามตัวกรองที่เลือก">
                                 <span>🖨️</span> <span>ส่งออก / พิมพ์รายงาน</span>
+                            </button>
+                            <button type="button" onclick="exportFilteredCasesCsv()" class="bg-teal-600/30 hover:bg-teal-600 text-teal-300 hover:text-white border border-teal-500/40 px-4 py-2.5 rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm" title="ส่งออกข้อมูลคดีตามตัวกรองเป็นไฟล์ Excel / CSV">
+                                <span>📊</span> <span>ส่งออก Excel / CSV</span>
                             </button>
                             <button type="button" onclick="openInquiryExportModal()" class="bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 px-4 py-2.5 rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20" title="ส่งออกข้อมูลคดีเป็นไฟล์ JSON มาตรฐานสำหรับระบบทำสำนวนในเครื่อง (พงส.)">
                                 <span>📥</span> <span>Export JSON สำนวน (พงส.)</span>
@@ -978,54 +981,87 @@
                     </div>
 
                     <!-- Filter Bar -->
-                    <div class="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 grid grid-cols-1 md:grid-cols-12 gap-3 items-center shadow-sm">
-                        <div class="md:col-span-3">
-                            <input type="text" id="caseFilterInput" oninput="renderCases()" placeholder="🔍 ค้นหาเลขเคส, ผู้เสียหาย, กลโกง, บัญชี, พงส., สืบสวน..." class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                        </div>
-                        <div class="md:col-span-4 flex items-center gap-1.5">
-                            <div class="relative flex-1 flex items-center">
-                                <input type="text" id="caseFilterDateStart" oninput="renderCases()" placeholder="วว/ดด/ปปปป" class="w-full px-2.5 py-2.5 pr-7 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:outline-none focus:ring-1 focus:ring-amber-500">
-                                <input type="date" id="filterStartPicker" class="absolute right-1 opacity-0 w-6 h-6 cursor-pointer" onchange="syncDate('filterStartPicker', 'caseFilterDateStart'); renderCases();">
-                                <span class="absolute right-2 text-slate-400 pointer-events-none text-xs">📅</span>
+                    <div class="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-3 shadow-sm">
+                        <!-- Upper Filter Row: Search, Dates, Investigator (พงส.) -->
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                            <div class="md:col-span-5">
+                                <div class="relative flex items-center">
+                                    <span class="absolute left-3.5 text-slate-400 text-xs pointer-events-none">🔍</span>
+                                    <input type="text" id="caseFilterInput" oninput="renderCases()" placeholder="ค้นหาเลขเคส, ผู้เสียหาย, กลโกง, บัญชี, พงส., สืบสวน..." class="w-full pl-9 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                                </div>
                             </div>
-                            <span class="text-xs font-medium text-slate-400 shrink-0">ถึง</span>
-                            <div class="relative flex-1 flex items-center">
-                                <input type="text" id="caseFilterDateEnd" oninput="renderCases()" placeholder="วว/ดด/ปปปป" class="w-full px-2.5 py-2.5 pr-7 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:outline-none focus:ring-1 focus:ring-amber-500">
-                                <input type="date" id="filterEndPicker" class="absolute right-1 opacity-0 w-6 h-6 cursor-pointer" onchange="syncDate('filterEndPicker', 'caseFilterDateEnd'); renderCases();">
-                                <span class="absolute right-2 text-slate-400 pointer-events-none text-xs">📅</span>
+                            <div class="md:col-span-4 flex items-center gap-1.5">
+                                <div class="relative flex-1 flex items-center">
+                                    <input type="text" id="caseFilterDateStart" oninput="renderCases()" placeholder="วว/ดด/ปปปป" class="w-full px-2.5 py-2.5 pr-7 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                    <input type="date" id="filterStartPicker" class="absolute right-1 opacity-0 w-6 h-6 cursor-pointer" onchange="syncDate('filterStartPicker', 'caseFilterDateStart'); renderCases();">
+                                    <span class="absolute right-2 text-slate-400 pointer-events-none text-xs">📅</span>
+                                </div>
+                                <span class="text-xs font-medium text-slate-400 shrink-0">ถึง</span>
+                                <div class="relative flex-1 flex items-center">
+                                    <input type="text" id="caseFilterDateEnd" oninput="renderCases()" placeholder="วว/ดด/ปปปป" class="w-full px-2.5 py-2.5 pr-7 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                    <input type="date" id="filterEndPicker" class="absolute right-1 opacity-0 w-6 h-6 cursor-pointer" onchange="syncDate('filterEndPicker', 'caseFilterDateEnd'); renderCases();">
+                                    <span class="absolute right-2 text-slate-400 pointer-events-none text-xs">📅</span>
+                                </div>
+                                <button type="button" onclick="filterPreviewToday()" class="px-2.5 py-2.5 bg-amber-500/15 hover:bg-amber-500 text-amber-600 dark:text-amber-400 hover:text-slate-950 border border-amber-500/30 rounded-2xl text-[11px] font-bold whitespace-nowrap transition" title="กรองเฉพาะเคสวันนี้">
+                                    วันนี้
+                                </button>
                             </div>
-                            <button type="button" onclick="filterPreviewToday()" class="px-2.5 py-2.5 bg-amber-500/15 hover:bg-amber-500 text-amber-600 dark:text-amber-400 hover:text-slate-950 border border-amber-500/30 rounded-2xl text-[11px] font-bold whitespace-nowrap transition" title="กรองเฉพาะเคสวันนี้">
-                                วันนี้
-                            </button>
+                            <div class="md:col-span-3">
+                                <select id="caseInvestigatorFilter" onchange="renderCases()" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none font-medium">
+                                    <option value="">👮 พงส. ทั้งหมด (ทุกนาย)</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="md:col-span-2">
-                            <select id="caseStatusFilter" onchange="renderCases()" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:outline-none">
-                                <option value="">สถานะทั้งหมด</option>
-                                <option value="พบพงส.">พบพงส.</option>
-                                <option value="นัดหมาย">นัดหมาย</option>
-                                <option value="warroom">🚨 warroom</option>
-                                <option value="สิ้นสุด">สิ้นสุด</option>
-                                <option value="ติดต่อไม่ได้">ติดต่อไม่ได้</option>
-                            </select>
-                        </div>
-                        <div class="md:col-span-2">
-                            <select id="caseUrgencyFilter" onchange="renderCases()" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:outline-none">
-                                <option value="">ความเร่งด่วนทั้งหมด</option>
-                                <option value="ภจว.ติดตาม">⚡ 1. ภจว.ติดตาม</option>
-                                <option value="คดีเร่งด่วน ภ.1ติดตาม">🔥 2. คดีเร่งด่วน ภ.1ติดตาม</option>
-                                <option value="ตร.ติดตาม">🛡️ 3. ตร.ติดตาม</option>
-                                <option value="any_urgent">🚨 คดีเร่งด่วนทุกระดับ (1-3)</option>
-                            </select>
-                        </div>
-                        <div class="md:col-span-1 flex gap-1.5">
-                            <button type="button" onclick="resetFilters()" title="ล้างตัวกรองทั้งหมด" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 py-2.5 rounded-2xl text-xs font-semibold transition flex items-center justify-center">
-                                🔄
-                            </button>
+
+                        <!-- Lower Filter Row: Status, Urgency, Reset & Filtered Export Buttons -->
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                            <div class="md:col-span-3">
+                                <select id="caseStatusFilter" onchange="renderCases()" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:outline-none">
+                                    <option value="">📌 สถานะทั้งหมด</option>
+                                    <option value="พบพงส.">พบพงส.</option>
+                                    <option value="นัดหมาย">นัดหมาย</option>
+                                    <option value="warroom">🚨 warroom</option>
+                                    <option value="สิ้นสุด">สิ้นสุด</option>
+                                    <option value="ติดต่อไม่ได้">ติดต่อไม่ได้</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-3">
+                                <select id="caseUrgencyFilter" onchange="renderCases()" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:outline-none">
+                                    <option value="">⚡ ความเร่งด่วนทั้งหมด</option>
+                                    <option value="ภจว.ติดตาม">⚡ 1. ภจว.ติดตาม</option>
+                                    <option value="คดีเร่งด่วน ภ.1ติดตาม">🔥 2. คดีเร่งด่วน ภ.1ติดตาม</option>
+                                    <option value="ตร.ติดตาม">🛡️ 3. ตร.ติดตาม</option>
+                                    <option value="any_urgent">🚨 คดีเร่งด่วนทุกระดับ (1-3)</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-6 flex flex-wrap items-center justify-end gap-2">
+                                <button type="button" onclick="resetFilters()" title="ล้างตัวกรองทั้งหมด" class="px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl text-xs font-semibold transition flex items-center gap-1">
+                                    <span>🔄</span> <span>ล้างตัวกรอง</span>
+                                </button>
+                                <button type="button" onclick="exportFilteredCasesCsv()" title="ส่งออกเฉพาะรายการที่กรองเป็นไฟล์ Excel / CSV" class="px-3.5 py-2.5 bg-teal-600/15 hover:bg-teal-600 text-teal-600 dark:text-teal-400 hover:text-white border border-teal-500/30 rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+                                    <span>📊</span> <span>ส่งออก Excel / CSV</span>
+                                </button>
+                                <button type="button" onclick="exportCasesPrint()" title="พิมพ์หรือบันทึก PDF รายงานเฉพาะรายการที่กรอง" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                                    <span>🖨️</span> <span>พิมพ์รายงานตามตัวกรอง</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Cases Table matching user uploaded image -->
                     <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+                        <!-- Summary info bar -->
+                        <div class="px-5 py-3 bg-slate-50/70 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-bold text-slate-700 dark:text-slate-200">รายการคดีที่แสดง:</span>
+                                <span id="caseFilteredCountBadge" class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-500 dark:text-amber-400 font-bold">0 คดี</span>
+                                <span id="caseActiveFilterNotice" class="text-slate-400 text-[11px]"></span>
+                            </div>
+                            <div class="flex items-center gap-2 font-semibold">
+                                <span class="text-slate-400">มูลค่าความเสียหายรวม:</span>
+                                <span id="caseFilteredTotalDamage" class="text-rose-600 dark:text-rose-400 font-bold">0 ฿</span>
+                            </div>
+                        </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-xs border-collapse">
                                 <thead>
@@ -3638,6 +3674,7 @@
             if (role === 'investigator') {
                 if (!investigatorsList.includes(name)) investigatorsList.push(name);
                 populateOfficerSelects(name, document.getElementById('mCaseDetective').value);
+                if (typeof populateCaseInvestigatorFilter === 'function') populateCaseInvestigatorFilter(true);
             } else {
                 if (!detectivesList.includes(name)) detectivesList.push(name);
                 populateOfficerSelects(document.getElementById('mCaseInvestigator').value, name);
@@ -3956,13 +3993,95 @@
             return 99;
         }
 
-        function renderCases() {
-            const tbody = document.getElementById('casesTbody');
-            const q = (document.getElementById('caseFilterInput')?.value || '').toLowerCase();
+        let lastKnownInvestigatorSetKey = '';
+        function populateCaseInvestigatorFilter(force = false) {
+            const filterSelect = document.getElementById('caseInvestigatorFilter');
+            if (!filterSelect) return;
+            const currentVal = filterSelect.value;
+
+            const invSet = new Set();
+            mockCases.forEach(c => {
+                const inv = (c.investigator || c.officerInquiry || '').trim();
+                if (inv) invSet.add(inv);
+            });
+            const invList = (typeof investigatorsList !== 'undefined' ? investigatorsList : []) || (window.investigatorsList || []);
+            invList.forEach(name => {
+                const n = String(name || '').trim();
+                if (n) invSet.add(n);
+            });
+
+            const sortedInvs = Array.from(invSet).sort();
+            const setKey = sortedInvs.join('|||');
+            if (!force && setKey === lastKnownInvestigatorSetKey && filterSelect.options.length > 1) {
+                return;
+            }
+            lastKnownInvestigatorSetKey = setKey;
+
+            filterSelect.innerHTML = '<option value="">👮 พงส. ทั้งหมด (ทุกนาย)</option>';
+            sortedInvs.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = `พงส. ${name}`;
+                if (name === currentVal) opt.selected = true;
+                filterSelect.appendChild(opt);
+            });
+        }
+
+        function getFilteredCasesList() {
+            const q = (document.getElementById('caseFilterInput')?.value || '').toLowerCase().trim();
             const s = document.getElementById('caseStatusFilter')?.value || '';
             const u = document.getElementById('caseUrgencyFilter')?.value || '';
+            const inv = document.getElementById('caseInvestigatorFilter')?.value || '';
             const startVal = parseDateToComparable(document.getElementById('caseFilterDateStart')?.value);
             const endVal = parseDateToComparable(document.getElementById('caseFilterDateEnd')?.value);
+
+            return mockCases.filter(c => {
+                const urgList = Array.isArray(c.urgency) ? c.urgency : (c.urgency ? [c.urgency] : []);
+                
+                // กรองตามสถานะ
+                if (s && c.status !== s) return false;
+
+                // กรองตาม พงส. ที่รับผิดชอบ
+                if (inv) {
+                    const caseInv = (c.investigator || c.officerInquiry || '').trim();
+                    const cleanInv = inv.replace(/^ว่าที่\s*/, '').replace(/^[พรรดจส]\.?[ตโทอ]\.?[ตโทอ]?\.?\s*/, '').trim();
+                    const cleanCaseInv = caseInv.replace(/^ว่าที่\s*/, '').replace(/^[พรรดจส]\.?[ตโทอ]\.?[ตโทอ]?\.?\s*/, '').trim();
+                    if (caseInv !== inv && !cleanCaseInv.includes(cleanInv) && !caseInv.includes(inv)) {
+                        return false;
+                    }
+                }
+
+                // กรองตามความเร่งด่วนจาก dropdown
+                if (u === 'any_urgent' && urgList.length === 0) return false;
+                if (u && u !== 'any_urgent' && !urgList.includes(u)) return false;
+
+                // กรองตาม Quick Filter Pill
+                if (currentCaseQuickFilter === 'warroom' && c.status !== 'warroom') return false;
+                if (currentCaseQuickFilter !== 'all' && currentCaseQuickFilter !== 'warroom' && !urgList.includes(currentCaseQuickFilter)) return false;
+
+                // ค้นหาข้อความ
+                const accStr = (c.accounts || []).map(a => typeof a === 'string' ? a : `${a.bank || ''} ${a.no || a.accNo || ''} ${a.name || ''}`).join(' ');
+                const urgStr = urgList.join(' ');
+                const pongs = c.investigator || c.officerInquiry || '';
+                const sueber = c.detective || c.officerInvestigate || '';
+                if (q && !`${c.caseNo || c.caseId || ''} ${c.victim || ''} ${c.type || ''} ${c.status || ''} ${urgStr} ${accStr} ${pongs} ${sueber}`.toLowerCase().includes(q)) return false;
+
+                // กรองตามช่วงวันที่
+                if (startVal || endVal) {
+                    const cDateVal = parseDateToComparable(c.date);
+                    if (cDateVal) {
+                        if (startVal && cDateVal < startVal) return false;
+                        if (endVal && cDateVal > endVal) return false;
+                    }
+                }
+                return true;
+            });
+        }
+
+        function renderCases() {
+            populateCaseInvestigatorFilter();
+            const tbody = document.getElementById('casesTbody');
+            if (!tbody) return;
 
             // อัปเดตตัวเลขเคาน์เตอร์ Quick Filter Pills
             const elAll = document.getElementById('qfCount-all');
@@ -3977,35 +4096,49 @@
             if (elPha1) elPha1.textContent = mockCases.filter(c => (Array.isArray(c.urgency) ? c.urgency : [c.urgency]).includes('คดีเร่งด่วน ภ.1ติดตาม')).length;
             if (elTorRor) elTorRor.textContent = mockCases.filter(c => (Array.isArray(c.urgency) ? c.urgency : [c.urgency]).includes('ตร.ติดตาม')).length;
 
-            const filtered = mockCases.filter(c => {
-                const urgList = Array.isArray(c.urgency) ? c.urgency : (c.urgency ? [c.urgency] : []);
-                
-                // กรองตามสถานะ
-                if (s && c.status !== s) return false;
+            const filtered = getFilteredCasesList();
 
-                // กรองตามความเร่งด่วนจาก dropdown
-                if (u === 'any_urgent' && urgList.length === 0) return false;
-                if (u && u !== 'any_urgent' && !urgList.includes(u)) return false;
+            // Update summary bar badges
+            const totalCount = mockCases.length;
+            const filteredCount = filtered.length;
+            const totalDamage = filtered.reduce((sum, c) => {
+                const raw = c.amount !== undefined ? c.amount : c.damage;
+                const n = Number(raw);
+                return sum + (!isNaN(n) ? n : 0);
+            }, 0);
 
-                // กรองตาม Quick Filter Pill
-                if (currentCaseQuickFilter === 'warroom' && c.status !== 'warroom') return false;
-                if (currentCaseQuickFilter !== 'all' && currentCaseQuickFilter !== 'warroom' && !urgList.includes(currentCaseQuickFilter)) return false;
+            const badgeCountEl = document.getElementById('caseFilteredCountBadge');
+            const noticeEl = document.getElementById('caseActiveFilterNotice');
+            const damageEl = document.getElementById('caseFilteredTotalDamage');
 
-                // ค้นหาข้อความ
-                const accStr = (c.accounts || []).join(' ');
-                const urgStr = urgList.join(' ');
-                if (q && !`${c.caseNo} ${c.victim} ${c.type} ${c.status} ${urgStr} ${accStr} ${c.investigator} ${c.detective}`.toLowerCase().includes(q)) return false;
+            if (badgeCountEl) {
+                badgeCountEl.textContent = `${filteredCount} คดี (จากทั้งหมด ${totalCount} คดี)`;
+            }
+            if (damageEl) {
+                damageEl.textContent = `${totalDamage.toLocaleString()} ฿`;
+            }
+            if (noticeEl) {
+                const activeFilters = [];
+                const invVal = document.getElementById('caseInvestigatorFilter')?.value;
+                const statusVal = document.getElementById('caseStatusFilter')?.value;
+                const urgVal = document.getElementById('caseUrgencyFilter')?.value;
+                const qVal = document.getElementById('caseFilterInput')?.value?.trim();
+                const dStart = document.getElementById('caseFilterDateStart')?.value?.trim();
+                const dEnd = document.getElementById('caseFilterDateEnd')?.value?.trim();
 
-                // กรองตามช่วงวันที่
-                if (startVal || endVal) {
-                    const cDateVal = parseDateToComparable(c.date);
-                    if (cDateVal) {
-                        if (startVal && cDateVal < startVal) return false;
-                        if (endVal && cDateVal > endVal) return false;
-                    }
+                if (invVal) activeFilters.push(`พงส.: ${invVal}`);
+                if (statusVal) activeFilters.push(`สถานะ: ${statusVal}`);
+                if (urgVal) activeFilters.push(`เร่งด่วน: ${urgVal === 'any_urgent' ? 'ทุกระดับ' : urgVal}`);
+                if (currentCaseQuickFilter !== 'all') activeFilters.push(`หมวด: ${currentCaseQuickFilter}`);
+                if (dStart || dEnd) activeFilters.push(`วันที่: ${dStart || '...'} ถึง ${dEnd || '...'}`);
+                if (qVal) activeFilters.push(`ค้นหา: "${qVal}"`);
+
+                if (activeFilters.length > 0) {
+                    noticeEl.textContent = `| เงื่อนไข: ${activeFilters.join(', ')}`;
+                } else {
+                    noticeEl.textContent = '| แสดงคดีทั้งหมด';
                 }
-                return true;
-            });
+            }
 
             // จัดเรียงลำดับ: เรียงตามความเร่งด่วน (1.ภจว. ➔ 2.ภ.1 ➔ 3.ตร.) หรือตามวันที่
             if (caseSortByUrgency) {
@@ -4018,6 +4151,21 @@
             }
 
             tbody.innerHTML = '';
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="p-12 text-center text-slate-400">
+                            <div class="text-3xl mb-2">🔍</div>
+                            <div class="font-semibold text-sm">ไม่พบคดีตามเงื่อนไขตัวกรองที่กำหนด</div>
+                            <div class="text-xs text-slate-500 mt-1">ลองเปลี่ยนคำค้นหา หรือกดปุ่ม "ล้างตัวกรอง" เพื่อแสดงคดีทั้งหมด</div>
+                            <button type="button" onclick="resetFilters()" class="mt-3 px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-xs font-semibold transition">
+                                🔄 ล้างตัวกรอง
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
             filtered.forEach(c => {
                 const urgList = Array.isArray(c.urgency) ? c.urgency : (c.urgency ? [c.urgency] : []);
                 const isPhaJorWor = urgList.includes('ภจว.ติดตาม');
@@ -4148,11 +4296,12 @@
         }
 
         function resetFilters() {
-            document.getElementById('caseFilterInput').value = '';
-            document.getElementById('caseStatusFilter').value = '';
+            if (document.getElementById('caseFilterInput')) document.getElementById('caseFilterInput').value = '';
+            if (document.getElementById('caseStatusFilter')) document.getElementById('caseStatusFilter').value = '';
             if (document.getElementById('caseUrgencyFilter')) document.getElementById('caseUrgencyFilter').value = '';
-            document.getElementById('caseFilterDateStart').value = '';
-            document.getElementById('caseFilterDateEnd').value = '';
+            if (document.getElementById('caseInvestigatorFilter')) document.getElementById('caseInvestigatorFilter').value = '';
+            if (document.getElementById('caseFilterDateStart')) document.getElementById('caseFilterDateStart').value = '';
+            if (document.getElementById('caseFilterDateEnd')) document.getElementById('caseFilterDateEnd').value = '';
             currentCaseQuickFilter = 'all';
             document.querySelectorAll('.qf-case-btn').forEach(btn => {
                 btn.className = 'qf-case-btn px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700';
@@ -4314,7 +4463,7 @@
             const selectEl = document.getElementById('inquiryExportOfficerSelect');
             const selectLabel = document.getElementById('inquiryExportSelectLabel');
 
-            let activeOfficer = preSelectedOfficer || (user ? user.rank_name : 'ร.ต.ต.ธนกฤต ไทยกมล');
+            let activeOfficer = preSelectedOfficer || (document.getElementById('caseInvestigatorFilter')?.value) || (user ? user.rank_name : 'ร.ต.ต.ธนกฤต ไทยกมล');
 
             if (isAdmin) {
                 if (selectEl && selectLabel) {
@@ -5056,29 +5205,52 @@
             const thMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
             const printDate = `${now.getDate()} ${thMonths[now.getMonth()]} พ.ศ. ${now.getFullYear() + 543}`;
 
-            const q = (document.getElementById('caseFilterInput')?.value || '').toLowerCase();
+            const q = (document.getElementById('caseFilterInput')?.value || '').trim();
             const s = document.getElementById('caseStatusFilter')?.value || '';
-            const startVal = parseDateToComparable(document.getElementById('caseFilterDateStart')?.value || '');
-            const endVal = parseDateToComparable(document.getElementById('caseFilterDateEnd')?.value || '');
+            const u = document.getElementById('caseUrgencyFilter')?.value || '';
+            const inv = document.getElementById('caseInvestigatorFilter')?.value || '';
+            const startStr = document.getElementById('caseFilterDateStart')?.value || '';
+            const endStr = document.getElementById('caseFilterDateEnd')?.value || '';
 
-            const listToExport = mockCases.filter(c => {
-                if (s && c.status !== s) return false;
-                const accStr = (c.accounts || []).map(a => typeof a === 'string' ? a : `${a.bank || ''} ${a.no || a.accNo || ''} ${a.name || ''}`).join(' ');
-                if (q && !`${c.caseNo || c.caseId || ''} ${c.victim || ''} ${c.type || ''} ${accStr} ${c.investigator || c.officerInquiry || ''} ${c.detective || c.officerInvestigate || ''}`.toLowerCase().includes(q)) return false;
-                if (startVal || endVal) {
-                    const cDateVal = parseDateToComparable(c.date);
-                    if (cDateVal) {
-                        if (startVal && cDateVal < startVal) return false;
-                        if (endVal && cDateVal > endVal) return false;
-                    }
-                }
-                return true;
-            });
+            // ดึงรายการคดีเฉพาะที่ตรงตามตัวกรองที่เลือก
+            const listToExport = [...getFilteredCasesList()];
 
             if (listToExport.length === 0) {
-                toast('ไม่มีข้อมูลคดีสำหรับส่งออกพิมพ์');
+                toast('⚠️ ไม่มีข้อมูลคดีตามตัวกรองที่เลือกสำหรับส่งออกพิมพ์');
                 return;
             }
+
+            // จัดเรียงตามความเร่งด่วนถ้าเปิดใช้งาน
+            if (caseSortByUrgency) {
+                listToExport.sort((a, b) => {
+                    const scoreA = getCaseUrgencyScore(a);
+                    const scoreB = getCaseUrgencyScore(b);
+                    if (scoreA !== scoreB) return scoreA - scoreB;
+                    return (b.id || 0) - (a.id || 0);
+                });
+            }
+
+            // คำนวณยอดรวมความเสียหาย
+            const totalDamage = listToExport.reduce((sum, c) => {
+                const raw = c.amount !== undefined ? c.amount : c.damage;
+                const n = Number(raw);
+                return sum + (!isNaN(n) ? n : 0);
+            }, 0);
+
+            // สร้างข้อความสรุปเงื่อนไขตัวกรอง
+            const filterTags = [];
+            if (inv) filterTags.push(`พนักงานสอบสวน: <strong>${inv}</strong>`);
+            if (s) filterTags.push(`สถานะคดี: <strong>${s}</strong>`);
+            if (u) filterTags.push(`ความเร่งด่วน: <strong>${u === 'any_urgent' ? 'เร่งด่วนทุกระดับ' : u}</strong>`);
+            if (currentCaseQuickFilter !== 'all') filterTags.push(`หมวดติดตาม: <strong>${currentCaseQuickFilter}</strong>`);
+            if (startStr && endStr) filterTags.push(`ช่วงวันที่: <strong>${startStr} - ${endStr}</strong>`);
+            else if (startStr) filterTags.push(`ตั้งแต่วันที่: <strong>${startStr}</strong>`);
+            else if (endStr) filterTags.push(`ถึงวันที่: <strong>${endStr}</strong>`);
+            if (q) filterTags.push(`คำค้นหา: "<strong>${q}</strong>"`);
+
+            const filterLabelHtml = filterTags.length > 0 
+                ? filterTags.join(' &nbsp;|&nbsp; ') 
+                : 'แสดงข้อมูลคดีทั้งหมด (ไม่จำกัดเงื่อนไข)';
 
             const rowsHtml = listToExport.map((c, idx) => {
                 const caseNum = c.caseNo || c.caseId || '-';
@@ -5137,19 +5309,42 @@
                 `;
             }).join('');
 
+            // Signature info
+            const signatoryHtml = inv ? `
+                <div style="width: 320px;">
+                    <p style="margin-bottom: 40px;">รับรองความถูกต้องของข้อมูลสำนวนคดี</p>
+                    <p>( ${inv} )<br>พนักงานสอบสวนผู้รับผิดชอบ สภ.บางพลี</p>
+                </div>
+            ` : `
+                <div style="width: 320px;">
+                    <p style="margin-bottom: 40px;">รับรองความถูกต้อง</p>
+                    <p>( ${currentAuthUser?.rank_name || 'ร.ต.ต.ธนกฤต ไทยกมล'} )<br>${currentAuthUser?.position || 'รอง สว.สส.สภ.บางพลี'}</p>
+                </div>
+            `;
+
             const fullHtml = `
                 <div style="font-family: 'Sarabun', sans-serif; font-size: 12px; line-height: 1.4; color: #000; padding: 10px;">
                     <style>
-                        @page { size: A4 landscape; margin: 12mm 12mm 12mm 12mm; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                        @page { size: A4 landscape; margin: 10mm 10mm 10mm 10mm; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
                         th, td { border: 1px solid #94a3b8; padding: 6px 8px; font-size: 11.5px; vertical-align: top; }
                         th { background: #f1f5f9; font-weight: bold; }
                     </style>
                     <div style="text-align: center;">
                         <h2 style="margin: 0; font-size: 17px; font-weight: bold;">รายงานข้อมูลคดีออนไลน์ สถานีตำรวจภูธรบางพลี</h2>
                         <p style="margin: 2px 0; font-size: 12.5px;">สารบบคดีแจ้งความออนไลน์และข้อมูลบัญชีม้า / คนร้าย</p>
-                        <p style="margin: 0 0 8px; font-size: 11.5px; color: #475569;">พิมพ์เมื่อ: ${printDate} | จำนวนคดีในรายงาน: ${listToExport.length} คดี</p>
                     </div>
+
+                    <!-- Filter & Summary Bar -->
+                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; margin-top: 8px; margin-bottom: 8px; font-size: 11px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <span>🔍 <strong>ตัวกรอง:</strong> ${filterLabelHtml}</span>
+                        </div>
+                        <div style="text-align: right; font-weight: bold;">
+                            <span>จำนวนคดี: <span style="color: #1e3a8a;">${listToExport.length}</span> คดี &nbsp;|&nbsp; ความเสียหายรวม: <span style="color: #b91c1c;">${totalDamage.toLocaleString()}</span> ฿ &nbsp;|&nbsp; พิมพ์เมื่อ: ${printDate}</span>
+                        </div>
+                    </div>
+
                     <table>
                         <thead>
                             <tr>
@@ -5166,15 +5361,97 @@
                         <tbody>${rowsHtml}</tbody>
                     </table>
                     <div style="margin-top: 30px; display: flex; justify-content: flex-end; text-align: center;">
-                        <div style="width: 300px;">
-                            <p style="margin-bottom: 35px;">รับรองความถูกต้อง</p>
-                            <p>( ร.ต.ต.ธนกฤต ไทยกมล )<br>รอง สว.สส.สภ.บางพลี</p>
-                        </div>
+                        ${signatoryHtml}
                     </div>
                 </div>
             `;
 
-            showDocPreviewModal('รายงานข้อมูลคดีออนไลน์ สภ.บางพลี', fullHtml);
+            showDocPreviewModal('รายงานข้อมูลคดีออนไลน์ สภ.บางพลี (ตามตัวกรอง)', fullHtml);
+        }
+
+        function exportFilteredCasesCsv() {
+            const list = getFilteredCasesList();
+            if (!list || list.length === 0) {
+                toast('⚠️ ไม่มีข้อมูลคดีตามตัวกรองที่เลือกสำหรับส่งออก CSV');
+                return;
+            }
+
+            const headers = [
+                'ลำดับ',
+                'เลขรับแจ้งความ',
+                'วันที่รับแจ้ง',
+                'ผู้เสียหาย',
+                'ประเภทกลโกง',
+                'มูลค่าความเสียหาย (บาท)',
+                'สถานะคดี',
+                'ความเร่งด่วน',
+                'บัญชีคนร้าย/บัญชีม้า',
+                'พนักงานสอบสวน (พงส.)',
+                'เจ้าหน้าที่ฝ่ายสืบสวน',
+                'หมายเรียก 1',
+                'หมายเรียก 2',
+                'หมายจับ'
+            ];
+
+            const escapeCsv = (str) => {
+                if (str === null || str === undefined) return '""';
+                const s = String(str).replace(/"/g, '""');
+                return `"${s}"`;
+            };
+
+            const rows = list.map((c, idx) => {
+                const urgList = Array.isArray(c.urgency) ? c.urgency : (c.urgency ? [c.urgency] : []);
+                const accList = (c.accounts || []).map(a => typeof a === 'string' ? a : `${a.bank || ''} ${a.no || a.accNo || ''} ${a.name || ''}`).join(' | ');
+                const rawAmount = c.amount !== undefined ? c.amount : c.damage;
+                const numAmount = Number(rawAmount) || 0;
+
+                return [
+                    idx + 1,
+                    escapeCsv(c.caseNo || c.caseId || ''),
+                    escapeCsv(c.date || ''),
+                    escapeCsv(c.victim || ''),
+                    escapeCsv(c.type || ''),
+                    numAmount,
+                    escapeCsv(c.status || ''),
+                    escapeCsv(urgList.join(', ')),
+                    escapeCsv(accList),
+                    escapeCsv(c.investigator || c.officerInquiry || ''),
+                    escapeCsv(c.detective || c.officerInvestigate || ''),
+                    escapeCsv(c.summons1 ? (c.summons1Date ? `ออกแล้ว (${c.summons1Date})` : 'ออกแล้ว') : 'ยังไม่ออก'),
+                    escapeCsv(c.summons2 ? (c.summons2Date ? `ออกแล้ว (${c.summons2Date})` : 'ออกแล้ว') : 'ยังไม่ออก'),
+                    escapeCsv(c.warrant ? 'ออกหมายจับแล้ว' : 'ยังไม่ออก')
+                ].join(',');
+            });
+
+            // UTF-8 BOM (\uFEFF) for Microsoft Excel compatibility
+            const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+
+            // Dynamic filename based on active filters
+            const inv = document.getElementById('caseInvestigatorFilter')?.value;
+            const s = document.getElementById('caseStatusFilter')?.value;
+            const u = document.getElementById('caseUrgencyFilter')?.value;
+            let fileSuffix = 'all';
+            if (inv) fileSuffix = `พงส_${inv.replace(/[\s\.]+/g, '_')}`;
+            else if (s) fileSuffix = `สถานะ_${s}`;
+            else if (u) fileSuffix = `ความเร่งด่วน_${u}`;
+            else if (currentCaseQuickFilter !== 'all') fileSuffix = `${currentCaseQuickFilter}`;
+
+            const dateStr = new Date().toISOString().slice(0, 10);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `คดีออนไลน์_สภ_บางพลี_${fileSuffix}_${dateStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            if (typeof appendLocalAuditLog === 'function' && currentAuthUser) {
+                appendLocalAuditLog(currentAuthUser, 'EXPORT_CASES_CSV', 'CASE', 'FILTERED', `ส่งออกไฟล์ CSV คดีออนไลน์ (${list.length} คดี) ตามตัวกรอง ${fileSuffix}`);
+            }
+
+            toast(`📊 ส่งออกข้อมูล ${list.length} คดีเป็นไฟล์ Excel / CSV สำเร็จ`);
         }
 
         function renderWarrants() {
