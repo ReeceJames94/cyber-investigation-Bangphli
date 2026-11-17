@@ -329,4 +329,59 @@ TO anon, authenticated
 USING (station_code = 'POLICE-STN-BANGPHLI-001')
 WITH CHECK (station_code = 'POLICE-STN-BANGPHLI-001');
 
+-- =========================================================================================
+-- 5. ตาราง cyber_details: รายละเอียดคดีออนไลน์เชิงลึกสำหรับระบบทำสำนวนของพนักงานสอบสวน
+-- มีฟิลด์ครบถ้วน: เลขรับแจ้ง, ข้อมูลผู้เสียหาย, บัญชีม้า, เส้นทางการเงิน (Financial Trails)
+-- ออกแบบสำหรับเชื่อมต่อแบบ Read-Only ให้พนักงานสอบสวนเจ้าของเรื่องดึงเข้าสู่ระบบทำสำนวน
+-- =========================================================================================
+CREATE TABLE IF NOT EXISTS public.cyber_details (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    case_no TEXT NOT NULL,
+    station_code TEXT NOT NULL DEFAULT 'POLICE-STN-BANGPHLI-001',
+    incident_date TEXT,
+    victim_name TEXT NOT NULL,
+    victim_phone TEXT,
+    victim_id_card TEXT,
+    victim_address TEXT,
+    damage_amount NUMERIC(15, 2) DEFAULT 0.00,
+    fraud_category TEXT NOT NULL,
+    mule_accounts JSONB NOT NULL DEFAULT '[]'::jsonb,
+    financial_trails JSONB NOT NULL DEFAULT '[]'::jsonb,
+    investigator_name TEXT NOT NULL,
+    investigator_badge TEXT,
+    detective_name TEXT,
+    status TEXT NOT NULL DEFAULT 'พบพงส.',
+    urgency TEXT[] DEFAULT ARRAY[]::TEXT[],
+    legal_actions JSONB DEFAULT '{"summons1": false, "summons2": false, "warrant": false}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_cyber_details_station CHECK (station_code = 'POLICE-STN-BANGPHLI-001')
+);
+
+CREATE INDEX IF NOT EXISTS idx_cyber_details_case_no ON public.cyber_details(case_no);
+CREATE INDEX IF NOT EXISTS idx_cyber_details_investigator ON public.cyber_details(investigator_name);
+CREATE INDEX IF NOT EXISTS idx_cyber_details_badge ON public.cyber_details(investigator_badge);
+
+ALTER TABLE public.cyber_details ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "cyber_details_select_read_only" ON public.cyber_details;
+CREATE POLICY "cyber_details_select_read_only"
+ON public.cyber_details FOR SELECT
+TO anon, authenticated
+USING (true);
+
+DROP POLICY IF EXISTS "cyber_details_insert_officer" ON public.cyber_details;
+CREATE POLICY "cyber_details_insert_officer"
+ON public.cyber_details FOR INSERT
+TO anon, authenticated
+WITH CHECK (length(trim(case_no)) > 0 AND length(trim(investigator_name)) > 0);
+
+DROP POLICY IF EXISTS "cyber_details_update_officer" ON public.cyber_details;
+CREATE POLICY "cyber_details_update_officer"
+ON public.cyber_details FOR UPDATE
+TO anon, authenticated
+USING (true)
+WITH CHECK (true);
+
+
 

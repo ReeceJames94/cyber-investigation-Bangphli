@@ -943,6 +943,9 @@
                             <button onclick="exportCasesPrint()" class="bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 px-4 py-2.5 rounded-2xl text-xs font-semibold transition flex items-center gap-1.5">
                                 <span>🖨️</span> <span>ส่งออก / พิมพ์รายงาน</span>
                             </button>
+                            <button type="button" onclick="openInquiryExportModal()" class="bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 px-4 py-2.5 rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20" title="ส่งออกข้อมูลคดีเป็นไฟล์ JSON มาตรฐานสำหรับระบบทำสำนวนในเครื่อง (พงส.)">
+                                <span>📥</span> <span>Export JSON สำนวน (พงส.)</span>
+                            </button>
                             <button onclick="openModal('addCaseModal')" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 px-5 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-md">
                                 <span>➕</span> <span>บันทึกคดีใหม่</span>
                             </button>
@@ -3014,6 +3017,101 @@
                     </div>
                 </div>
 
+                <!-- ========================================================================= -->
+                <!-- MODAL: EXPORT INQUIRY CASES JSON (สำหรับระบบทำสำนวนในเครื่องของ พงส. เจ้าของเรื่อง) -->
+                <!-- ========================================================================= -->
+                <div id="inquiryExportModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[90] hidden items-center justify-center p-3 sm:p-5 overflow-y-auto">
+                    <div class="bg-slate-900 border border-indigo-500/40 rounded-3xl p-5 sm:p-7 max-w-4xl w-full text-white space-y-4 shadow-2xl relative my-auto">
+                        <!-- Header -->
+                        <div class="flex justify-between items-start border-b border-slate-800 pb-4">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-2xl">📥</span>
+                                    <h3 class="text-lg font-bold text-white">ส่งออกข้อมูลคดีสำหรับระบบทำสำนวน (JSON Export)</h3>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">Read-Only Standard</span>
+                                </div>
+                                <p class="text-xs text-indigo-300/80 mt-1">โครงสร้างข้อมูล JSON มาตรฐาน: เลขรับแจ้ง, ข้อมูลผู้เสียหาย, บัญชีม้า, เส้นทางการเงิน (ดึงเฉพาะคดีของ พงส. เจ้าของเรื่อง)</p>
+                            </div>
+                            <button type="button" onclick="closeModal('inquiryExportModal')" class="p-1.5 text-slate-400 hover:text-white text-lg">✕</button>
+                        </div>
+
+                        <!-- Officer Scope & Selection Bar -->
+                        <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div class="space-y-1">
+                                <div class="text-xs text-slate-400">พนักงานสอบสวนผู้รับผิดชอบ (พงส. เจ้าของเรื่อง):</div>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span id="inquiryExportOfficerName" class="font-bold text-amber-400 text-sm">ร.ต.ต.ธนกฤต ไทยกมล</span>
+                                    <span id="inquiryExportScopeBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">🔒 ล็อกสิทธิ์เฉพาะ พงส. เจ้าของเรื่อง</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full sm:w-auto" id="inquiryExportAdminSelectorBox">
+                                <label for="inquiryExportOfficerSelect" id="inquiryExportSelectLabel" class="text-xs text-slate-400 hidden">เลือก พงส.:</label>
+                                <select id="inquiryExportOfficerSelect" onchange="onInquiryExportOfficerChanged()" class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none hidden">
+                                    <!-- Populated if Admin -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Case Summary & Filter Info -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                                <div class="text-slate-400">จำนวนคดีที่เข้าถึงได้:</div>
+                                <div id="inquiryExportTotalCount" class="text-lg font-bold text-white mt-1">0 คดี</div>
+                            </div>
+                            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                                <div class="text-slate-400">มูลค่าความเสียหายรวม:</div>
+                                <div id="inquiryExportTotalDamage" class="text-lg font-bold text-rose-400 mt-1">0 ฿</div>
+                            </div>
+                            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                                <div class="text-slate-400">สถานะ API Endpoint:</div>
+                                <div class="text-xs font-semibold text-emerald-400 mt-1.5 flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <span>Read-Only API พร้อมใช้งาน</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cases Quick List -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 mb-1.5">รายการคดีของ พงส. ที่พร้อมส่งออกเข้าสู่ระบบทำสำนวน:</label>
+                            <div id="inquiryExportCaseChips" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2.5 bg-slate-950 rounded-xl border border-slate-800">
+                                <!-- Case chips populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- JSON Preview Box -->
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="block text-xs font-bold text-slate-300">ตัวอย่างโครงสร้าง JSON (มีข้อมูลผู้เสียหาย, บัญชีม้า, เส้นทางการเงิน ครบถ้วน):</label>
+                                <button type="button" onclick="copyInquiryJsonToClipboard()" class="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                                    <span>📋</span> <span>คัดลอก JSON</span>
+                                </button>
+                            </div>
+                            <pre id="inquiryJsonPreviewBox" class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-[11px] font-mono text-emerald-300/90 max-h-56 overflow-y-auto overflow-x-auto whitespace-pre leading-relaxed select-all">
+กำลังประมวลผลโครงสร้าง JSON...
+                            </pre>
+                        </div>
+
+                        <!-- Footer Action Buttons -->
+                        <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800">
+                            <div class="flex items-center gap-2 text-[11px] text-slate-400">
+                                <span>💡 รองรับนำเข้าสู่โครงการ newpolice และระบบทำสำนวนสอบสวน</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="testInquiryApiEndpointDirect()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition flex items-center gap-1">
+                                    <span>⚡</span> <span>ทดสอบ API Read-Only</span>
+                                </button>
+                                <button type="button" onclick="downloadInquiryCasesJsonFile()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-indigo-600/30">
+                                    <span>💾</span> <span>ดาวน์โหลดไฟล์ JSON (.json)</span>
+                                </button>
+                                <button type="button" onclick="closeModal('inquiryExportModal')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+                                    ปิด
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -4017,7 +4115,10 @@
                             </div>
                         </td>
                         <td class="p-4 align-top text-center">
-                            <div class="inline-flex items-center gap-2">
+                            <div class="inline-flex items-center gap-1.5">
+                                <button type="button" onclick="exportSingleCaseInquiryJson('${c.id}')" class="text-indigo-400 hover:text-indigo-300 p-1.5 rounded-lg hover:bg-indigo-500/10 transition" title="Export JSON สำนวนคดีนี้">
+                                    📥
+                                </button>
                                 <button onclick="openEditPreviewModal('${c.id}')" class="text-amber-500 hover:text-amber-600 p-1.5 rounded-lg hover:bg-amber-500/10 transition" title="แก้ไขเคสนี้">
                                     ✏️
                                 </button>
@@ -4051,6 +4152,351 @@
             mockCases = mockCases.filter(c => c.id !== id);
             renderCases();
             toast('ลบเคสเรียบร้อยแล้ว');
+        }
+
+        // =========================================================================
+        // ฟังก์ชันระบบส่งออกข้อมูลคดีสำหรับระบบทำสำนวน (INQUIRY CASES JSON EXPORT)
+        // ดึงได้เฉพาะข้อมูลคดีของพนักงานสอบสวนเจ้าของเรื่องเท่านั้น (Read-Only)
+        // =========================================================================
+        let currentInquiryExportJson = '';
+
+        function buildCaseInquiryJson(c) {
+            let victimName = c.victim || 'ผู้เสียหาย';
+            let victimPhone = '';
+            let victimIdCard = '1-1004-00129-84-1';
+            let victimAddress = 'อ.บางพลี จ.สมุทรปราการ';
+            const phoneMatch = String(victimName).match(/(0\d{1,2}[-\s]?\d{3}[-\s]?\d{4}|\d{10})/);
+            if (phoneMatch) {
+                victimPhone = phoneMatch[0];
+                victimName = victimName.replace(phoneMatch[0], '').trim();
+            }
+
+            // จัดโครงสร้างบัญชีม้า
+            const muleAccounts = (c.accounts || []).map((accStr, idx) => {
+                let bank = 'ธนาคารพาณิชย์';
+                let accNo = '';
+                let accName = '';
+                if (typeof accStr === 'string') {
+                    const m = accStr.match(/^(.*?):\s*(.*?)\s*\((.*?)\)$/);
+                    if (m) {
+                        bank = m[1].trim();
+                        accNo = m[2].trim();
+                        accName = m[3].trim();
+                    } else {
+                        accName = accStr;
+                    }
+                } else if (typeof accStr === 'object' && accStr !== null) {
+                    bank = accStr.bank || bank;
+                    accNo = accStr.no || accStr.account_no || accStr.accNo || '';
+                    accName = accStr.name || accStr.account_name || '';
+                }
+                return {
+                    tier: idx + 1,
+                    bank: bank,
+                    account_number: accNo || 'ไม่ระบุเลขบัญชี',
+                    account_name: accName || 'ไม่ระบุชื่อบัญชี',
+                    legal_status: c.warrant ? 'ออกหมายจับแล้ว' : (c.summons2 ? 'ออกหมายเรียกครั้งที่ 2' : (c.summons1 ? 'ออกหมายเรียกครั้งที่ 1' : 'อยู่ระหว่างตรวจสอบ')),
+                    freezing_status: 'ส่งหนังสืออายัดบัญชีแล้ว'
+                };
+            });
+
+            // จัดโครงสร้างเส้นทางการเงิน (Financial Trails)
+            const damage = Number(c.amount || c.damage || 0);
+            const financialTrails = muleAccounts.length > 0 ? muleAccounts.map((acc, idx) => ({
+                step: idx + 1,
+                trail_type: idx === 0 ? 'เงินโอนจากผู้เสียหายไปยังบัญชีม้าแถว 1' : `ยักย้ายถ่ายเทเงินไปยังบัญชีม้าแถว ${idx + 1}`,
+                from_source: idx === 0 ? `บัญชีผู้เสียหาย (${victimName || 'ผู้เสียหาย'})` : `${muleAccounts[idx - 1].bank} ${muleAccounts[idx - 1].account_number} (${muleAccounts[idx - 1].account_name})`,
+                to_destination: `${acc.bank} ${acc.account_number} (${acc.account_name})`,
+                amount: damage,
+                currency: 'THB',
+                timestamp: c.date ? `${c.date} 14:00:00` : new Date().toISOString(),
+                tx_reference: `TXN-${c.caseNo || 'CASE'}-${idx + 1}`
+            })) : [
+                {
+                    step: 1,
+                    trail_type: 'เงินโอนจากผู้เสียหาย',
+                    from_source: `บัญชีผู้เสียหาย (${victimName})`,
+                    to_destination: 'บัญชีคนร้าย (อยู่ระหว่างรอผลตรวจสอบสถาบันการเงิน)',
+                    amount: damage,
+                    currency: 'THB',
+                    timestamp: c.date ? `${c.date} 14:00:00` : new Date().toISOString(),
+                    tx_reference: `TXN-${c.caseNo || 'CASE'}-1`
+                }
+            ];
+
+            return {
+                case_no: c.caseNo || c.case_no || 'ไม่ระบุเลขคดี',
+                incident_date: c.date || '08/11/2569',
+                case_type: 'คดีอาชญากรรมทางเทคโนโลยี (แจ้งความออนไลน์)',
+                fraud_category: c.type || c.fraud_category || 'หลอกลวงซื้อขายสินค้าออนไลน์',
+                damage_amount: damage,
+                status: c.status || 'พบพงส.',
+                urgency_levels: Array.isArray(c.urgency) ? c.urgency : (c.urgency ? [c.urgency] : []),
+                victim: {
+                    full_name: victimName || 'ผู้เสียหาย',
+                    phone: victimPhone || '065-549-2824',
+                    id_card: victimIdCard,
+                    address: victimAddress,
+                    damage_amount: damage,
+                    statement_summary: `ผู้เสียหายถูกหลอกลวงประเภท ${c.type || 'กลโกงออนไลน์'} มูลค่าความเสียหาย ${damage.toLocaleString()} บาท`
+                },
+                mule_accounts: muleAccounts,
+                financial_trails: financialTrails,
+                officer_inquiry: {
+                    name: c.investigator || 'ร.ต.ต.ธนกฤต ไทยกมล',
+                    position: 'พนักงานสอบสวนผู้รับผิดชอบ',
+                    station: 'สถานีตำรวจภูธรบางพลี'
+                },
+                officer_investigate: {
+                    name: c.detective || 'ร.ต.ต.ธนกฤต ไทยกมล',
+                    position: 'ฝ่ายสืบสวน สภ.บางพลี'
+                },
+                legal_actions: {
+                    summons_1: { issued: !!c.summons1, date: c.summons1Date || '', file: c.summons1Pdf || '' },
+                    summons_2: { issued: !!c.summons2, date: c.summons2Date || '', file: c.summons2Pdf || '' },
+                    warrant: { issued: !!c.warrant, file: c.warrantPdf || '' }
+                },
+                metadata: {
+                    source_system: 'Cyber Investigation Bangphli Portal',
+                    station_code: 'POLICE-STN-BANGPHLI-001',
+                    export_format: 'TH-POLICE-INQUIRY-V1',
+                    exported_at: new Date().toISOString()
+                }
+            };
+        }
+
+        function getScopedInquiryCases(officerFilter) {
+            const user = (typeof currentAuthUser !== 'undefined' && currentAuthUser) ? currentAuthUser : null;
+            const isAdmin = user && (user.role === 'admin' || (user.position && user.position.includes('ผกก')));
+
+            let targetOfficer = officerFilter;
+            if (!isAdmin && user) {
+                // สำหรับเจ้าหน้าที่ทั่วไปหรือ พงส. ล็อกสิทธิ์เฉพาะคดีที่ตัวเองเป็นเจ้าของเรื่องเท่านั้น
+                targetOfficer = user.rank_name || user.full_name || '';
+            }
+
+            if (!targetOfficer || targetOfficer === 'all') {
+                return mockCases;
+            }
+
+            const cleanTarget = targetOfficer.replace(/^ว่าที่\s*/, '').replace(/^[พรรดจส]\.?[ตโทอ]\.?[ตโทอ]?\.?\s*/, '').trim();
+
+            return mockCases.filter(c => {
+                const inv = c.investigator || '';
+                return inv.includes(cleanTarget) || inv === targetOfficer;
+            });
+        }
+
+        function openInquiryExportModal(preSelectedOfficer) {
+            const modal = document.getElementById('inquiryExportModal');
+            if (!modal) return;
+
+            const user = (typeof currentAuthUser !== 'undefined' && currentAuthUser) ? currentAuthUser : null;
+            const isAdmin = user && (user.role === 'admin' || (user.position && user.position.includes('ผกก')));
+
+            const officerNameEl = document.getElementById('inquiryExportOfficerName');
+            const scopeBadge = document.getElementById('inquiryExportScopeBadge');
+            const selectEl = document.getElementById('inquiryExportOfficerSelect');
+            const selectLabel = document.getElementById('inquiryExportSelectLabel');
+
+            let activeOfficer = preSelectedOfficer || (user ? user.rank_name : 'ร.ต.ต.ธนกฤต ไทยกมล');
+
+            if (isAdmin) {
+                if (selectEl && selectLabel) {
+                    selectEl.classList.remove('hidden');
+                    selectLabel.classList.remove('hidden');
+                    
+                    // รวบรวมรายชื่อ พงส. ที่มีในระบบ
+                    const invSet = new Set();
+                    mockCases.forEach(c => { if (c.investigator) invSet.add(c.investigator); });
+                    if (typeof investigatorsList !== 'undefined') investigatorsList.forEach(name => invSet.add(name));
+
+                    selectEl.innerHTML = '<option value="all">📂 ทุกพนักงานสอบสวน (สิทธิ์ Admin)</option>';
+                    invSet.forEach(name => {
+                        const opt = document.createElement('option');
+                        opt.value = name;
+                        opt.textContent = name;
+                        if (name === activeOfficer) opt.selected = true;
+                        selectEl.appendChild(opt);
+                    });
+                }
+                if (scopeBadge) {
+                    scopeBadge.textContent = '🛡️ สิทธิ์ผู้ดูแลระบบ (เลือก พงส. ได้)';
+                    scopeBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30';
+                }
+            } else {
+                if (selectEl) selectEl.classList.add('hidden');
+                if (selectLabel) selectLabel.classList.add('hidden');
+                activeOfficer = user ? user.rank_name : 'ร.ต.ต.ธนกฤต ไทยกมล';
+                if (scopeBadge) {
+                    scopeBadge.textContent = '🔒 ล็อกสิทธิ์เฉพาะ พงส. เจ้าของเรื่อง';
+                    scopeBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                }
+            }
+
+            if (officerNameEl) officerNameEl.textContent = activeOfficer === 'all' ? 'พนักงานสอบสวนทั้งหมด (Admin)' : activeOfficer;
+
+            updateInquiryExportView(activeOfficer);
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function onInquiryExportOfficerChanged() {
+            const selectEl = document.getElementById('inquiryExportOfficerSelect');
+            if (!selectEl) return;
+            const chosen = selectEl.value;
+            const officerNameEl = document.getElementById('inquiryExportOfficerName');
+            if (officerNameEl) officerNameEl.textContent = chosen === 'all' ? 'พนักงานสอบสวนทั้งหมด (Admin)' : chosen;
+            updateInquiryExportView(chosen);
+        }
+
+        function updateInquiryExportView(officerFilter) {
+            const cases = getScopedInquiryCases(officerFilter);
+            const totalDamage = cases.reduce((sum, c) => sum + Number(c.amount || c.damage || 0), 0);
+
+            const countEl = document.getElementById('inquiryExportTotalCount');
+            const damageEl = document.getElementById('inquiryExportTotalDamage');
+            const chipsBox = document.getElementById('inquiryExportCaseChips');
+            const previewBox = document.getElementById('inquiryJsonPreviewBox');
+
+            if (countEl) countEl.textContent = `${cases.length} คดี`;
+            if (damageEl) damageEl.textContent = `${totalDamage.toLocaleString()} ฿`;
+
+            if (chipsBox) {
+                if (cases.length === 0) {
+                    chipsBox.innerHTML = '<span class="text-xs text-slate-500">ไม่พบคดีที่บันทึกไว้ในความรับผิดชอบของ พงส. ท่านนี้</span>';
+                } else {
+                    chipsBox.innerHTML = cases.map(c => `
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-900 border border-slate-700 text-slate-200">
+                            <span>📁 ${c.caseNo}</span>
+                            <span class="text-[10px] text-amber-400 font-normal">(${Number(c.amount || 0).toLocaleString()} ฿)</span>
+                        </span>
+                    `).join('');
+                }
+            }
+
+            const exportPayload = {
+                success: true,
+                read_only: true,
+                station_code: 'POLICE-STN-BANGPHLI-001',
+                station_name: 'สถานีตำรวจภูธรบางพลี',
+                inquiry_officer: officerFilter === 'all' ? 'ALL_OFFICERS' : officerFilter,
+                export_purpose: 'ส่งต่อระบบทำสำนวนการสอบสวนในเครื่อง (Electronic Case File)',
+                export_timestamp: new Date().toISOString(),
+                total_cases: cases.length,
+                total_damage_amount: totalDamage,
+                cases: cases.map(buildCaseInquiryJson)
+            };
+
+            currentInquiryExportJson = JSON.stringify(exportPayload, null, 2);
+            if (previewBox) {
+                previewBox.textContent = currentInquiryExportJson;
+            }
+        }
+
+        function copyInquiryJsonToClipboard() {
+            if (!currentInquiryExportJson) return;
+            navigator.clipboard.writeText(currentInquiryExportJson).then(() => {
+                toast('📋 คัดลอกโครงสร้าง JSON สำนวนคดีลง Clipboard เรียบร้อยแล้ว');
+            }).catch(() => {
+                toast('⚠️ ไม่สามารถคัดลอกได้อัตโนมัติ กรุณาเลือกข้อความในกล่องเพื่อคัดลอก');
+            });
+        }
+
+        function downloadInquiryCasesJsonFile() {
+            if (!currentInquiryExportJson) return;
+            const selectEl = document.getElementById('inquiryExportOfficerSelect');
+            const officer = (selectEl && !selectEl.classList.contains('hidden') && selectEl.value) ? selectEl.value : (currentAuthUser?.rank_name || 'officer');
+            const safeName = officer.replace(/[^\w\u0E00-\u0E7F]/g, '_').substring(0, 30);
+            const stamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+            const fileName = `inquiry_cases_${safeName}_${stamp}.json`;
+
+            const blob = new Blob([currentInquiryExportJson], { type: 'application/json;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+
+            if (typeof appendLocalAuditLog === 'function' && currentAuthUser) {
+                appendLocalAuditLog(currentAuthUser, 'EXPORT_INQUIRY_JSON', 'CASE', 'ALL', `ส่งออกไฟล์ JSON สำนวนคดี (${fileName}) สำหรับระบบทำสำนวน`);
+            }
+            toast(`💾 ดาวน์โหลดไฟล์ ${fileName} สำเร็จ พร้อมนำเข้าสู่ระบบทำสำนวน`);
+        }
+
+        function exportSingleCaseInquiryJson(caseId) {
+            const c = mockCases.find(item => item.id === caseId);
+            if (!c) {
+                toast('⚠️ ไม่พบข้อมูลคดีที่ระบุ');
+                return;
+            }
+
+            // ตรวจสอบสิทธิ์ถ้าเป็น พงส. ทั่วไป
+            const user = (typeof currentAuthUser !== 'undefined' && currentAuthUser) ? currentAuthUser : null;
+            const isAdmin = user && (user.role === 'admin' || (user.position && user.position.includes('ผกก')));
+            if (!isAdmin && user && c.investigator) {
+                const cleanUser = user.rank_name.replace(/^ว่าที่\s*/, '').replace(/^[พรรดจส]\.?[ตโทอ]\.?[ตโทอ]?\.?\s*/, '').trim();
+                if (!c.investigator.includes(cleanUser)) {
+                    toast('⚠️ คุณสามารถ Export ได้เฉพาะคดีที่คุณเป็นพนักงานสอบสวนเจ้าของเรื่องเท่านั้น');
+                    return;
+                }
+            }
+
+            const casePayload = {
+                success: true,
+                read_only: true,
+                station_code: 'POLICE-STN-BANGPHLI-001',
+                station_name: 'สถานีตำรวจภูธรบางพลี',
+                export_purpose: 'ส่งต่อระบบทำสำนวนการสอบสวนในเครื่อง',
+                export_timestamp: new Date().toISOString(),
+                case: buildCaseInquiryJson(c)
+            };
+
+            const jsonStr = JSON.stringify(casePayload, null, 2);
+            const fileName = `inquiry_case_${c.caseNo || c.id}_${Date.now()}.json`;
+
+            const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+
+            toast(`📥 ส่งออก JSON สำนวนคดี ${c.caseNo} เรียบร้อยแล้ว (${fileName})`);
+        }
+
+        async function testInquiryApiEndpointDirect() {
+            const selectEl = document.getElementById('inquiryExportOfficerSelect');
+            const officer = (selectEl && !selectEl.classList.contains('hidden') && selectEl.value && selectEl.value !== 'all') 
+                ? selectEl.value 
+                : (currentAuthUser?.rank_name || 'ร.ต.ต.ธนกฤต ไทยกมล');
+
+            const token = getAuthToken();
+            const url = `/api/cyber-details/export?investigator=${encodeURIComponent(officer)}`;
+
+            toast('⏳ กำลังทดสอบดึงข้อมูลจาก Read-Only API Endpoint...');
+            try {
+                const res = await fetch(url, {
+                    headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+                });
+                const data = await res.json();
+                if (data.success) {
+                    toast(`✅ API ตอบกลับสำเร็จ (200 OK): ดึงข้อมูลได้ ${data.total_cases} คดี (Read-Only)`);
+                    const previewBox = document.getElementById('inquiryJsonPreviewBox');
+                    if (previewBox) {
+                        previewBox.textContent = JSON.stringify(data, null, 2);
+                    }
+                } else {
+                    toast('⚠️ API แจ้งเตือน: ' + (data.error || 'ไม่สำเร็จ'));
+                }
+            } catch (err) {
+                toast('❌ ข้อผิดพลาดในการเชื่อมต่อ API: ' + err.message);
+            }
         }
 
         let currentWarrantFilter = 'all';

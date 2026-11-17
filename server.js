@@ -212,7 +212,152 @@ CREATE TABLE IF NOT EXISTS victim_inquiries (
     submitted_at TEXT,
     status TEXT DEFAULT 'submitted'
 );
+
+CREATE TABLE IF NOT EXISTS cyber_details (
+    id TEXT PRIMARY KEY,
+    case_no TEXT UNIQUE NOT NULL,
+    incident_date TEXT,
+    victim_name TEXT NOT NULL,
+    victim_phone TEXT,
+    victim_id_card TEXT,
+    victim_address TEXT,
+    damage_amount REAL DEFAULT 0,
+    fraud_category TEXT NOT NULL,
+    mule_accounts TEXT NOT NULL DEFAULT '[]',
+    financial_trails TEXT NOT NULL DEFAULT '[]',
+    investigator_name TEXT NOT NULL,
+    investigator_badge TEXT,
+    detective_name TEXT,
+    status TEXT DEFAULT 'พบพงส.',
+    urgency TEXT DEFAULT '[]',
+    legal_actions TEXT DEFAULT '{"summons1": false, "summons2": false, "warrant": false}',
+    station_code TEXT DEFAULT 'POLICE-STN-BANGPHLI-001',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 `);
+
+// Pre-seed cyber_details if empty
+const countCyberDetails = db.prepare('SELECT COUNT(*) as count FROM cyber_details;').get().count;
+if (countCyberDetails === 0) {
+    console.log('[SECURITY] Pre-seeding cyber_details for Inquiry System...');
+    const nowIso = new Date().toISOString();
+    const seedCyberDetails = [
+        {
+            id: 'cd-1',
+            case_no: 'T6911087326',
+            incident_date: '08/11/2569',
+            victim_name: 'ฐิติพร ชุมชอบ',
+            victim_phone: '0655492824',
+            victim_id_card: '1-1004-00129-84-1',
+            victim_address: '145/22 หมู่ 3 ต.บางพลีใหญ่ อ.บางพลี จ.สมุทรปราการ',
+            damage_amount: 8000,
+            fraud_category: 'หลอกลวงซื้อขายสินค้าออนไลน์',
+            mule_accounts: JSON.stringify([
+                { tier: 1, bank: 'Max Card / บัตรเงินสด', account_no: '320001000578130', account_name: 'เบญจมาภรณ์ บุญทนา', status: 'ส่งหนังสืออายัดแล้ว' }
+            ]),
+            financial_trails: JSON.stringify([
+                { step: 1, trail_type: 'โอนเงินค่าสินค้าออนไลน์', from_source: 'บัญชีผู้เสียหาย (ฐิติพร ชุมชอบ)', to_destination: 'Max Card 320001000578130 (เบญจมาภรณ์ บุญทนา)', amount: 8000, timestamp: '2026-11-08 14:22:15', tx_reference: 'TXN-691108-88219' }
+            ]),
+            investigator_name: 'ร.ต.ต.ธนกฤต ไทยกมล',
+            investigator_badge: '10000',
+            detective_name: 'ร.ต.ต.ธนกฤต ไทยกมล',
+            status: 'warroom',
+            urgency: JSON.stringify(['ภจว.ติดตาม']),
+            legal_actions: JSON.stringify({ summons1: true, summons1Date: '08/11/2569', summons1Pdf: 'หมายเรียก1_เบญจมาภรณ์.pdf', summons2: false, warrant: false })
+        },
+        {
+            id: 'cd-2',
+            case_no: 'T6911087748',
+            incident_date: '08/11/2569',
+            victim_name: 'ปริญ มหโชคภัทรวิมล',
+            victim_phone: '0918955919',
+            victim_id_card: '3-1102-00481-99-2',
+            victim_address: '88/14 หมู่บ้านพฤกษา ต.บางพลีใหญ่ อ.บางพลี จ.สมุทรปราการ',
+            damage_amount: 9000,
+            fraud_category: 'หลอกลวงซื้อขายสินค้าออนไลน์',
+            mule_accounts: JSON.stringify([
+                { tier: 1, bank: 'ธ.ก.ส.', account_no: '020228673257', account_name: 'ชฎาพร ป่าเกลือ', status: 'ออกหมายจับแล้ว' }
+            ]),
+            financial_trails: JSON.stringify([
+                { step: 1, trail_type: 'โอนเงินซื้อสินค้าโมเดล', from_source: 'บัญชีผู้เสียหาย (ปริญ มหโชคภัทรวิมล)', to_destination: 'ธ.ก.ส. 020228673257 (ชฎาพร ป่าเกลือ)', amount: 9000, timestamp: '2026-11-08 15:45:00', tx_reference: 'TXN-691108-99014' }
+            ]),
+            investigator_name: 'ร.ต.ต.ธนกฤต ไทยกมล',
+            investigator_badge: '10000',
+            detective_name: 'ร.ต.ต.ธนกฤต ไทยกมล',
+            status: 'พบพงส.',
+            urgency: JSON.stringify(['คดีเร่งด่วน ภ.1ติดตาม']),
+            legal_actions: JSON.stringify({ summons1: true, summons1Date: '08/11/2569', summons2: true, summons2Date: '15/11/2569', warrant: true, warrantPdf: 'หมายจับ_ศาลสมุทรปราการ_ชฎาพร.pdf' })
+        },
+        {
+            id: 'cd-3',
+            case_no: 'T6911087788',
+            incident_date: '08/11/2569',
+            victim_name: 'นายเจริญ บุญญานิบาล',
+            victim_phone: '0819958712',
+            victim_id_card: '1-1004-98432-11-0',
+            victim_address: '12/9 หมู่ 2 ต.บางโฉลง อ.บางพลี จ.สมุทรปราการ',
+            damage_amount: 1599,
+            fraud_category: 'หลอกลวงซื้อขายสินค้าออนไลน์',
+            mule_accounts: JSON.stringify([
+                { tier: 1, bank: 'พร้อมเพย์ QR Code', account_no: 'xxxxxx7621', account_name: 'ชินกร กันทะวงษ์', status: 'ส่งตรวจสอบเส้นทาง' },
+                { tier: 2, bank: 'พร้อมเพย์ QR Code', account_no: 'xxxxxx7917', account_name: 'วีศรุต ไชยสุรินทร์', status: 'แถว 2 ปลายทาง' }
+            ]),
+            financial_trails: JSON.stringify([
+                { step: 1, trail_type: 'โอนชำระสินค้า', from_source: 'ผู้เสียหาย', to_destination: 'QR Code xxxxxx7621 (ชินกร กันทะวงษ์)', amount: 1599, timestamp: '2026-11-08 16:10:00', tx_reference: 'TXN-691108-7621' },
+                { step: 2, trail_type: 'ยักย้ายถ่ายเทเงินแถว 2', from_source: 'ชินกร กันทะวงษ์', to_destination: 'QR Code xxxxxx7917 (วีศรุต ไชยสุรินทร์)', amount: 1500, timestamp: '2026-11-08 16:15:20', tx_reference: 'TXN-691108-7917' }
+            ]),
+            investigator_name: 'ร.ต.ต.ธนกฤต ไทยกมล',
+            investigator_badge: '10000',
+            detective_name: 'ร.ต.ต.ธนกฤต ไทยกมล',
+            status: 'พบพงส.',
+            urgency: JSON.stringify(['ตร.ติดตาม']),
+            legal_actions: JSON.stringify({ summons1: false, summons2: false, warrant: false })
+        },
+        {
+            id: 'cd-4',
+            case_no: 'T6911088120',
+            incident_date: '08/11/2569',
+            victim_name: 'ศศิธร วงศ์เจริญ',
+            victim_phone: '0891234567',
+            victim_id_card: '2-1005-00129-33-8',
+            victim_address: '99/50 ต.ราชาเทวะ อ.บางพลี จ.สมุทรปราการ',
+            damage_amount: 35000,
+            fraud_category: 'หลอกให้โอนเงินเพื่อทำงาน',
+            mule_accounts: JSON.stringify([
+                { tier: 1, bank: 'ธนาคารกสิกรไทย', account_no: '0451239988', account_name: 'สมรักษ์ คำสิงห์พาณิชย์', status: 'ส่งหนังสืออายัดแล้ว' }
+            ]),
+            financial_trails: JSON.stringify([
+                { step: 1, trail_type: 'โอนเงินเพื่อทำภารกิจหารายได้', from_source: 'บัญชีผู้เสียหาย', to_destination: 'กสิกรไทย 0451239988 (สมรักษ์ คำสิงห์พาณิชย์)', amount: 35000, timestamp: '2026-11-08 17:00:00', tx_reference: 'TXN-691108-0451' }
+            ]),
+            investigator_name: 'พ.ต.ท.ประเสริฐ กุลบุตร',
+            investigator_badge: '30001',
+            detective_name: 'ร.ต.ต.ธนกฤต ไทยกมล',
+            status: 'นัดหมาย',
+            urgency: JSON.stringify([]),
+            legal_actions: JSON.stringify({ summons1: false, summons2: false, warrant: false })
+        }
+    ];
+
+    const insCyber = db.prepare(`
+        INSERT INTO cyber_details (
+            id, case_no, incident_date, victim_name, victim_phone, victim_id_card, victim_address,
+            damage_amount, fraud_category, mule_accounts, financial_trails,
+            investigator_name, investigator_badge, detective_name, status, urgency, legal_actions,
+            station_code, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    `);
+
+    for (const c of seedCyberDetails) {
+        insCyber.run(
+            c.id, c.case_no, c.incident_date, c.victim_name, c.victim_phone, c.victim_id_card, c.victim_address,
+            c.damage_amount, c.fraud_category, c.mule_accounts, c.financial_trails,
+            c.investigator_name, c.investigator_badge, c.detective_name, c.status, c.urgency, c.legal_actions,
+            'POLICE-STN-BANGPHLI-001', nowIso, nowIso
+        );
+    }
+    console.log('[SECURITY] Pre-seeded 4 cyber_details cases for สภ.บางพลี.');
+}
 
 // Pre-seed police users if empty
 const countUsers = db.prepare('SELECT COUNT(*) as count FROM users;').get().count;
@@ -1029,6 +1174,116 @@ const server = http.createServer(async (req, res) => {
                     success: true,
                     count: submissions.length,
                     submissions
+                });
+            }
+
+            // 4g. CYBER DETAILS & CASES READ-ONLY EXPORT ENDPOINT FOR INQUIRY SYSTEM (พนักงานสอบสวนเจ้าของเรื่อง)
+            if (pathname === '/api/cyber-details/export' || pathname === '/api/external/inquiry/cases-json') {
+                if (req.method !== 'GET' && req.method !== 'HEAD') {
+                    return sendJson(res, 405, { success: false, error: 'Endpoint นี้เป็นแบบ Read-Only เท่านั้น (405 Method Not Allowed)' });
+                }
+
+                const urlObj = new URL(req.url, 'http://localhost');
+                const requestedInvestigator = (urlObj.searchParams.get('investigator') || '').trim();
+                const requestedBadge = (urlObj.searchParams.get('badge') || '').trim();
+                const requestedCaseNo = (urlObj.searchParams.get('caseNo') || '').trim();
+
+                // ตรวจสอบสิทธิ์ผ่าน Session (ถ้ามีการส่ง Authorization Bearer Token)
+                const session = authenticateReq(req);
+                let targetInvestigator = requestedInvestigator;
+                let targetBadge = requestedBadge;
+
+                if (session) {
+                    const isAdmin = session.role === 'admin' || (session.position && session.position.includes('ผกก'));
+                    if (isAdmin) {
+                        targetInvestigator = requestedInvestigator || '';
+                        targetBadge = requestedBadge || '';
+                    } else {
+                        // บังคับจำกัดสิทธิ์เฉพาะ พงส. เจ้าของเรื่องเท่านั้น
+                        targetInvestigator = session.rank_name;
+                        targetBadge = session.badge_no;
+                    }
+                }
+
+                // หากไม่ได้ล็อกอินและไม่ระบุชื่อ/รหัส พงส. ให้ปฏิเสธการเข้าถึง
+                if (!session && !targetInvestigator && !targetBadge && !requestedCaseNo) {
+                    return sendJson(res, 403, {
+                        success: false,
+                        error: 'การเข้าถึงถูกจำกัด: อนุญาตให้ดึงได้เฉพาะข้อมูลคดีของพนักงานสอบสวนเจ้าของเรื่องเท่านั้น โปรดระบุ ?investigator=... หรือ ?badge=...'
+                    });
+                }
+
+                let query = 'SELECT * FROM cyber_details WHERE 1=1';
+                const params = [];
+
+                if (requestedCaseNo) {
+                    query += ' AND case_no = ?';
+                    params.push(requestedCaseNo);
+                }
+
+                if (targetInvestigator) {
+                    const cleanName = targetInvestigator.replace(/^ว่าที่\s*/, '').replace(/^[พรรดจส]\.?[ตโทอ]\.?[ตโทอ]?\.?\s*/, '').trim();
+                    query += ' AND (investigator_name LIKE ? OR investigator_name = ?)';
+                    params.push(`%${cleanName}%`, targetInvestigator);
+                } else if (targetBadge) {
+                    query += ' AND investigator_badge = ?';
+                    params.push(targetBadge);
+                }
+
+                query += ' ORDER BY created_at DESC;';
+
+                let rows = [];
+                try {
+                    rows = db.prepare(query).all(...params);
+                } catch(dbErr) {
+                    console.error('[DB ERROR cyber_details]', dbErr);
+                    rows = [];
+                }
+
+                const casesExport = rows.map(r => ({
+                    case_no: r.case_no,
+                    incident_date: r.incident_date,
+                    fraud_category: r.fraud_category,
+                    damage_amount: Number(r.damage_amount) || 0,
+                    status: r.status,
+                    urgency: JSON.parse(r.urgency || '[]'),
+                    victim: {
+                        name: r.victim_name,
+                        phone: r.victim_phone,
+                        id_card: r.victim_id_card,
+                        address: r.victim_address,
+                        damage: Number(r.damage_amount) || 0
+                    },
+                    mule_accounts: JSON.parse(r.mule_accounts || '[]'),
+                    financial_trails: JSON.parse(r.financial_trails || '[]'),
+                    officer_inquiry: {
+                        name: r.investigator_name,
+                        badge: r.investigator_badge || '',
+                        role: 'พนักงานสอบสวนผู้รับผิดชอบ'
+                    },
+                    officer_investigate: {
+                        name: r.detective_name || '',
+                        role: 'สืบสวนผู้รับผิดชอบ'
+                    },
+                    legal_actions: JSON.parse(r.legal_actions || '{}'),
+                    station_code: r.station_code || 'POLICE-STN-BANGPHLI-001',
+                    station_name: 'สถานีตำรวจภูธรบางพลี'
+                }));
+
+                if (req.method === 'HEAD') {
+                    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                    res.end();
+                    return;
+                }
+
+                return sendJson(res, 200, {
+                    success: true,
+                    read_only: true,
+                    source: 'Bangphli Cyber Investigation System',
+                    filter_investigator: targetInvestigator || targetBadge || 'ทั้งหมด (สิทธิ์ Admin)',
+                    total_cases: casesExport.length,
+                    export_timestamp: new Date().toISOString(),
+                    cases: casesExport
                 });
             }
 
