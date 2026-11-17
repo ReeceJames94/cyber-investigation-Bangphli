@@ -3216,13 +3216,28 @@
             }
         ];
 
-        // คืนค่าข้อมูลคดีจาก LocalStorage (ถ้ามี)
+        // คืนค่าข้อมูลคดีจาก LocalStorage (ถ้ามี) พร้อม Auto-migrate โครงสร้างความเร่งด่วนและ Warroom ให้สมบูรณ์
         try {
             const savedCyberCases = localStorage.getItem('cyber_cases');
             if (savedCyberCases) {
                 const parsedCases = JSON.parse(savedCyberCases);
                 if (Array.isArray(parsedCases) && parsedCases.length > 0) {
+                    parsedCases.forEach(c => {
+                        if (!Array.isArray(c.urgency)) {
+                            c.urgency = c.urgency ? [c.urgency] : [];
+                        }
+                        // เติมค่าตั้งต้นให้คดีตัวอย่างเดิมที่ยังไม่มีความเร่งด่วน เพื่อให้แสดงผลครบถ้วน
+                        if (c.caseNo === 'T6911087326' || c.id === '1') {
+                            if (!c.status || c.status === 'พบพงส.') c.status = 'warroom';
+                            if (!c.urgency.includes('ภจว.ติดตาม')) c.urgency.push('ภจว.ติดตาม');
+                        } else if (c.caseNo === 'T6911087748' || c.id === '2') {
+                            if (!c.urgency.includes('คดีเร่งด่วน ภ.1ติดตาม')) c.urgency.push('คดีเร่งด่วน ภ.1ติดตาม');
+                        } else if (c.caseNo === 'T6911087788' || c.id === '3') {
+                            if (!c.urgency.includes('ตร.ติดตาม')) c.urgency.push('ตร.ติดตาม');
+                        }
+                    });
                     mockCases = parsedCases;
+                    localStorage.setItem('cyber_cases', JSON.stringify(mockCases));
                 }
             }
         } catch(e) {}
@@ -10014,8 +10029,8 @@ ${currentDocPrintHtml}
                     bold = false,
                     align = AlignmentType.LEFT,
                     before = 0,
-                    after = 16,
-                    line = 235,
+                    after = 6,
+                    line = 226,
                     size = SZ,
                     indent = undefined,
                     frame = undefined
@@ -10067,7 +10082,7 @@ ${currentDocPrintHtml}
                     wrap: FrameWrap.NONE
                 },
                 alignment: AlignmentType.RIGHT,
-                spacing: { before: 0, after: 0, line: 240 },
+                spacing: { before: 0, after: 0, line: 220 },
                 children: [
                     new TextRun({
                         text: `(ลงชื่อ) ${prefix} .................................................... ผู้ถูกจับ`,
@@ -10147,11 +10162,11 @@ ${currentDocPrintHtml}
                             new TableCell({
                                 width: { size: 3800, type: WidthType.DXA },
                                 borders: cellBorder,
-                                margins: { top: 60, bottom: 60, left: 100, right: 100 },
+                                margins: { top: 40, bottom: 40, left: 80, right: 80 },
                                 children: [
-                                    tP(`ปจว.ข้อ ${vm.dailyLogNo || '...............'} เวลา ${vm.dailyLogTime || '....................'} น.`, { size: SZ_SM, after: 20, line: 230 }),
-                                    tP(`คดีอาญาที่ ${vm.criminalCaseNo || '.................../......................'}`, { size: SZ_SM, after: 20, line: 230 }),
-                                    tP(`บัญชีของกลางเลขที่ ${vm.evidenceBookNo || '................../...............'}`, { size: SZ_SM, after: 0, line: 230 })
+                                    tP(`ปจว.ข้อ ${vm.dailyLogNo || '...............'} เวลา ${vm.dailyLogTime || '....................'} น.`, { size: SZ_SM, after: 10, line: 220 }),
+                                    tP(`คดีอาญาที่ ${vm.criminalCaseNo || '.................../......................'}`, { size: SZ_SM, after: 10, line: 220 }),
+                                    tP(`บัญชีของกลางเลขที่ ${vm.evidenceBookNo || '................../...............'}`, { size: SZ_SM, after: 0, line: 220 })
                                 ]
                             })
                         ]
@@ -10159,59 +10174,59 @@ ${currentDocPrintHtml}
                 ]
             }));
 
-            children.push(tP([tRun('สถานที่บันทึก ', { bold: true }), tRun(vm.recordLocAr)], { before: 40, after: 15 }));
-            children.push(tP([tRun('วัน เดือน ปี ที่บันทึก ', { bold: true }), tRun(`${vm.recordDateAr} เวลาประมาณ ${vm.recordTimeAr} น.`)], { after: 15 }));
-            children.push(tP([tRun('วัน เดือน ปี ที่จับกุม ', { bold: true }), tRun(`${vm.arrestDateAr} เวลาประมาณ ${vm.arrestTimeAr} น.`)], { after: 15 }));
-            children.push(tP([tRun('สถานที่จับกุม ', { bold: true }), tRun(vm.fullArrestLocAr)], { after: 15 }));
+            children.push(tP([tRun('สถานที่บันทึก ', { bold: true }), tRun(vm.recordLocAr)], { before: 20, after: 6 }));
+            children.push(tP([tRun('วัน เดือน ปี ที่บันทึก ', { bold: true }), tRun(`${vm.recordDateAr} เวลาประมาณ ${vm.recordTimeAr} น.`)], { after: 6 }));
+            children.push(tP([tRun('วัน เดือน ปี ที่จับกุม ', { bold: true }), tRun(`${vm.arrestDateAr} เวลาประมาณ ${vm.arrestTimeAr} น.`)], { after: 6 }));
+            children.push(tP([tRun('สถานที่จับกุม ', { bold: true }), tRun(vm.fullArrestLocAr)], { after: 6 }));
             children.push(tP([
                 tRun(`นามเจ้าหน้าที่ตำรวจที่ร่วมจับกุม ${vm.unitShort} ภายใต้การอำนวยการของ `, { bold: true }),
                 tRun(`${vm.cmdStrAr}, `),
                 tRun('พร้อมกำลังชุดปฏิบัติ นำโดย ', { bold: true }),
                 tRun(vm.offStrAr)
-            ], { align: AlignmentType.BOTH, after: 15 }));
+            ], { align: AlignmentType.BOTH, after: 6 }));
             children.push(tP([
                 tRun('ได้ร่วมกันจับกุมตัว ', { bold: true }),
                 tRun(`${vm.suspFullName} อายุ ${vm.suspAgeAr} ปี เลขประจำตัวประชาชน ${vm.suspIdAr} `),
                 tRun('ผู้ต้องหา', { bold: true })
-            ], { after: 15 }));
-            children.push(tP([tRun('อยู่บ้านเลขที่ ', { bold: true }), tRun(vm.suspAddrAr)], { after: 15 }));
+            ], { after: 6 }));
+            children.push(tP([tRun('อยู่บ้านเลขที่ ', { bold: true }), tRun(vm.suspAddrAr)], { after: 6 }));
 
             if (!rec.noWarrant && rec.warrantNo) {
-                children.push(tP([tRun('โดยจับกุมตามหมายจับของ ', { bold: true }), tRun(`${vm.warrantCourtAr} ที่ ${vm.warrantNoAr} ลงวันที่ ${vm.warrantDateAr}`)], { after: 15 }));
+                children.push(tP([tRun('โดยจับกุมตามหมายจับของ ', { bold: true }), tRun(`${vm.warrantCourtAr} ที่ ${vm.warrantNoAr} ลงวันที่ ${vm.warrantDateAr}`)], { after: 6 }));
                 children.push(tP([
                     tRun('ซึ่งต้องหาว่ากระทำความผิดฐาน ', { bold: true }),
                     tRun(`“${vm.chargesJoinedAr}” ซึ่งเจ้าพนักงานผู้จับกุมได้แสดงต่อผู้ถูกจับกุมแล้ว สอบถามผู้ต้องหารับว่าเป็นบุคคลเดียวกันตามหมายจับจริง และมีชื่อที่อยู่ตรงกับที่เจ้าหน้าที่ได้แสดงให้ตนดู และตนไม่เคยถูกจับกุมในคดีนี้มาก่อน`)
-                ], { align: AlignmentType.BOTH, after: 20 }));
+                ], { align: AlignmentType.BOTH, after: 8 }));
             } else {
                 children.push(tP([
                     tRun('โดยกล่าวหาว่ากระทำความผิดฐาน ', { bold: true }),
                     tRun(`“${vm.chargesJoinedAr}”`)
-                ], { align: AlignmentType.BOTH, after: 20 }));
+                ], { align: AlignmentType.BOTH, after: 8 }));
             }
 
             if (vm.evList.length > 0) {
                 children.push(tP([
                     tRun('พร้อมด้วยของกลาง ', { bold: true }),
                     tRun(vm.evList.map((e, i) => `${i + 1}. ${toAr(e.description)} (${toAr(e.foundLocation || '')})`).join(', '))
-                ], { after: 15 }));
+                ], { after: 6 }));
             }
 
-            children.push(tP('ผู้ต้องหาได้รับทราบสิทธิตามกฎหมาย ดังนี้', { bold: true, after: 10 }));
-            children.push(tP('1.มีสิทธิจะไม่ให้การหรือให้การก็ได้ และถ้อยคำของผู้ต้องหาอาจใช้เป็นพยานหลักฐานในการพิจารณาคดีได้', { after: 10 }));
-            children.push(tP('2.มีสิทธิพบและปรึกษาทนายความ หรือผู้ซึ่งจะเป็นทนายความเป็นการเฉพาะตัว', { after: 10 }));
-            children.push(tP('3.มีสิทธิแจ้งหรือขอให้เจ้าพนักงานแจ้งให้ญาติหรือผู้ซึ่งไว้วางใจทราบถึงการจับกุมและสถานที่ถูกควบคุมในโอกาสแรก', { after: 10 }));
-            children.push(tP('4.มีสิทธิให้ทนายความหรือผู้ซึ่งตนไว้วางใจ เข้าฟังการสอบสวนปากคำตนได้ในชั้นสอบสวน', { after: 10 }));
-            children.push(tP('5.มีสิทธิได้รับการเยี่ยมหรือติดต่อกับญาติได้ตามสมควร', { after: 10 }));
-            children.push(tP('6.มีสิทธิได้รับการรักษาพยาบาลโดยเร็วเมื่อเจ็บป่วย', { after: 15 }));
+            children.push(tP('ผู้ต้องหาได้รับทราบสิทธิตามกฎหมาย ดังนี้', { bold: true, after: 4 }));
+            children.push(tP('1.มีสิทธิจะไม่ให้การหรือให้การก็ได้ และถ้อยคำของผู้ต้องหาอาจใช้เป็นพยานหลักฐานในการพิจารณาคดีได้', { after: 4 }));
+            children.push(tP('2.มีสิทธิพบและปรึกษาทนายความ หรือผู้ซึ่งจะเป็นทนายความเป็นการเฉพาะตัว', { after: 4 }));
+            children.push(tP('3.มีสิทธิแจ้งหรือขอให้เจ้าพนักงานแจ้งให้ญาติหรือผู้ซึ่งไว้วางใจทราบถึงการจับกุมและสถานที่ถูกควบคุมในโอกาสแรก', { after: 4 }));
+            children.push(tP('4.มีสิทธิให้ทนายความหรือผู้ซึ่งตนไว้วางใจ เข้าฟังการสอบสวนปากคำตนได้ในชั้นสอบสวน', { after: 4 }));
+            children.push(tP('5.มีสิทธิได้รับการเยี่ยมหรือติดต่อกับญาติได้ตามสมควร', { after: 4 }));
+            children.push(tP('6.มีสิทธิได้รับการรักษาพยาบาลโดยเร็วเมื่อเจ็บป่วย', { after: 6 }));
 
-            children.push(tP('ผู้ถูกจับรับทราบสิทธิแล้ว', { bold: true, after: 10 }));
-            children.push(tP(`( ${mk(vm.right4Action === 'no')} ) ไม่ขอดำเนินการตามข้อ 4`, { indent: { left: 560 }, after: 10 }));
-            children.push(tP(`( ${mk(vm.right4Action === 'yes')} ) ขอดำเนินการตามข้อ 4 และได้ดำเนินการเรียบร้อย`, { indent: { left: 560 }, after: 10 }));
-            children.push(tP(`( ${mk(!rec.noWarrant)} ) ขอให้การรับว่าเป็นบุคคลตามหมายจับ และยังไม่เคยถูกดำเนินคดีนี้มาก่อน ในการจับกุมผู้ต้องหาครั้งนี้`, { indent: { left: 560 }, after: 10 }));
-            children.push(tP(`เจ้าหน้าที่ตำรวจชุดจับกุมได้กระทำไปตามอำนาจหน้าที่ ( ${mk(!rec.noWarrant && vm.basis !== 'court_order')} ) มีหมายจับ     ( ${mk(vm.basis === 'court_order')} ) มีคำสั่งศาล`, { after: 10 }));
-            children.push(tP(`( ${mk(vm.basis === 'flagrante')} ) กระทำความผิดซึ่งหน้าดังได้บัญญัติไว้ในมาตรา 80`, { indent: { left: 560 }, after: 10 }));
-            children.push(tP(`( ${mk(vm.basis === 'suspicious')} ) มีพฤติการณ์อันควรสงสัยว่าผู้นั้นน่าจะก่อเหตุร้ายให้เกิดอันตรายแก่บุคคลหรือทรัพย์สินของผู้อื่น โดยมี เครื่องมือ อาวุธ หรือวัตถุอย่างอื่นอันสามารถใช้ในการกระทำความผิด`, { indent: { left: 560 }, after: 10 }));
-            children.push(tP(`( ${mk(vm.basis === 'urgent78')} ) เมื่อมีเหตุที่จะออกหมายจับบุคคลนั้นตามมาตรา 66 (2) แต่มีความจำเป็นเร่งด่วนที่ไม่อาจขอให้ศาลออกหมายจับบุคคลนั้นได้`, { indent: { left: 560 }, after: 20 }));
+            children.push(tP('ผู้ถูกจับรับทราบสิทธิแล้ว', { bold: true, after: 4 }));
+            children.push(tP(`( ${mk(vm.right4Action === 'no')} ) ไม่ขอดำเนินการตามข้อ 4`, { indent: { left: 560 }, after: 4 }));
+            children.push(tP(`( ${mk(vm.right4Action === 'yes')} ) ขอดำเนินการตามข้อ 4 และได้ดำเนินการเรียบร้อย`, { indent: { left: 560 }, after: 4 }));
+            children.push(tP(`( ${mk(!rec.noWarrant)} ) ขอให้การรับว่าเป็นบุคคลตามหมายจับ และยังไม่เคยถูกดำเนินคดีนี้มาก่อน ในการจับกุมผู้ต้องหาครั้งนี้`, { indent: { left: 560 }, after: 4 }));
+            children.push(tP(`เจ้าหน้าที่ตำรวจชุดจับกุมได้กระทำไปตามอำนาจหน้าที่ ( ${mk(!rec.noWarrant && vm.basis !== 'court_order')} ) มีหมายจับ     ( ${mk(vm.basis === 'court_order')} ) มีคำสั่งศาล`, { after: 4 }));
+            children.push(tP(`( ${mk(vm.basis === 'flagrante')} ) กระทำความผิดซึ่งหน้าดังได้บัญญัติไว้ในมาตรา 80`, { indent: { left: 560 }, after: 4 }));
+            children.push(tP(`( ${mk(vm.basis === 'suspicious')} ) มีพฤติการณ์อันควรสงสัยว่าผู้นั้นน่าจะก่อเหตุร้ายให้เกิดอันตรายแก่บุคคลหรือทรัพย์สินของผู้อื่น โดยมี เครื่องมือ อาวุธ หรือวัตถุอย่างอื่นอันสามารถใช้ในการกระทำความผิด`, { indent: { left: 560 }, after: 4 }));
+            children.push(tP(`( ${mk(vm.basis === 'urgent78')} ) เมื่อมีเหตุที่จะออกหมายจับบุคคลนั้นตามมาตรา 66 (2) แต่มีความจำเป็นเร่งด่วนที่ไม่อาจขอให้ศาลออกหมายจับบุคคลนั้นได้`, { indent: { left: 560 }, after: 6 }));
 
             // กล่องข้อความแสดงอยู่ท้ายหน้า (Text Box / Frame) สำหรับหน้า 1
             children.push(mkSuspectBottomBox(vm.suspPrefix));
@@ -10220,38 +10235,38 @@ ${currentDocPrintHtml}
             // PAGE 2 (ภาพ 2): บันทึกจับกุม หน้าที่ 2
             // =========================================================================
             children.push(new Paragraph({ children: [new PageBreak()] }));
-            children.push(tP(`( ${mk(vm.basis === 'bail_escape')} ) เป็นการจับกุมผู้ต้องหาหรือจำเลยที่หนีหรือจะหลบหนีระหว่างถูกปล่อยชั่วคราว ตาม ม.117`, { indent: { left: 560 }, after: 20 }));
-            children.push(tP('( / ) ในการจับกุมและควบคุมได้กระทำไปตามกฎหมาย โดยคำนึงถึงศักดิ์ศรีความเป็นมนุษย์', { indent: { left: 560 }, after: 20 }));
-            children.push(tP(`( ${mk(!vm.hasForceMajeure)} ) ในการควบคุมตัวผู้ถูกจับ เจ้าหน้าที่ผู้จับกุมได้ทำการบันทึกภาพและเสียงอย่างต่อเนื่อง ในขณะจับ และควบคุมตัวผู้ถูกจับในชั้นจับกุมจนกระทั่งส่งตัวให้พนักงานสอบสวน ตามมาตรา 22 วรรคหนึ่ง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565`, { indent: { left: 560 }, align: AlignmentType.BOTH, after: 20 }));
-            children.push(tP(`( ${mk(vm.hasForceMajeure)} ) มีเหตุสุดวิสัยที่ไม่สามารถบันทึกภาพและเสียงตาม ตามมาตรา 22 วรรคหนึ่ง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 เนื่องจาก ${vm.hasForceMajeure ? vm.fmReason : '–'}`, { indent: { left: 560, firstLine: 560 }, after: 20 }));
-            children.push(tP('ผู้จับกุมไม่ได้กระทำการใดๆ อันเป็นการทรมาน การทำที่โหดร้าย ไร้มนุษยธรรม หรือย่ำยีศักดิ์ศรีความเป็นมนุษย์หรือกระทำให้บุคคลสูญหายแต่อย่างใด', { indent: { firstLine: 560 }, after: 20 }));
-            children.push(tP('เจ้าหน้าที่ผู้จับกุม ได้แจ้งข้อมูลเกี่ยวกับผู้ถูกควบคุมตัว ตามมาตรา 22 วรรคสอง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 ไปยัง www.ptd.ago.go.th เรียบร้อยแล้ว', { indent: { firstLine: 560 }, after: 20 }));
-            children.push(tP('เจ้าหน้าที่ผู้จับกุม ได้แจ้งข้อมูลเกี่ยวกับผู้ถูกควบคุมตัว ตามมาตรา 22 วรรคสอง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 ไปยัง https://arrest.dopa.go.th/0308/arrest/app/place/ เรียบร้อยแล้ว', { indent: { firstLine: 560 }, after: 20 }));
-            children.push(tP('เจ้าหน้าที่ตำรวจผู้จับได้อ่านบันทึกให้ผู้ถูกจับฟังรับว่าถูกต้อง มีการดำเนินการตาม พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 มาตรา 22 และได้มอบสำเนาบันทึกการจับกุมให้แก่ผู้ถูกจับเรียบร้อย', { indent: { firstLine: 560 }, after: 40 }));
+            children.push(tP(`( ${mk(vm.basis === 'bail_escape')} ) เป็นการจับกุมผู้ต้องหาหรือจำเลยที่หนีหรือจะหลบหนีระหว่างถูกปล่อยชั่วคราว ตาม ม.117`, { indent: { left: 560 }, after: 10 }));
+            children.push(tP('( / ) ในการจับกุมและควบคุมได้กระทำไปตามกฎหมาย โดยคำนึงถึงศักดิ์ศรีความเป็นมนุษย์', { indent: { left: 560 }, after: 10 }));
+            children.push(tP(`( ${mk(!vm.hasForceMajeure)} ) ในการควบคุมตัวผู้ถูกจับ เจ้าหน้าที่ผู้จับกุมได้ทำการบันทึกภาพและเสียงอย่างต่อเนื่อง ในขณะจับ และควบคุมตัวผู้ถูกจับในชั้นจับกุมจนกระทั่งส่งตัวให้พนักงานสอบสวน ตามมาตรา 22 วรรคหนึ่ง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565`, { indent: { left: 560 }, align: AlignmentType.BOTH, after: 10 }));
+            children.push(tP(`( ${mk(vm.hasForceMajeure)} ) มีเหตุสุดวิสัยที่ไม่สามารถบันทึกภาพและเสียงตาม ตามมาตรา 22 วรรคหนึ่ง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 เนื่องจาก ${vm.hasForceMajeure ? vm.fmReason : '–'}`, { indent: { left: 560, firstLine: 560 }, after: 10 }));
+            children.push(tP('ผู้จับกุมไม่ได้กระทำการใดๆ อันเป็นการทรมาน การทำที่โหดร้าย ไร้มนุษยธรรม หรือย่ำยีศักดิ์ศรีความเป็นมนุษย์หรือกระทำให้บุคคลสูญหายแต่อย่างใด', { indent: { firstLine: 560 }, after: 10 }));
+            children.push(tP('เจ้าหน้าที่ผู้จับกุม ได้แจ้งข้อมูลเกี่ยวกับผู้ถูกควบคุมตัว ตามมาตรา 22 วรรคสอง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 ไปยัง www.ptd.ago.go.th เรียบร้อยแล้ว', { indent: { firstLine: 560 }, after: 10 }));
+            children.push(tP('เจ้าหน้าที่ผู้จับกุม ได้แจ้งข้อมูลเกี่ยวกับผู้ถูกควบคุมตัว ตามมาตรา 22 วรรคสอง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 ไปยัง https://arrest.dopa.go.th/0308/arrest/app/place/ เรียบร้อยแล้ว', { indent: { firstLine: 560 }, after: 10 }));
+            children.push(tP('เจ้าหน้าที่ตำรวจผู้จับได้อ่านบันทึกให้ผู้ถูกจับฟังรับว่าถูกต้อง มีการดำเนินการตาม พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 มาตรา 22 และได้มอบสำเนาบันทึกการจับกุมให้แก่ผู้ถูกจับเรียบร้อย', { indent: { firstLine: 560 }, after: 15 }));
 
-            children.push(tP('ผู้ถูกจับทราบข้อกล่าวหา รายละเอียดเกี่ยวกับเหตุแห่งการจับ และสิทธิของผู้ถูกจับดังกล่าวข้างต้นแล้ว', { bold: true, after: 20 }));
+            children.push(tP('ผู้ถูกจับทราบข้อกล่าวหา รายละเอียดเกี่ยวกับเหตุแห่งการจับ และสิทธิของผู้ถูกจับดังกล่าวข้างต้นแล้ว', { bold: true, after: 10 }));
             children.push(tP([
                 bwChkRun(vm.pleaRefuseTestify), tRun(' ไม่ยอมให้การ   '),
                 bwChkRun(vm.pleaGiveStatement), tRun(' ให้การ   '),
                 bwChkRun(vm.pleaConfess), tRun(' รับสารภาพตลอดข้อกล่าวหา   '),
                 bwChkRun(vm.pleaDeny), tRun(' ปฏิเสธ   '),
                 bwChkRun(vm.pleaUnable), tRun(' ไม่สามารถให้การใดๆ ได้')
-            ], { after: 20 }));
+            ], { after: 10 }));
             children.push(tP([
                 bwChkRun(vm.warrantReadCheck),
                 tRun(' เป็นกรณีมีหมายจับ เจ้าพนักงานตำรวจผู้จับได้แจ้งให้ผู้ถูกจับทราบ และอ่านข้อความในหมายจับให้ผู้ถูกจับฟังแล้ว')
-            ], { after: 35 }));
+            ], { after: 15 }));
 
             if (vm.narrPage2.length > 0) {
                 vm.narrPage2.forEach((para, idx) => {
                     if (idx === 0) {
-                        children.push(tP([tRun('พฤติการณ์แห่งการจับกุม ', { bold: true }), tRun(para)], { align: AlignmentType.BOTH, after: 20 }));
+                        children.push(tP([tRun('พฤติการณ์แห่งการจับกุม ', { bold: true }), tRun(para)], { align: AlignmentType.BOTH, after: 10 }));
                     } else {
-                        children.push(tP(para, { align: AlignmentType.BOTH, after: 20 }));
+                        children.push(tP(para, { align: AlignmentType.BOTH, after: 10 }));
                     }
                 });
             } else {
-                children.push(tP([tRun('พฤติการณ์แห่งการจับกุม ', { bold: true }), tRun('-')], { after: 20 }));
+                children.push(tP([tRun('พฤติการณ์แห่งการจับกุม ', { bold: true }), tRun('-')], { after: 10 }));
             }
 
             // กล่องข้อความแสดงอยู่ท้ายหน้า (Text Box / Frame) สำหรับหน้า 2
@@ -10693,12 +10708,22 @@ ${currentDocPrintHtml}
                     properties: {
                         page: {
                             size: { width: 11906, height: 16838 },
-                            margin: { top: 720, bottom: 720, left: 1000, right: 1000 }
+                            margin: { top: 600, bottom: 600, left: 1000, right: 1000 }
                         }
                     },
                     children
                 }]
             });
+
+            // ปิดการตรวจคำผิดและไวยากรณ์ (ซ่อนเส้นหยักสีแดง/สีน้ำเงินใน Microsoft Word ออกทั้งหมด 100%)
+            if (doc.settings && Array.isArray(doc.settings.root)) {
+                const existingOnOff = doc.settings.root.find(r => r && r.rootKey === 'w:displayBackgroundShape');
+                const OnOffCls = existingOnOff ? existingOnOff.constructor : docx.OnOffElement;
+                if (OnOffCls) {
+                    doc.settings.root.push(new OnOffCls('w:hideSpellingErrors', true));
+                    doc.settings.root.push(new OnOffCls('w:hideGrammaticalErrors', true));
+                }
+            }
 
             // Filename generation requested:
             // "โดยชื่อไฟล์ให้ใช้ชื่อผู้ต้องหา ตามด้วยข้อหาสั้นๆและ วว/ดด/ปป"
