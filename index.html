@@ -779,98 +779,8 @@
         </div>
     </div>
 
-    <!-- AUTH / LOGIN SCREEN -->
-    <div id="auth-screen" class="fixed inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 flex items-center justify-center z-50 p-4 overflow-y-auto">
-        <div class="absolute inset-0 overflow-hidden pointer-events-none">
-            <div class="absolute -top-32 -left-32 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl"></div>
-            <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl"></div>
-        </div>
-
-        <div class="relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-3xl shadow-2xl max-w-md w-full p-7 sm:p-9 border border-white/20 dark:border-slate-800 my-8">
-            <!-- Header Badge & Logo -->
-            <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center w-24 h-24 p-1.5 bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 rounded-3xl mb-3.5 shadow-2xl border border-amber-500/40">
-                    <img src="assets/police_logo_transparent.png" alt="ตราพระแสงดาบเขนและโล่ สำนักงานตำรวจแห่งชาติ" class="w-full h-full object-contain filter drop-shadow">
-                </div>
-                <div class="flex items-center justify-center gap-1.5 mb-2">
-                    <span class="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                        ROYAL THAI POLICE • CYBER CRIME UNIT
-                    </span>
-                </div>
-                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                    Cyber Investigation Portal
-                </h1>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    ระบบสนับสนุนงานสืบสวนสอบสวนคดีออนไลน์ สภ.บางพลี
-                </p>
-                <div class="mt-2 text-[10px] bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 py-1 px-2.5 rounded-lg font-medium inline-block">
-                    🔒 พื้นที่ความมั่นคงปลอดภัยชั้นความลับทางราชการ
-                </div>
-            </div>
-
-            <!-- Login Form -->
-            <form onsubmit="handlePreviewLogin(event)" class="space-y-4 text-xs">
-                <div>
-                    <label class="block font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
-                        ชื่อผู้ใช้งาน (Username)
-                    </label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">👤</span>
-                        <input type="text" id="loginUsername" required value="thanakrit" class="w-full pl-9 pr-3.5 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none transition" placeholder="กรอกชื่อผู้ใช้งาน">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
-                        รหัสผ่าน (Password)
-                    </label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">🔑</span>
-                        <input type="password" id="loginPassword" required value="password123" class="w-full pl-9 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none transition" placeholder="กรอกรหัสผ่าน">
-                        <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" title="แสดง/ซ่อนรหัสผ่าน">
-                            <span id="pwdEyeIcon">👁️</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
-                    <label class="flex items-center gap-1.5 cursor-pointer">
-                        <input type="checkbox" id="rememberMe" checked class="rounded text-amber-500">
-                        <span>จดจำการเข้าสู่ระบบ</span>
-                    </label>
-                    <a href="javascript:void(0)" onclick="toast('กรุณาติดต่อ Admin เพื่อรีเซ็ตรหัสผ่าน')" class="text-amber-600 dark:text-amber-400 hover:underline">ลืมรหัสผ่าน?</a>
-                </div>
-
-                <button type="submit" id="loginSubmitBtn" class="w-full bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 hover:from-blue-900 hover:to-slate-800 text-white font-bold py-3.5 rounded-2xl transition duration-200 shadow-xl shadow-blue-950/40 flex items-center justify-center gap-2 border border-amber-500/30 text-xs">
-                    <span>🛡️ เข้าสู่ระบบปฏิบัติงาน</span>
-                </button>
-
-                <!-- Quick Select Demo Accounts -->
-                <div class="pt-3 border-t border-slate-100 dark:border-slate-800">
-                    <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2 text-center">
-                        ⚡ บัญชีทดสอบสำหรับเจ้าหน้าที่ (คลิกเลือกใช้งานได้ทันที):
-                    </p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" onclick="quickLogin('thanakrit', 'password123')" class="p-2.5 bg-slate-50 dark:bg-slate-950 hover:bg-amber-500/10 border border-slate-200 dark:border-slate-800 rounded-xl text-left transition group">
-                            <div class="font-bold text-slate-800 dark:text-white group-hover:text-amber-500">ร.ต.ต.ธนกฤต</div>
-                            <div class="text-[10px] text-amber-500">Admin (สืบสวน)</div>
-                        </button>
-                        <button type="button" onclick="quickLogin('investigator', 'password123')" class="p-2.5 bg-slate-50 dark:bg-slate-950 hover:bg-blue-500/10 border border-slate-200 dark:border-slate-800 rounded-xl text-left transition group">
-                            <div class="font-bold text-slate-800 dark:text-white group-hover:text-blue-500">ร.ต.อ.ธนากร</div>
-                            <div class="text-[10px] text-blue-500">พนักงานสอบสวน</div>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="text-center text-[10px] text-slate-400 pt-1">
-                    การเข้าถึงโดยมิได้รับอนุญาตมีโทษตาม พ.ร.บ. คอมพิวเตอร์ พ.ศ. 2550
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- MAIN APP WRAPPER -->
-    <div id="app-wrapper" class="hidden min-h-screen flex flex-col lg:flex-row">
+    <div id="app-wrapper" class="min-h-screen flex flex-col lg:flex-row">
         <!-- LEFT SIDEBAR -->
         <aside class="w-full lg:w-72 bg-slate-900 text-white flex flex-col shrink-0 border-r border-slate-800 shadow-2xl">
             <!-- Header -->
@@ -936,7 +846,7 @@
                         <p class="text-[10px] text-amber-400" id="currentUserRoleDisplay">Admin สูงสุด (สืบสวน)</p>
                     </div>
                 </div>
-                <button onclick="handlePreviewLogout()" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/15 rounded-xl transition" title="ออกจากระบบ">
+                <button onclick="handleOfficerLogout()" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/15 rounded-xl transition" title="ออกจากระบบ">
                     🚪
                 </button>
             </div>
@@ -2141,8 +2051,8 @@
                 <!-- ========================================================================= -->
                 <!-- MODAL: POLICE OFFICER LOGIN & ACCESS CONTROL (ระบบยืนยันตัวตนเจ้าหน้าที่) -->
                 <!-- ========================================================================= -->
-                <div id="policeLoginModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
-                    <div class="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 text-xs text-slate-200">
+                <div id="policeLoginModal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
+                    <div class="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-5 text-xs text-slate-200">
                         <div class="text-center space-y-2">
                             <img src="assets/police_logo_transparent.png" class="h-20 w-auto mx-auto drop-shadow-lg" alt="ตราโล่ตำรวจ">
                             <h2 class="text-lg font-bold text-white tracking-wide">เข้าสู่ระบบสารสนเทศสืบสวนและบันทึกจับกุม</h2>
@@ -2157,7 +2067,7 @@
                                 <label class="block font-bold text-slate-300 mb-1">รหัสประจำตัวตำรวจ / ชื่อผู้ใช้งาน (Badge No. / Username)</label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-3 text-slate-500">👮</span>
-                                    <input type="text" id="loginUsernameInput" required placeholder="เช่น 10001 หรือ admin_bangphli" class="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <input type="text" id="loginUsernameInput" required placeholder="กรอกรหัสประจำตัว หรือ ชื่อผู้ใช้งาน" class="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500">
                                 </div>
                             </div>
 
@@ -2165,7 +2075,10 @@
                                 <label class="block font-bold text-slate-300 mb-1">รหัสผ่าน (Password)</label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-3 text-slate-500">🔑</span>
-                                    <input type="password" id="loginPasswordInput" required placeholder="รหัสผ่านเข้าสู่ระบบ" class="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <input type="password" id="loginPasswordInput" required placeholder="กรอกรหัสผ่านเข้าสู่ระบบ" class="w-full pl-9 pr-10 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <button type="button" onclick="toggleOfficerPwdVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white" title="แสดง/ซ่อนรหัสผ่าน">
+                                        <span id="officerPwdEyeIcon">👁️</span>
+                                    </button>
                                 </div>
                                 <p class="text-[10px] text-slate-400 mt-1">เข้ารหัสความปลอดภัยมาตรฐาน PBKDF2-SHA512 (100,000 รอบ)</p>
                             </div>
@@ -2177,48 +2090,8 @@
                             </button>
                         </form>
 
-                        <div class="border-t border-slate-800 pt-4 space-y-2">
-                            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                                <span>⚡ เลือกบัญชีเจ้าหน้าที่ตำรวจ (Quick Select):</span>
-                                <span class="text-[10px] text-amber-500 font-mono">รหัสผ่าน: Police@2569</span>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                                <button type="button" onclick="quickLoginAs('thanakrit')" class="p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-left transition flex items-center justify-between group sm:col-span-2">
-                                    <div>
-                                        <div class="font-bold text-amber-400">ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล (thanakrit)</div>
-                                        <div class="text-[10px] text-slate-300">รอง สว.(สส.) สภ.บางพลี • ผู้ดูแลระบบสูงสุด (Super Admin)</div>
-                                    </div>
-                                    <span class="text-xs">⚡ เข้าสู่ระบบด่วน 👉</span>
-                                </button>
-                                <button type="button" onclick="quickLoginAs('admin_bangphli')" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-left transition flex items-center justify-between group">
-                                    <div>
-                                        <div class="font-bold text-white group-hover:text-amber-400">พ.ต.อ.ไพโรจน์ เพ็ชรพลอย</div>
-                                        <div class="text-[10px] text-slate-400">ผกก.สภ.บางพลี (Admin)</div>
-                                    </div>
-                                    <span class="text-xs">👉</span>
-                                </button>
-                                <button type="button" onclick="quickLoginAs('investigator1')" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-left transition flex items-center justify-between group">
-                                    <div>
-                                        <div class="font-bold text-white group-hover:text-amber-400">พ.ต.ท.ชิดชนก นพเจริญพงษ์</div>
-                                        <div class="text-[10px] text-slate-400">รอง ผกก.สส. (สืบสวน)</div>
-                                    </div>
-                                    <span class="text-xs">👉</span>
-                                </button>
-                                <button type="button" onclick="quickLoginAs('investigator2')" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-left transition flex items-center justify-between group">
-                                    <div>
-                                        <div class="font-bold text-white group-hover:text-amber-400">ร.ต.อ.วิโรจน์ แสงสว่าง</div>
-                                        <div class="text-[10px] text-slate-400">รอง สว.สส. (ชุดจับกุม)</div>
-                                    </div>
-                                    <span class="text-xs">👉</span>
-                                </button>
-                                <button type="button" onclick="quickLoginAs('inquiry1')" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-left transition flex items-center justify-between group">
-                                    <div>
-                                        <div class="font-bold text-white group-hover:text-amber-400">พ.ต.ท.ประเสริฐ กุลบุตร</div>
-                                        <div class="text-[10px] text-slate-400">รอง ผกก.(สอบสวน)</div>
-                                    </div>
-                                    <span class="text-xs">👉</span>
-                                </button>
-                            </div>
+                        <div class="text-center text-[10px] text-slate-500 border-t border-slate-800/80 pt-3">
+                            การเข้าถึงโดยมิได้รับอนุญาตมีโทษตาม พ.ร.บ. ว่าด้วยการกระทำความผิดเกี่ยวกับคอมพิวเตอร์ และ พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล
                         </div>
                     </div>
                 </div>
@@ -4469,11 +4342,9 @@
         }
 
         function handlePreviewLogout() {
-            currentLoggedInUser = null;
-            document.getElementById('app-wrapper').classList.add('hidden');
-            document.getElementById('auth-screen').classList.remove('hidden');
-            toast('ออกจากระบบเรียบร้อยแล้ว');
-            renderInquiry();
+            if (typeof handleOfficerLogout === 'function') {
+                handleOfficerLogout();
+            }
         }
 
         // =========================================================================
@@ -8890,7 +8761,7 @@ ${currentDocPrintHtml}
                 u.status !== 'suspended'
             );
 
-            const validPasses = ['Police@2569', 'admin1234', '123456', foundUser?.pass || 'Police@2569', foundUser?.username || ''];
+            const validPasses = ['Police@2569', 'password123', 'admin1234', '123456', foundUser?.pass || 'Police@2569', foundUser?.username || ''];
             if (foundUser && validPasses.includes(password)) {
                 const zkToken = 'zk_session_' + Date.now() + '_' + foundUser.badge_no;
                 setAuthToken(zkToken, foundUser);
@@ -8906,11 +8777,24 @@ ${currentDocPrintHtml}
             } else {
                 appendLocalAuditLog({ badge_no: username, rank_name: username, role: 'guest' }, 'LOGIN_FAILED', 'AUTH', username, 'ระบุชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
                 if (errEl) {
-                    errEl.textContent = 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง (รหัสผ่านมาตรฐาน: Police@2569)';
+                    errEl.textContent = 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง';
                     errEl.classList.remove('hidden');
                 } else {
                     toast('⚠️ ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
                 }
+            }
+        }
+
+        function toggleOfficerPwdVisibility() {
+            const input = document.getElementById('loginPasswordInput');
+            const icon = document.getElementById('officerPwdEyeIcon');
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                icon.textContent = '👁️';
             }
         }
 
