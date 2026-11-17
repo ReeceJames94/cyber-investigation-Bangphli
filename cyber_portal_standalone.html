@@ -8538,11 +8538,17 @@ ${currentDocPrintHtml}
                 narrPage3 = [paras[1]];
             } else if (paras.length === 1) {
                 const single = paras[0];
-                if (single.length > 520) {
-                    const splitIdx = single.indexOf(' ', 440);
+                const splitPhrase = 'และไม่เคยถูกจับกุมในคดีนี้';
+                const sIdx = single.indexOf(splitPhrase);
+                if (sIdx !== -1 && sIdx >= 350 && sIdx <= 950) {
+                    narrPage2 = [single.slice(0, sIdx + splitPhrase.length).trim()];
+                    narrPage3 = [single.slice(sIdx + splitPhrase.length).trim()];
+                } else if (single.length > 780) {
+                    let splitIdx = single.lastIndexOf(' ', 780);
+                    if (splitIdx < 500) splitIdx = single.indexOf(' ', 650);
                     if (splitIdx !== -1) {
-                        narrPage2 = [single.slice(0, splitIdx)];
-                        narrPage3 = [single.slice(splitIdx + 1)];
+                        narrPage2 = [single.slice(0, splitIdx).trim()];
+                        narrPage3 = [single.slice(splitIdx).trim()];
                     } else {
                         narrPage2 = [single];
                     }
@@ -8653,7 +8659,9 @@ ${currentDocPrintHtml}
                 <style>
                     @page { size: A4; margin: 12mm 16mm; }
                     .arrest-pkg { font-family: 'TH Sarabun New', 'Sarabun', 'Leelawadee UI', Tahoma, sans-serif; color: #000; line-height: 1.48; font-size: 16px; }
-                    .arrest-pkg .a4-page { background: #fff; page-break-after: always; box-sizing: border-box; padding: 12px 16px 14px; margin-bottom: 18px; border-bottom: 2px dashed #cbd5e1; width: 100%; }
+                    .arrest-pkg .a4-page { background: #fff; page-break-after: always; box-sizing: border-box; padding: 12px 16px 14px; margin-bottom: 18px; border-bottom: 2px dashed #cbd5e1; width: 100%; position: relative; }
+                    .arrest-pkg .a4-page.has-bottom-sig { padding-bottom: 22mm; min-height: 297mm; }
+                    .arrest-bottom-textbox { position: absolute; bottom: 12mm; right: 16mm; text-align: right; font-size: 15px; }
                     .arrest-pkg .a4-page:last-child { page-break-after: auto; border-bottom: none; }
                     .arrest-pkg p { margin: 0 0 3px 0; }
                     .arrest-pkg .indent { padding-left: 34px; }
@@ -8668,7 +8676,7 @@ ${currentDocPrintHtml}
                 </style>
                 <div class="arrest-pkg">
                     <!-- ================= ภาพ 1: บันทึกจับกุม หน้า 1 ================= -->
-                    <div class="a4-page">
+                    <div class="a4-page has-bottom-sig">
                         <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px;">
                             <tr>
                                 <td style="width: 34%;"></td>
@@ -8709,13 +8717,13 @@ ${currentDocPrintHtml}
                         <p class="indent">( ${mk(vm.basis === 'flagrante')} ) กระทำความผิดซึ่งหน้าดังได้บัญญัติไว้ในมาตรา 80</p>
                         <p class="indent">( ${mk(vm.basis === 'suspicious')} ) มีพฤติการณ์อันควรสงสัยว่าผู้นั้นน่าจะก่อเหตุร้ายให้เกิดอันตรายแก่บุคคลหรือทรัพย์สินของผู้อื่น โดยมี เครื่องมือ อาวุธ หรือวัตถุอย่างอื่นอันสามารถใช้ในการกระทำความผิด</p>
                         <p class="indent">( ${mk(vm.basis === 'urgent78')} ) เมื่อมีเหตุที่จะออกหมายจับบุคคลนั้นตามมาตรา 66 (2) แต่มีความจำเป็นเร่งด่วนที่ไม่อาจขอให้ศาลออกหมายจับบุคคลนั้นได้</p>
-                        <div style="text-align: right; padding-right: 40px; margin-top: 10px;">
-                            (ลงชื่อ) ${vm.suspPrefix} ......................................................... ผู้ถูกจับ
+                        <div class="arrest-bottom-textbox">
+                            (ลงชื่อ) ${vm.suspPrefix} .................................................... ผู้ถูกจับ
                         </div>
                     </div>
 
                     <!-- ================= ภาพ 2: บันทึกจับกุม หน้า 2 ================= -->
-                    <div class="a4-page">
+                    <div class="a4-page has-bottom-sig">
                         <p class="indent">( ${mk(vm.basis === 'bail_escape')} ) เป็นการจับกุมผู้ต้องหาหรือจำเลยที่หนีหรือจะหลบหนีระหว่างถูกปล่อยชั่วคราว ตาม ม.117</p>
                         <p class="indent">( / ) ในการจับกุมและควบคุมได้กระทำไปตามกฎหมาย โดยคำนึงถึงศักดิ์ศรีความเป็นมนุษย์</p>
                         <p class="indent" style="text-align: justify;">( ${mk(!vm.hasForceMajeure)} ) ในการควบคุมตัวผู้ถูกจับ เจ้าหน้าที่ผู้จับกุมได้ทำการบันทึกภาพและเสียงอย่างต่อเนื่อง ในขณะจับ และควบคุมตัวผู้ถูกจับในชั้นจับกุมจนกระทั่งส่งตัวให้พนักงานสอบสวน ตามมาตรา 22 วรรคหนึ่ง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565</p>
@@ -8735,8 +8743,8 @@ ${currentDocPrintHtml}
                                 : `<p><strong>พฤติการณ์แห่งการจับกุม</strong> &nbsp;-</p>`}
                         </div>
 
-                        <div style="text-align: center; margin-top: 18px;">
-                            (ลงชื่อ) ${vm.suspPrefix} ......................................................... ผู้ถูกจับ
+                        <div class="arrest-bottom-textbox">
+                            (ลงชื่อ) ${vm.suspPrefix} .................................................... ผู้ถูกจับ
                         </div>
                     </div>
 
@@ -9066,7 +9074,8 @@ ${currentDocPrintHtml}
             const {
                 Document, Packer, Paragraph, TextRun, ImageRun,
                 Table, TableRow, TableCell, AlignmentType, WidthType,
-                BorderStyle, PageBreak, VerticalAlign, HeightRule, UnderlineType
+                BorderStyle, PageBreak, VerticalAlign, HeightRule, UnderlineType,
+                FrameAnchorType, FrameWrap
             } = docx;
 
             let rec = null;
@@ -9095,14 +9104,15 @@ ${currentDocPrintHtml}
             const FONT = 'TH Sarabun New';
             const SZ = 30;      // 15pt
             const SZ_SM = 26;   // 13pt (ตาราง ปท.๑ และกล่องทะเบียน)
-            const SZ_TITLE = 38;// 19pt
-            const SZ_HDR = 34;  // 17pt
+            const SZ_TITLE = 36;// 18pt
+            const SZ_HDR = 32;  // 16pt
 
             const tRun = (text, opts = {}) => new TextRun({
                 text: text ?? '',
                 font: FONT,
                 size: opts.size || SZ,
-                bold: !!opts.bold
+                bold: !!opts.bold,
+                noProof: true
             });
 
             const dRun = (text, opts = {}) => {
@@ -9112,7 +9122,8 @@ ${currentDocPrintHtml}
                     font: FONT,
                     size: opts.size || SZ,
                     bold: !!opts.bold,
-                    underline: val ? { type: UnderlineType.DOTTED, color: '000000' } : undefined
+                    underline: val ? { type: UnderlineType.DOTTED, color: '000000' } : undefined,
+                    noProof: true
                 });
             };
 
@@ -9121,18 +9132,20 @@ ${currentDocPrintHtml}
                     bold = false,
                     align = AlignmentType.LEFT,
                     before = 0,
-                    after = 55,
-                    line = 250,
+                    after = 16,
+                    line = 235,
                     size = SZ,
-                    indent = undefined
+                    indent = undefined,
+                    frame = undefined
                 } = opts;
                 const runs = Array.isArray(content)
                     ? content
-                    : [new TextRun({ text: content ?? '', font: FONT, size, bold })];
+                    : [new TextRun({ text: content ?? '', font: FONT, size, bold, noProof: true })];
                 return new Paragraph({
                     alignment: align,
                     spacing: { before, after, line },
                     indent,
+                    frame,
                     children: runs
                 });
             };
@@ -9158,7 +9171,29 @@ ${currentDocPrintHtml}
                 text: b ? '☑' : '☐',
                 font: 'MS Gothic',
                 size: sz,
-                color: '000000'
+                color: '000000',
+                noProof: true
+            });
+
+            // กล่องข้อความแสดงอยู่ท้ายหน้า (Text Box / Frame) สำหรับหน้า 1 และหน้า 2 ในบันทึกจับกุม
+            const mkSuspectBottomBox = (prefix) => new Paragraph({
+                frame: {
+                    width: 7200,
+                    height: 380,
+                    anchor: { horizontal: FrameAnchorType.MARGIN, vertical: FrameAnchorType.MARGIN },
+                    alignment: { x: 'right', y: 'bottom' },
+                    wrap: FrameWrap.NONE
+                },
+                alignment: AlignmentType.RIGHT,
+                spacing: { before: 0, after: 0, line: 240 },
+                children: [
+                    new TextRun({
+                        text: `(ลงชื่อ) ${prefix} .................................................... ผู้ถูกจับ`,
+                        font: FONT,
+                        size: SZ,
+                        noProof: true
+                    })
+                ]
             });
 
             const buildPt23SignaturesTable = () => {
@@ -9242,120 +9277,124 @@ ${currentDocPrintHtml}
                 ]
             }));
 
-            children.push(tP([tRun('สถานที่บันทึก ', { bold: true }), tRun(vm.recordLocAr)], { before: 80 }));
-            children.push(tP([tRun('วัน เดือน ปี ที่บันทึก ', { bold: true }), tRun(`${vm.recordDateAr} เวลาประมาณ ${vm.recordTimeAr} น.`)]));
-            children.push(tP([tRun('วัน เดือน ปี ที่จับกุม ', { bold: true }), tRun(`${vm.arrestDateAr} เวลาประมาณ ${vm.arrestTimeAr} น.`)]));
-            children.push(tP([tRun('สถานที่จับกุม ', { bold: true }), tRun(vm.fullArrestLocAr)]));
+            children.push(tP([tRun('สถานที่บันทึก ', { bold: true }), tRun(vm.recordLocAr)], { before: 40, after: 15 }));
+            children.push(tP([tRun('วัน เดือน ปี ที่บันทึก ', { bold: true }), tRun(`${vm.recordDateAr} เวลาประมาณ ${vm.recordTimeAr} น.`)], { after: 15 }));
+            children.push(tP([tRun('วัน เดือน ปี ที่จับกุม ', { bold: true }), tRun(`${vm.arrestDateAr} เวลาประมาณ ${vm.arrestTimeAr} น.`)], { after: 15 }));
+            children.push(tP([tRun('สถานที่จับกุม ', { bold: true }), tRun(vm.fullArrestLocAr)], { after: 15 }));
             children.push(tP([
                 tRun(`นามเจ้าหน้าที่ตำรวจที่ร่วมจับกุม ${vm.unitShort} ภายใต้การอำนวยการของ `, { bold: true }),
                 tRun(`${vm.cmdStrAr}, `),
                 tRun('พร้อมกำลังชุดปฏิบัติ นำโดย ', { bold: true }),
                 tRun(vm.offStrAr)
-            ], { align: AlignmentType.BOTH }));
+            ], { align: AlignmentType.BOTH, after: 15 }));
             children.push(tP([
                 tRun('ได้ร่วมกันจับกุมตัว ', { bold: true }),
                 tRun(`${vm.suspFullName} อายุ ${vm.suspAgeAr} ปี เลขประจำตัวประชาชน ${vm.suspIdAr} `),
                 tRun('ผู้ต้องหา', { bold: true })
-            ]));
-            children.push(tP([tRun('อยู่บ้านเลขที่ ', { bold: true }), tRun(vm.suspAddrAr)]));
+            ], { after: 15 }));
+            children.push(tP([tRun('อยู่บ้านเลขที่ ', { bold: true }), tRun(vm.suspAddrAr)], { after: 15 }));
 
             if (!rec.noWarrant && rec.warrantNo) {
-                children.push(tP([tRun('โดยจับกุมตามหมายจับของ ', { bold: true }), tRun(`${vm.warrantCourtAr} ที่ ${vm.warrantNoAr} ลงวันที่ ${vm.warrantDateAr}`)]));
+                children.push(tP([tRun('โดยจับกุมตามหมายจับของ ', { bold: true }), tRun(`${vm.warrantCourtAr} ที่ ${vm.warrantNoAr} ลงวันที่ ${vm.warrantDateAr}`)], { after: 15 }));
                 children.push(tP([
                     tRun('ซึ่งต้องหาว่ากระทำความผิดฐาน ', { bold: true }),
                     tRun(`“${vm.chargesJoinedAr}” ซึ่งเจ้าพนักงานผู้จับกุมได้แสดงต่อผู้ถูกจับกุมแล้ว สอบถามผู้ต้องหารับว่าเป็นบุคคลเดียวกันตามหมายจับจริง และมีชื่อที่อยู่ตรงกับที่เจ้าหน้าที่ได้แสดงให้ตนดู และตนไม่เคยถูกจับกุมในคดีนี้มาก่อน`)
-                ], { align: AlignmentType.BOTH }));
+                ], { align: AlignmentType.BOTH, after: 20 }));
             } else {
                 children.push(tP([
                     tRun('โดยกล่าวหาว่ากระทำความผิดฐาน ', { bold: true }),
                     tRun(`“${vm.chargesJoinedAr}”`)
-                ], { align: AlignmentType.BOTH }));
+                ], { align: AlignmentType.BOTH, after: 20 }));
             }
 
             if (vm.evList.length > 0) {
                 children.push(tP([
                     tRun('พร้อมด้วยของกลาง ', { bold: true }),
                     tRun(vm.evList.map((e, i) => `${i + 1}. ${toAr(e.description)} (${toAr(e.foundLocation || '')})`).join(', '))
-                ]));
+                ], { after: 15 }));
             }
 
-            children.push(tP('ผู้ต้องหาได้รับทราบสิทธิตามกฎหมาย ดังนี้', { bold: true, after: 30 }));
-            children.push(tP('1.มีสิทธิจะไม่ให้การหรือให้การก็ได้ และถ้อยคำของผู้ต้องหาอาจใช้เป็นพยานหลักฐานในการพิจารณาคดีได้', { after: 25 }));
-            children.push(tP('2.มีสิทธิพบและปรึกษาทนายความ หรือผู้ซึ่งจะเป็นทนายความเป็นการเฉพาะตัว', { after: 25 }));
-            children.push(tP('3.มีสิทธิแจ้งหรือขอให้เจ้าพนักงานแจ้งให้ญาติหรือผู้ซึ่งไว้วางใจทราบถึงการจับกุมและสถานที่ถูกควบคุมในโอกาสแรก', { after: 25 }));
-            children.push(tP('4.มีสิทธิให้ทนายความหรือผู้ซึ่งตนไว้วางใจ เข้าฟังการสอบสวนปากคำตนได้ในชั้นสอบสวน', { after: 25 }));
-            children.push(tP('5.มีสิทธิได้รับการเยี่ยมหรือติดต่อกับญาติได้ตามสมควร', { after: 25 }));
-            children.push(tP('6.มีสิทธิได้รับการรักษาพยาบาลโดยเร็วเมื่อเจ็บป่วย', { after: 40 }));
+            children.push(tP('ผู้ต้องหาได้รับทราบสิทธิตามกฎหมาย ดังนี้', { bold: true, after: 10 }));
+            children.push(tP('1.มีสิทธิจะไม่ให้การหรือให้การก็ได้ และถ้อยคำของผู้ต้องหาอาจใช้เป็นพยานหลักฐานในการพิจารณาคดีได้', { after: 10 }));
+            children.push(tP('2.มีสิทธิพบและปรึกษาทนายความ หรือผู้ซึ่งจะเป็นทนายความเป็นการเฉพาะตัว', { after: 10 }));
+            children.push(tP('3.มีสิทธิแจ้งหรือขอให้เจ้าพนักงานแจ้งให้ญาติหรือผู้ซึ่งไว้วางใจทราบถึงการจับกุมและสถานที่ถูกควบคุมในโอกาสแรก', { after: 10 }));
+            children.push(tP('4.มีสิทธิให้ทนายความหรือผู้ซึ่งตนไว้วางใจ เข้าฟังการสอบสวนปากคำตนได้ในชั้นสอบสวน', { after: 10 }));
+            children.push(tP('5.มีสิทธิได้รับการเยี่ยมหรือติดต่อกับญาติได้ตามสมควร', { after: 10 }));
+            children.push(tP('6.มีสิทธิได้รับการรักษาพยาบาลโดยเร็วเมื่อเจ็บป่วย', { after: 15 }));
 
-            children.push(tP('ผู้ถูกจับรับทราบสิทธิแล้ว', { bold: true, after: 30 }));
-            children.push(tP(`( ${mk(vm.right4Action === 'no')} ) ไม่ขอดำเนินการตามข้อ 4`, { indent: { left: 560 }, after: 25 }));
-            children.push(tP(`( ${mk(vm.right4Action === 'yes')} ) ขอดำเนินการตามข้อ 4 และได้ดำเนินการเรียบร้อย`, { indent: { left: 560 }, after: 25 }));
-            children.push(tP(`( ${mk(!rec.noWarrant)} ) ขอให้การรับว่าเป็นบุคคลตามหมายจับ และยังไม่เคยถูกดำเนินคดีนี้มาก่อน ในการจับกุมผู้ต้องหาครั้งนี้`, { indent: { left: 560 }, after: 25 }));
-            children.push(tP(`เจ้าหน้าที่ตำรวจชุดจับกุมได้กระทำไปตามอำนาจหน้าที่ ( ${mk(!rec.noWarrant && vm.basis !== 'court_order')} ) มีหมายจับ     ( ${mk(vm.basis === 'court_order')} ) มีคำสั่งศาล`, { after: 25 }));
-            children.push(tP(`( ${mk(vm.basis === 'flagrante')} ) กระทำความผิดซึ่งหน้าดังได้บัญญัติไว้ในมาตรา 80`, { indent: { left: 560 }, after: 25 }));
-            children.push(tP(`( ${mk(vm.basis === 'suspicious')} ) มีพฤติการณ์อันควรสงสัยว่าผู้นั้นน่าจะก่อเหตุร้ายให้เกิดอันตรายแก่บุคคลหรือทรัพย์สินของผู้อื่น โดยมี เครื่องมือ อาวุธ หรือวัตถุอย่างอื่นอันสามารถใช้ในการกระทำความผิด`, { indent: { left: 560 }, after: 25 }));
-            children.push(tP(`( ${mk(vm.basis === 'urgent78')} ) เมื่อมีเหตุที่จะออกหมายจับบุคคลนั้นตามมาตรา 66 (2) แต่มีความจำเป็นเร่งด่วนที่ไม่อาจขอให้ศาลออกหมายจับบุคคลนั้นได้`, { indent: { left: 560 }, after: 140 }));
-            children.push(tP(`(ลงชื่อ) ${vm.suspPrefix} ......................................................... ผู้ถูกจับ`, { align: AlignmentType.RIGHT, after: 0 }));
+            children.push(tP('ผู้ถูกจับรับทราบสิทธิแล้ว', { bold: true, after: 10 }));
+            children.push(tP(`( ${mk(vm.right4Action === 'no')} ) ไม่ขอดำเนินการตามข้อ 4`, { indent: { left: 560 }, after: 10 }));
+            children.push(tP(`( ${mk(vm.right4Action === 'yes')} ) ขอดำเนินการตามข้อ 4 และได้ดำเนินการเรียบร้อย`, { indent: { left: 560 }, after: 10 }));
+            children.push(tP(`( ${mk(!rec.noWarrant)} ) ขอให้การรับว่าเป็นบุคคลตามหมายจับ และยังไม่เคยถูกดำเนินคดีนี้มาก่อน ในการจับกุมผู้ต้องหาครั้งนี้`, { indent: { left: 560 }, after: 10 }));
+            children.push(tP(`เจ้าหน้าที่ตำรวจชุดจับกุมได้กระทำไปตามอำนาจหน้าที่ ( ${mk(!rec.noWarrant && vm.basis !== 'court_order')} ) มีหมายจับ     ( ${mk(vm.basis === 'court_order')} ) มีคำสั่งศาล`, { after: 10 }));
+            children.push(tP(`( ${mk(vm.basis === 'flagrante')} ) กระทำความผิดซึ่งหน้าดังได้บัญญัติไว้ในมาตรา 80`, { indent: { left: 560 }, after: 10 }));
+            children.push(tP(`( ${mk(vm.basis === 'suspicious')} ) มีพฤติการณ์อันควรสงสัยว่าผู้นั้นน่าจะก่อเหตุร้ายให้เกิดอันตรายแก่บุคคลหรือทรัพย์สินของผู้อื่น โดยมี เครื่องมือ อาวุธ หรือวัตถุอย่างอื่นอันสามารถใช้ในการกระทำความผิด`, { indent: { left: 560 }, after: 10 }));
+            children.push(tP(`( ${mk(vm.basis === 'urgent78')} ) เมื่อมีเหตุที่จะออกหมายจับบุคคลนั้นตามมาตรา 66 (2) แต่มีความจำเป็นเร่งด่วนที่ไม่อาจขอให้ศาลออกหมายจับบุคคลนั้นได้`, { indent: { left: 560 }, after: 20 }));
+
+            // กล่องข้อความแสดงอยู่ท้ายหน้า (Text Box / Frame) สำหรับหน้า 1
+            children.push(mkSuspectBottomBox(vm.suspPrefix));
 
             // =========================================================================
             // PAGE 2 (ภาพ 2): บันทึกจับกุม หน้าที่ 2
             // =========================================================================
             children.push(new Paragraph({ children: [new PageBreak()] }));
-            children.push(tP(`( ${mk(vm.basis === 'bail_escape')} ) เป็นการจับกุมผู้ต้องหาหรือจำเลยที่หนีหรือจะหลบหนีระหว่างถูกปล่อยชั่วคราว ตาม ม.117`, { indent: { left: 560 }, after: 35 }));
-            children.push(tP('( / ) ในการจับกุมและควบคุมได้กระทำไปตามกฎหมาย โดยคำนึงถึงศักดิ์ศรีความเป็นมนุษย์', { indent: { left: 560 }, after: 35 }));
-            children.push(tP(`( ${mk(!vm.hasForceMajeure)} ) ในการควบคุมตัวผู้ถูกจับ เจ้าหน้าที่ผู้จับกุมได้ทำการบันทึกภาพและเสียงอย่างต่อเนื่อง ในขณะจับ และควบคุมตัวผู้ถูกจับในชั้นจับกุมจนกระทั่งส่งตัวให้พนักงานสอบสวน ตามมาตรา 22 วรรคหนึ่ง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565`, { indent: { left: 560 }, align: AlignmentType.BOTH, after: 35 }));
-            children.push(tP(`( ${mk(vm.hasForceMajeure)} ) มีเหตุสุดวิสัยที่ไม่สามารถบันทึกภาพและเสียงตาม ตามมาตรา 22 วรรคหนึ่ง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 เนื่องจาก ${vm.hasForceMajeure ? vm.fmReason : '–'}`, { indent: { left: 560, firstLine: 560 }, after: 35 }));
-            children.push(tP('ผู้จับกุมไม่ได้กระทำการใดๆ อันเป็นการทรมาน การทำที่โหดร้าย ไร้มนุษยธรรม หรือย่ำยีศักดิ์ศรีความเป็นมนุษย์หรือกระทำให้บุคคลสูญหายแต่อย่างใด', { indent: { firstLine: 560 }, after: 35 }));
-            children.push(tP('เจ้าหน้าที่ผู้จับกุม ได้แจ้งข้อมูลเกี่ยวกับผู้ถูกควบคุมตัว ตามมาตรา 22 วรรคสอง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 ไปยัง www.ptd.ago.go.th เรียบร้อยแล้ว', { indent: { firstLine: 560 }, after: 35 }));
-            children.push(tP('เจ้าหน้าที่ผู้จับกุม ได้แจ้งข้อมูลเกี่ยวกับผู้ถูกควบคุมตัว ตามมาตรา 22 วรรคสอง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 ไปยัง https://arrest.dopa.go.th/0308/arrest/app/place/ เรียบร้อยแล้ว', { indent: { firstLine: 560 }, after: 35 }));
-            children.push(tP('เจ้าหน้าที่ตำรวจผู้จับได้อ่านบันทึกให้ผู้ถูกจับฟังรับว่าถูกต้อง มีการดำเนินการตาม พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 มาตรา 22 และได้มอบสำเนาบันทึกการจับกุมให้แก่ผู้ถูกจับเรียบร้อย', { indent: { firstLine: 560 }, after: 70 }));
+            children.push(tP(`( ${mk(vm.basis === 'bail_escape')} ) เป็นการจับกุมผู้ต้องหาหรือจำเลยที่หนีหรือจะหลบหนีระหว่างถูกปล่อยชั่วคราว ตาม ม.117`, { indent: { left: 560 }, after: 20 }));
+            children.push(tP('( / ) ในการจับกุมและควบคุมได้กระทำไปตามกฎหมาย โดยคำนึงถึงศักดิ์ศรีความเป็นมนุษย์', { indent: { left: 560 }, after: 20 }));
+            children.push(tP(`( ${mk(!vm.hasForceMajeure)} ) ในการควบคุมตัวผู้ถูกจับ เจ้าหน้าที่ผู้จับกุมได้ทำการบันทึกภาพและเสียงอย่างต่อเนื่อง ในขณะจับ และควบคุมตัวผู้ถูกจับในชั้นจับกุมจนกระทั่งส่งตัวให้พนักงานสอบสวน ตามมาตรา 22 วรรคหนึ่ง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565`, { indent: { left: 560 }, align: AlignmentType.BOTH, after: 20 }));
+            children.push(tP(`( ${mk(vm.hasForceMajeure)} ) มีเหตุสุดวิสัยที่ไม่สามารถบันทึกภาพและเสียงตาม ตามมาตรา 22 วรรคหนึ่ง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 เนื่องจาก ${vm.hasForceMajeure ? vm.fmReason : '–'}`, { indent: { left: 560, firstLine: 560 }, after: 20 }));
+            children.push(tP('ผู้จับกุมไม่ได้กระทำการใดๆ อันเป็นการทรมาน การทำที่โหดร้าย ไร้มนุษยธรรม หรือย่ำยีศักดิ์ศรีความเป็นมนุษย์หรือกระทำให้บุคคลสูญหายแต่อย่างใด', { indent: { firstLine: 560 }, after: 20 }));
+            children.push(tP('เจ้าหน้าที่ผู้จับกุม ได้แจ้งข้อมูลเกี่ยวกับผู้ถูกควบคุมตัว ตามมาตรา 22 วรรคสอง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 ไปยัง www.ptd.ago.go.th เรียบร้อยแล้ว', { indent: { firstLine: 560 }, after: 20 }));
+            children.push(tP('เจ้าหน้าที่ผู้จับกุม ได้แจ้งข้อมูลเกี่ยวกับผู้ถูกควบคุมตัว ตามมาตรา 22 วรรคสอง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 ไปยัง https://arrest.dopa.go.th/0308/arrest/app/place/ เรียบร้อยแล้ว', { indent: { firstLine: 560 }, after: 20 }));
+            children.push(tP('เจ้าหน้าที่ตำรวจผู้จับได้อ่านบันทึกให้ผู้ถูกจับฟังรับว่าถูกต้อง มีการดำเนินการตาม พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 มาตรา 22 และได้มอบสำเนาบันทึกการจับกุมให้แก่ผู้ถูกจับเรียบร้อย', { indent: { firstLine: 560 }, after: 40 }));
 
-            children.push(tP('ผู้ถูกจับทราบข้อกล่าวหา รายละเอียดเกี่ยวกับเหตุแห่งการจับ และสิทธิของผู้ถูกจับดังกล่าวข้างต้นแล้ว', { bold: true, after: 35 }));
+            children.push(tP('ผู้ถูกจับทราบข้อกล่าวหา รายละเอียดเกี่ยวกับเหตุแห่งการจับ และสิทธิของผู้ถูกจับดังกล่าวข้างต้นแล้ว', { bold: true, after: 20 }));
             children.push(tP([
                 bwChkRun(vm.pleaRefuseTestify), tRun(' ไม่ยอมให้การ   '),
                 bwChkRun(vm.pleaGiveStatement), tRun(' ให้การ   '),
                 bwChkRun(vm.pleaConfess), tRun(' รับสารภาพตลอดข้อกล่าวหา   '),
                 bwChkRun(vm.pleaDeny), tRun(' ปฏิเสธ   '),
                 bwChkRun(vm.pleaUnable), tRun(' ไม่สามารถให้การใดๆ ได้')
-            ], { after: 35 }));
+            ], { after: 20 }));
             children.push(tP([
                 bwChkRun(vm.warrantReadCheck),
                 tRun(' เป็นกรณีมีหมายจับ เจ้าพนักงานตำรวจผู้จับได้แจ้งให้ผู้ถูกจับทราบ และอ่านข้อความในหมายจับให้ผู้ถูกจับฟังแล้ว')
-            ], { after: 60 }));
+            ], { after: 35 }));
 
             if (vm.narrPage2.length > 0) {
                 vm.narrPage2.forEach((para, idx) => {
                     if (idx === 0) {
-                        children.push(tP([tRun('พฤติการณ์แห่งการจับกุม ', { bold: true }), tRun(para)], { align: AlignmentType.BOTH, after: 55 }));
+                        children.push(tP([tRun('พฤติการณ์แห่งการจับกุม ', { bold: true }), tRun(para)], { align: AlignmentType.BOTH, after: 20 }));
                     } else {
-                        children.push(tP(para, { align: AlignmentType.BOTH, after: 55 }));
+                        children.push(tP(para, { align: AlignmentType.BOTH, after: 20 }));
                     }
                 });
             } else {
-                children.push(tP([tRun('พฤติการณ์แห่งการจับกุม ', { bold: true }), tRun('-')], { after: 55 }));
+                children.push(tP([tRun('พฤติการณ์แห่งการจับกุม ', { bold: true }), tRun('-')], { after: 20 }));
             }
 
-            children.push(tP(`(ลงชื่อ) ${vm.suspPrefix} ......................................................... ผู้ถูกจับ`, { align: AlignmentType.CENTER, before: 160, after: 0 }));
+            // กล่องข้อความแสดงอยู่ท้ายหน้า (Text Box / Frame) สำหรับหน้า 2
+            children.push(mkSuspectBottomBox(vm.suspPrefix));
 
             // =========================================================================
             // PAGE 3 (ภาพ 3): บันทึกจับกุม หน้าที่ 3 (เหตุเกิดที่ + อนึ่ง + รายนามผู้จับกุม)
             // =========================================================================
             children.push(new Paragraph({ children: [new PageBreak()] }));
             vm.narrPage3.forEach(para => {
-                children.push(tP(para, { align: AlignmentType.BOTH, after: 55 }));
+                children.push(tP(para, { align: AlignmentType.BOTH, after: 25 }));
             });
-            children.push(tP([tRun('เหตุเกิดที่ ', { bold: true }), tRun(vm.fullArrestLocAr)], { after: 35 }));
-            children.push(tP(`วันที่ ${vm.arrestDateAr} เวลาประมาณ ${vm.arrestTimeAr} น.`, { indent: { left: 680 }, after: 90 }));
+            children.push(tP([tRun('เหตุเกิดที่ ', { bold: true }), tRun(vm.fullArrestLocAr)], { after: 20 }));
+            children.push(tP(`วันที่ ${vm.arrestDateAr} เวลาประมาณ ${vm.arrestTimeAr} น.`, { indent: { left: 680 }, after: 50 }));
 
             children.push(tP(
                 'อนึ่ง ในการจับกุมผู้ถูกจับครั้งนี้ เจ้าหน้าที่ตำรวจผู้จับกุมมิได้ทำให้ทรัพย์สินของผู้ถูกจับ หรือทรัพย์สินของผู้ใดเสียหาย สูญหาย เสื่อมค่า หรือไร้ประโยชน์ ทั้งมิได้เรียกร้องเอาทรัพย์สินของผู้ถูกจับหรือผู้ใดมาเป็นประโยชน์ต่อส่วนตนแต่อย่างใด และมิได้ทำร้ายร่างกายผู้ใดให้ได้รับอันตรายแก่กายหรือจิตใจแต่อย่างใด เจ้าหน้าที่ตำรวจได้อ่านบันทึกจับกุมนี้ให้ผู้ถูกจับฟังและให้อ่านเองจนเป็นที่เข้าใจแล้ว รับรองว่าถูกต้อง จึงให้ลงลายมือชื่อไว้เป็นหลักฐาน',
-                { indent: { firstLine: 680 }, align: AlignmentType.LEFT, after: 220 }
+                { indent: { firstLine: 680 }, align: AlignmentType.LEFT, after: 120 }
             ));
 
-            children.push(tP(`(ลงชื่อ) ${vm.suspPrefix} ......................................................... ผู้ถูกจับ`, { align: AlignmentType.CENTER, after: 20 }));
-            children.push(tP(`( ${vm.suspNameOnly} )`, { align: AlignmentType.CENTER, after: 260 }));
+            // หน้าสุดท้ายของบันทึกจับกุม: ลงลายมือชื่อผู้ถูกจับและรายนามผู้จับกุม (ในเนื้อหาเอกสาร ไม่ใช้กล่องลอย)
+            children.push(tP(`(ลงชื่อ) ${vm.suspPrefix} ......................................................... ผู้ถูกจับ`, { align: AlignmentType.CENTER, after: 15 }));
+            children.push(tP(`( ${vm.suspNameOnly} )`, { align: AlignmentType.CENTER, after: 120 }));
 
-            children.push(tP(`รายนามผู้จับกุม เจ้าหน้าที่ตำรวจ${vm.unitShort === 'สภ.บางพลี' ? 'งานสืบสวน สภ.บางพลี' : ' ' + vm.unitShort}`, { bold: true, align: AlignmentType.CENTER, after: 140 }));
+            children.push(tP(`รายนามผู้จับกุม เจ้าหน้าที่ตำรวจ${vm.unitShort === 'สภ.บางพลี' ? 'งานสืบสวน สภ.บางพลี' : ' ' + vm.unitShort}`, { bold: true, align: AlignmentType.CENTER, after: 80 }));
 
             const offRows = [];
             for (let i = 0; i < vm.officerSignItems.length; i += 2) {
@@ -9366,18 +9405,18 @@ ${currentDocPrintHtml}
                         new TableCell({
                             width: { size: 4800, type: WidthType.DXA },
                             borders: noBorders,
-                            margins: { top: 40, bottom: 90, left: 0, right: 60 },
+                            margins: { top: 30, bottom: 50, left: 0, right: 60 },
                             children: [
-                                tP(`(ลงชื่อ) ${L.rank} ...................... ${L.roleLabel}`, { size: 28, after: 15 }),
+                                tP(`(ลงชื่อ) ${L.rank} ...................... ${L.roleLabel}`, { size: 28, after: 10 }),
                                 tP(`( ${L.nameOnly} )`, { size: 28, align: AlignmentType.CENTER, after: 0 })
                             ]
                         }),
                         new TableCell({
                             width: { size: 4800, type: WidthType.DXA },
                             borders: noBorders,
-                            margins: { top: 40, bottom: 90, left: 60, right: 0 },
+                            margins: { top: 30, bottom: 50, left: 60, right: 0 },
                             children: R ? [
-                                tP(`(ลงชื่อ) ${R.rank} ...................... ${R.roleLabel}`, { size: 28, after: 15 }),
+                                tP(`(ลงชื่อ) ${R.rank} ...................... ${R.roleLabel}`, { size: 28, after: 10 }),
                                 tP(`( ${R.nameOnly} )`, { size: 28, align: AlignmentType.CENTER, after: 0 })
                             ] : [tP('', { after: 0 })]
                         })
@@ -9395,8 +9434,8 @@ ${currentDocPrintHtml}
             // PAGE 4 (ภาพ 4): ภาพประกอบการจับกุม (-4-)
             // =========================================================================
             children.push(new Paragraph({ children: [new PageBreak()] }));
-            children.push(tP('-4-', { align: AlignmentType.CENTER, size: SZ_SM, after: 40 }));
-            children.push(tP('ภาพประกอบการจับกุม', { align: AlignmentType.CENTER, size: SZ_TITLE, bold: false, after: 180 }));
+            children.push(tP('-4-', { align: AlignmentType.CENTER, size: SZ_SM, after: 30 }));
+            children.push(tP('ภาพประกอบการจับกุม', { align: AlignmentType.CENTER, size: SZ_TITLE, bold: false, after: 120 }));
 
             const page4BoxChildren = [];
             if (vm.generalPhotosList.length > 0) {
@@ -9411,7 +9450,7 @@ ${currentDocPrintHtml}
                 page4BoxChildren.push(new Paragraph({
                     alignment: AlignmentType.CENTER,
                     spacing: { before: 120, after: 200 },
-                    children: [new TextRun({ text: '{ภาพประกอบการจับกุม}', font: FONT, size: 40 })]
+                    children: [new TextRun({ text: '{ภาพประกอบการจับกุม}', font: FONT, size: 40, noProof: true })]
                 }));
             }
 
@@ -9772,7 +9811,7 @@ ${currentDocPrintHtml}
                     properties: {
                         page: {
                             size: { width: 11906, height: 16838 },
-                            margin: { top: 850, bottom: 850, left: 1134, right: 1134 }
+                            margin: { top: 720, bottom: 720, left: 1000, right: 1000 }
                         }
                     },
                     children

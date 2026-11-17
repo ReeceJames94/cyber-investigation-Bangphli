@@ -659,6 +659,60 @@ const server = http.createServer(async (req, res) => {
                 return sendJson(res, 200, { success: true, request: updated, accessToken });
             }
 
+            // 4c-3. NEWPOLICE MASTER UPDATE SERVER (SERVE VERSION INFO & INSTALLER EXE TO CLIENT PCS)
+            if (pathname === '/api/updates/info' && req.method === 'GET') {
+                try {
+                    const npRoot = path.join(__dirname, '../Newpolice');
+                    const verFile = path.join(npRoot, 'public/version.json');
+                    let verData = { version: '1.0.2', notes: [] };
+                    if (fs.existsSync(verFile)) {
+                        verData = JSON.parse(fs.readFileSync(verFile, 'utf8'));
+                    }
+                    const releaseDir = path.join(npRoot, 'release');
+                    let installerName = null;
+                    if (fs.existsSync(releaseDir)) {
+                        const files = fs.readdirSync(releaseDir).filter(f => f.endsWith('.exe') && f.includes('Setup'));
+                        files.sort();
+                        if (files.length > 0) installerName = files[files.length - 1];
+                    }
+                    return sendJson(res, 200, {
+                        success: true,
+                        ...verData,
+                        installerAvailable: Boolean(installerName),
+                        installerName,
+                        masterDownloadUrl: `/api/updates/download`
+                    });
+                } catch (e) {
+                    return sendJson(res, 500, { success: false, error: e.message });
+                }
+            }
+
+            if (pathname === '/api/updates/download' && req.method === 'GET') {
+                try {
+                    const releaseDir = path.join(__dirname, '../Newpolice/release');
+                    if (!fs.existsSync(releaseDir)) {
+                        return sendJson(res, 404, { success: false, error: 'ไม่พบโฟลเดอร์ release บนเครื่องหลัก' });
+                    }
+                    const files = fs.readdirSync(releaseDir).filter(f => f.endsWith('.exe') && f.includes('Setup'));
+                    files.sort();
+                    if (files.length === 0) {
+                        return sendJson(res, 404, { success: false, error: 'ไม่พบไฟล์ติดตั้ง .exe บนเครื่องหลัก' });
+                    }
+                    const targetFile = files[files.length - 1];
+                    const fullPath = path.join(releaseDir, targetFile);
+                    const stat = fs.statSync(fullPath);
+                    res.writeHead(200, {
+                        'Content-Type': 'application/octet-stream',
+                        'Content-Length': stat.size,
+                        'Content-Disposition': `attachment; filename="${encodeURIComponent(targetFile)}"`
+                    });
+                    fs.createReadStream(fullPath).pipe(res);
+                    return;
+                } catch (e) {
+                    return sendJson(res, 500, { success: false, error: e.message });
+                }
+            }
+
             // 4d. NEWPOLICE: USER SUBMITS ACCESS REQUEST TO CYBER INVEST
             if (pathname === '/api/external/newpolice/request-access' && req.method === 'POST') {
                 const body = await readBody(req);
