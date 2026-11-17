@@ -871,13 +871,16 @@
                     <button type="button" onclick="openAuditLogModal()" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 text-[11px] font-bold transition flex items-center gap-1.5 shadow-sm" title="ดูบันทึกประวัติการเข้าถึงข้อมูลตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)">
                         <span>📋</span> <span>Audit Log (PDPA)</span>
                     </button>
-                    <button type="button" onclick="exportAllPortalData()" title="สำรองข้อมูลทั้งหมดเป็นไฟล์ JSON เพื่อนำไปเปิดในคอมเครื่องอื่น" class="px-2.5 py-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white border border-sky-500/20 text-[11px] font-bold transition flex items-center gap-1 shadow-sm">
+                    <button type="button" onclick="exportAllPortalData()" title="สำรองข้อมูลพอร์ทัลแบบ Full Backup (.json) ครบทุกฐานข้อมูล" class="px-2.5 py-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white border border-sky-500/20 text-[11px] font-bold transition flex items-center gap-1 shadow-sm">
                         <span>💾</span> <span>สำรองข้อมูล</span>
                     </button>
                     <label title="นำเข้าไฟล์สำรองข้อมูล JSON จากคอมเครื่องอื่น" class="px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/20 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer shadow-sm">
                         <span>📥</span> <span>นำเข้า</span>
                         <input type="file" id="importJsonFileInput" accept=".json" class="hidden" onchange="importAllPortalData(event)">
                     </label>
+                    <button type="button" onclick="downloadServerDatabaseBackup()" title="ดาวน์โหลดไฟล์สำรองฐานข้อมูลแม่ข่าย SQLite (.db) สำหรับโหมดเซิร์ฟเวอร์" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/20 text-[11px] font-bold transition flex items-center gap-1 shadow-sm">
+                        <span>🗄️</span> <span>สำรอง .db</span>
+                    </button>
                     <div id="officerHeaderProfile" class="hidden sm:flex items-center gap-2 bg-slate-800/80 border border-slate-700 px-3 py-1 rounded-xl text-[11px]">
                         <span class="text-amber-400">👮</span>
                         <span id="officerHeaderName" class="font-semibold text-white">พ.ต.อ.ไพโรจน์ เพ็ชรพลอย</span>
@@ -2295,6 +2298,61 @@
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- ========================================================================= -->
+                <!-- MODAL: SESSION AUTO-LOCK (ระบบล็อกหน้าจออัตโนมัติเมื่อไม่มีการใช้งาน 15 นาที) -->
+                <!-- ========================================================================= -->
+                <div id="sessionLockModal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-[200] hidden items-center justify-center p-4">
+                    <div class="bg-slate-900 border border-amber-500/40 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-5 text-center text-slate-200 animate-fadeIn">
+                        <div class="w-16 h-16 mx-auto rounded-3xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-3xl shadow-lg shadow-amber-500/10">
+                            🔒
+                        </div>
+                        
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[11px] font-bold mb-2">
+                                <span>🛡️ PDPA Inactive Auto-Lock</span>
+                            </div>
+                            <h2 class="text-lg font-bold text-white">ระบบล็อกหน้าจออัตโนมัติ</h2>
+                            <p class="text-xs text-slate-400 mt-1">
+                                ตรวจพบไม่มีการเคลื่อนไหวเกิน 15 นาที เพื่อความปลอดภัยของข้อมูลลับราชการและมาตรฐาน PDPA ระบบได้ระงับการเข้าถึงชั่วคราว
+                            </p>
+                        </div>
+
+                        <div id="lockScreenOfficerCard" class="bg-slate-950/80 border border-slate-800 p-3.5 rounded-2xl flex items-center gap-3 text-left">
+                            <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xl text-amber-400">
+                                👮
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div id="lockOfficerName" class="text-xs font-bold text-white truncate">ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล</div>
+                                <div id="lockOfficerRole" class="text-[11px] text-slate-400 truncate">รอง สว.(สส.) สภ.บางพลี (Admin)</div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">LOCKED</span>
+                        </div>
+
+                        <form onsubmit="handleSessionUnlock(event)" class="space-y-3 text-left">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 mb-1">กรอกรหัสผ่านเพื่อปลดล็อก</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-3 text-slate-500">🔑</span>
+                                    <input type="password" id="lockScreenPasswordInput" required placeholder="กรอกรหัสผ่านเพื่อปฏิบัติงานต่อ" class="w-full pl-9 pr-10 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
+                                    <button type="button" onclick="toggleLockPwdVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white" title="แสดง/ซ่อนรหัสผ่าน">
+                                        <span id="lockPwdEyeIcon">👁️</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="lockScreenErrorMsg" class="hidden p-2.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs text-center font-semibold"></div>
+
+                            <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2">
+                                <span>🔓</span> <span>ปลดล็อกหน้าจอและปฏิบัติงานต่อ</span>
+                            </button>
+
+                            <button type="button" onclick="handleOfficerLogout()" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-rose-400 border border-slate-700 font-semibold text-xs transition flex items-center justify-center gap-1.5">
+                                <span>🚪</span> <span>ออกจากระบบเพื่อเปลี่ยนผู้ใช้งาน</span>
+                            </button>
+                        </form>
                     </div>
                 </div>
 
@@ -4693,8 +4751,8 @@
 
         // Authentication & Session Management
         const validUsers = [
-            { username: 'thanakrit', password: 'password123', name: 'ร.ต.ต.ธนกฤต ไทยกมล', role: 'Admin สูงสุด (สืบสวน)', isAdmin: true },
-            { username: 'investigator', password: 'password123', name: 'ร.ต.อ.ธนากร พิศุจน์', role: 'พนักงานสอบสวน', isAdmin: false }
+            { username: 'thanakrit', password: 'Police@2569', name: 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล', role: 'Admin สูงสุด (สืบสวน)', isAdmin: true },
+            { username: 'investigator', password: 'Police@2569', name: 'ร.ต.อ.ธนากร พิศุจน์', role: 'พนักงานสอบสวน', isAdmin: false }
         ];
 
         let currentLoggedInUser = validUsers[0];
@@ -6040,21 +6098,43 @@ ${currentDocPrintHtml}
         }
 
         // =========================================================================
-        // BACKUP & RESTORE DATA (ส่งออก/นำเข้าข้อมูลเพื่อย้ายไปทำในคอมเครื่องอื่น)
+        // BACKUP & RESTORE DATA (ระบบสำรองและกู้คืนฐานข้อมูลพอร์ทัลแบบครบวงจร - Full Backup)
         // =========================================================================
         function exportAllPortalData() {
+            let arrestV2 = [];
+            try {
+                arrestV2 = JSON.parse(localStorage.getItem('cyber_arrest_records_v2') || '[]');
+            } catch (_) {}
+            let usersStore = [];
+            try {
+                usersStore = JSON.parse(localStorage.getItem('cyber_police_users_store_v2') || '[]');
+            } catch (_) {}
+            let auditLogsStore = [];
+            try {
+                auditLogsStore = JSON.parse(localStorage.getItem('cyber_audit_logs_store_v2') || '[]');
+            } catch (_) {}
+            let newpoliceReqs = [];
+            try {
+                newpoliceReqs = JSON.parse(localStorage.getItem('cyber_newpolice_requests_v2') || '[]');
+            } catch (_) {}
+
             const data = {
                 app: 'CyberInvestigationPortal_BangPhli',
-                version: '2.0',
+                version: '2.5-pdpa-secure',
                 exportedAt: new Date().toISOString(),
                 exportedDateThai: typeof getTodayThaiFormatted === 'function' ? getTodayThaiFormatted() : '',
+                exportedBy: currentAuthUser ? `${currentAuthUser.rank_name} (${currentAuthUser.badge_no})` : 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล (Admin)',
+                stationCode: localStorage.getItem('cyber_zk_station_code') || (typeof DEFAULT_STATION_CODE !== 'undefined' ? DEFAULT_STATION_CODE : 'POLICE-STN-BANGPHLI-001'),
                 cases: (typeof mockCases !== 'undefined' ? mockCases : []),
                 warrants: (typeof mockWarrants !== 'undefined' ? mockWarrants : []),
                 dispatchDocs: (typeof mockDispatchDocs !== 'undefined' ? mockDispatchDocs : []),
                 receiptDocs: (typeof mockReceiptDocs !== 'undefined' ? mockReceiptDocs : []),
                 inquiry: (typeof mockInquiry !== 'undefined' ? mockInquiry : []),
-                arrestRecords: (typeof mockArrestRecords !== 'undefined' ? mockArrestRecords : []),
+                arrestRecordsV2: arrestV2.length ? arrestV2 : (typeof mockArrestRecords !== 'undefined' ? mockArrestRecords : []),
                 policeOfficersDB: (typeof policeOfficersDB !== 'undefined' ? policeOfficersDB : []),
+                usersStore: usersStore,
+                auditLogs: auditLogsStore,
+                newpoliceRequests: newpoliceReqs,
                 investigators: (typeof investigatorsList !== 'undefined' ? investigatorsList : []),
                 detectives: (typeof detectivesList !== 'undefined' ? detectivesList : [])
             };
@@ -6063,16 +6143,20 @@ ${currentDocPrintHtml}
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             const now = new Date();
-            const dStr = `${now.getFullYear() + 543}_${String(now.getMonth() + 1).padStart(2, '0')}_${String(now.getDate()).padStart(2, '0')}`;
+            const dStr = `${now.getFullYear() + 543}_${String(now.getMonth() + 1).padStart(2, '0')}_${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
             a.href = url;
-            a.download = `cyber_portal_backup_สภ_บางพลี_${dStr}.json`;
+            a.download = `cyber_portal_full_backup_สภ_บางพลี_${dStr}.json`;
             document.body.appendChild(a);
             a.click();
             setTimeout(() => {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }, 300);
-            toast('💾 สำรองข้อมูลทั้งหมดเป็นไฟล์ JSON เรียบร้อยแล้ว (สามารถนำไฟล์นี้ไปเปิดในคอมเครื่องอื่นได้ทันที)');
+
+            if (currentAuthUser && typeof appendLocalAuditLog === 'function') {
+                appendLocalAuditLog(currentAuthUser, 'EXPORT_FULL_BACKUP', 'SYSTEM', 'ALL', 'สำรองข้อมูลพอร์ทัลแบบ Full Backup (.json) ครบทุกฐานข้อมูล');
+            }
+            toast('💾 สำรองข้อมูลแบบสมบูรณ์ (Full Backup) เรียบร้อยแล้ว (รวมคดี, บันทึกจับกุม v2, ผู้ใช้งาน, และ Audit Log)');
         }
 
         function importAllPortalData(event) {
@@ -6082,7 +6166,7 @@ ${currentDocPrintHtml}
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (!data) throw new Error('Invalid JSON');
+                    if (!data || !data.app) throw new Error('รูปแบบไฟล์สำรองไม่ถูกต้อง');
                     
                     if (Array.isArray(data.cases)) {
                         mockCases = data.cases;
@@ -6113,14 +6197,26 @@ ${currentDocPrintHtml}
                         window.detectivesList = data.detectives;
                     }
                     
-                    if (Array.isArray(data.arrestRecords)) {
+                    if (Array.isArray(data.arrestRecordsV2)) {
+                        mockArrestRecords = data.arrestRecordsV2;
+                        try { localStorage.setItem('cyber_arrest_records_v2', JSON.stringify(data.arrestRecordsV2)); } catch(err) {}
+                    } else if (Array.isArray(data.arrestRecords)) {
                         mockArrestRecords = data.arrestRecords;
-                        try { localStorage.setItem('cyber_arrest_records_v2', JSON.stringify(mockArrestRecords)); } catch(err) {}
+                        try { localStorage.setItem('cyber_arrest_records_v2', JSON.stringify(data.arrestRecords)); } catch(err) {}
                     }
                     if (Array.isArray(data.policeOfficersDB)) {
                         policeOfficersDB = data.policeOfficersDB;
                         try { localStorage.setItem('cyber_police_officers_db', JSON.stringify(policeOfficersDB)); } catch(err) {}
-                        syncOfficersToLegacyArrays();
+                        if (typeof syncOfficersToLegacyArrays === 'function') syncOfficersToLegacyArrays();
+                    }
+                    if (Array.isArray(data.usersStore)) {
+                        try { localStorage.setItem('cyber_police_users_store_v2', JSON.stringify(data.usersStore)); } catch(err) {}
+                    }
+                    if (Array.isArray(data.auditLogs)) {
+                        try { localStorage.setItem('cyber_audit_logs_store_v2', JSON.stringify(data.auditLogs)); } catch(err) {}
+                    }
+                    if (Array.isArray(data.newpoliceRequests)) {
+                        try { localStorage.setItem('cyber_newpolice_requests_v2', JSON.stringify(data.newpoliceRequests)); } catch(err) {}
                     }
                     
                     // Re-render all views
@@ -6129,17 +6225,52 @@ ${currentDocPrintHtml}
                     if (typeof renderInquiry === 'function') renderInquiry();
                     if (typeof renderRegistry === 'function') renderRegistry();
                     if (typeof renderOfficersDirectory === 'function') renderOfficersDirectory();
+                    if (typeof renderArrestRecordsTableV2 === 'function') renderArrestRecordsTableV2();
                     if (typeof renderArrestModule === 'function') renderArrestModule();
                     if (typeof genReport === 'function') genReport();
+                    if (typeof loadAuditLogsFromApi === 'function') loadAuditLogsFromApi();
                     
-                    toast('✅ นำเข้าข้อมูลทั้งหมดจากคอมเครื่องอื่นเรียบร้อยแล้ว!', 'success');
+                    if (currentAuthUser && typeof appendLocalAuditLog === 'function') {
+                        appendLocalAuditLog(currentAuthUser, 'RESTORE_FULL_BACKUP', 'SYSTEM', 'ALL', `กู้คืนข้อมูลพอร์ทัลจากไฟล์สำรองสำเร็จ (${data.exportedDateThai || data.exportedAt || 'ไม่ระบุวัน'})`);
+                    }
+                    toast('✅ กู้คืนข้อมูลพอร์ทัลสำเร็จครบทุกฐานข้อมูล!', 'success');
                 } catch (err) {
                     console.error(err);
-                    toast('❌ ไฟล์สำรองข้อมูลไม่ถูกต้อง หรือเสียหาย', 'error');
+                    toast('❌ ไฟล์สำรองข้อมูลไม่ถูกต้อง หรือเสียหาย: ' + err.message, 'error');
                 }
                 event.target.value = '';
             };
             reader.readAsText(file);
+        }
+
+        async function downloadServerDatabaseBackup() {
+            try {
+                const token = getAuthToken();
+                const res = await fetch('/api/admin/backup-db', {
+                    headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    toast('⚠️ ไม่สามารถดาวน์โหลดไฟล์ฐานข้อมูลแม่ข่ายได้ (สถานะ ' + res.status + '): ' + (err.error || 'ต้องล็อกอินด้วยสิทธิ์ Admin'));
+                    return;
+                }
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const now = new Date();
+                const stamp = `${now.getFullYear() + 543}_${String(now.getMonth() + 1).padStart(2, '0')}_${String(now.getDate()).padStart(2, '0')}`;
+                a.href = url;
+                a.download = `bangphli_secure_backup_${stamp}.db`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 300);
+                toast('💾 ดาวน์โหลดฐานข้อมูลแม่ข่าย SQLite (.db) เรียบร้อยแล้ว');
+            } catch (e) {
+                toast('⚠️ ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์แม่ข่ายได้: ' + e.message);
+            }
         }
 
         // =========================================================================
@@ -10062,6 +10193,7 @@ ${currentDocPrintHtml}
                     updateAuthUI();
                     await syncArrestRecordsFromSecureBackend();
                     checkBackendStatus();
+                    resetSessionIdleTimer();
                 } else {
                     setAuthToken('');
                     openModal('policeLoginModal');
@@ -10074,6 +10206,7 @@ ${currentDocPrintHtml}
                         currentAuthUser = savedUser;
                         updateAuthUI();
                         checkBackendStatus();
+                        resetSessionIdleTimer();
                         return;
                     }
                 } catch (_) {}
@@ -10141,6 +10274,7 @@ ${currentDocPrintHtml}
                     updateAuthUI();
                     await syncArrestRecordsFromSecureBackend();
                     checkBackendStatus();
+                    resetSessionIdleTimer();
                     toast(`🔐 ยินดีต้อนรับ ${data.user.rank_name} เข้าสู่ระบบ สภ.บางพลี`);
                     return;
                 }
@@ -10154,8 +10288,9 @@ ${currentDocPrintHtml}
                 u.status !== 'suspended'
             );
 
-            const validPasses = ['Police@2569', 'password123', 'admin1234', '123456', foundUser?.pass || 'Police@2569', foundUser?.username || ''];
-            if (foundUser && validPasses.includes(password)) {
+            // ตรวจสอบรหัสผ่านที่แท้จริงของผู้ใช้งาน (ตัด Dev Bypass Passwords ออกทั้งหมด เพื่อความปลอดภัยตามมาตรฐาน PDPA)
+            const expectedPass = foundUser?.pass || 'Police@2569';
+            if (foundUser && password === expectedPass) {
                 const zkToken = 'zk_session_' + Date.now() + '_' + foundUser.badge_no;
                 setAuthToken(zkToken, foundUser);
                 currentAuthUser = foundUser;
@@ -10166,6 +10301,7 @@ ${currentDocPrintHtml}
                 closeModal('policeLoginModal');
                 updateAuthUI();
                 checkBackendStatus();
+                resetSessionIdleTimer();
                 toast(`🔐 ยินดีต้อนรับ ${foundUser.rank_name} เข้าสู่ระบบ สภ.บางพลี`);
             } else {
                 appendLocalAuditLog({ badge_no: username, rank_name: username, role: 'guest' }, 'LOGIN_FAILED', 'AUTH', username, 'ระบุชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
@@ -10198,6 +10334,10 @@ ${currentDocPrintHtml}
         }
 
         async function handleOfficerLogout() {
+            isSessionLocked = false;
+            if (sessionIdleTimer) clearTimeout(sessionIdleTimer);
+            closeModal('sessionLockModal');
+
             const token = getAuthToken();
             if (currentAuthUser) {
                 appendLocalAuditLog(currentAuthUser, 'LOGOUT', 'AUTH', currentAuthUser.badge_no, 'ออกจากระบบ');
@@ -10213,6 +10353,114 @@ ${currentDocPrintHtml}
             toast('🚪 ออกจากระบบเรียบร้อยแล้ว');
             openModal('policeLoginModal');
         }
+
+        // =========================================================================
+        // AUTO-LOCK SESSION TIMEOUT (15 MINUTES INACTIVITY - PDPA SECURITY)
+        // =========================================================================
+        const SESSION_IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 นาที
+        let sessionIdleTimer = null;
+        let isSessionLocked = false;
+
+        function resetSessionIdleTimer() {
+            if (isSessionLocked) return;
+            if (sessionIdleTimer) clearTimeout(sessionIdleTimer);
+            if (currentAuthUser || getAuthToken()) {
+                sessionIdleTimer = setTimeout(() => {
+                    lockScreenSession();
+                }, SESSION_IDLE_TIMEOUT_MS);
+            }
+        }
+
+        function lockScreenSession() {
+            if (isSessionLocked) return;
+            const token = getAuthToken();
+            if (!token && !currentAuthUser) return;
+
+            isSessionLocked = true;
+            if (sessionIdleTimer) clearTimeout(sessionIdleTimer);
+
+            // ล้าง Master Key ถอดรหัสชั่วคราวในหน่วยความจำเพื่อความปลอดภัย
+            if (typeof cachedStationMasterCryptoKey !== 'undefined') cachedStationMasterCryptoKey = null;
+
+            const nameEl = document.getElementById('lockOfficerName');
+            const roleEl = document.getElementById('lockOfficerRole');
+            const pwdInput = document.getElementById('lockScreenPasswordInput');
+            const errEl = document.getElementById('lockScreenErrorMsg');
+
+            if (nameEl) nameEl.textContent = currentAuthUser?.rank_name || 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล';
+            if (roleEl) roleEl.textContent = currentAuthUser?.position || 'รอง สว.(สส.) สภ.บางพลี (Admin)';
+            if (pwdInput) pwdInput.value = '';
+            if (errEl) { errEl.textContent = ''; errEl.classList.add('hidden'); }
+
+            openModal('sessionLockModal');
+            if (pwdInput) setTimeout(() => pwdInput.focus(), 150);
+
+            if (currentAuthUser && typeof appendLocalAuditLog === 'function') {
+                appendLocalAuditLog(currentAuthUser, 'SESSION_AUTOLOCK', 'SECURITY', currentAuthUser.badge_no, 'ระบบล็อกหน้าจออัตโนมัติเนื่องจากไม่มีการใช้งานเกิน 15 นาที (PDPA Auto-Lock)');
+                if (typeof syncAuditLogToSupabaseZeroKnowledge === 'function') {
+                    syncAuditLogToSupabaseZeroKnowledge('SESSION_AUTOLOCK', 'SECURITY', currentAuthUser.badge_no, 'Auto-Lock เซสชันเนื่องจากไม่มีการใช้งานเกิน 15 นาที');
+                }
+            }
+        }
+
+        function toggleLockPwdVisibility() {
+            const input = document.getElementById('lockScreenPasswordInput');
+            const icon = document.getElementById('lockPwdEyeIcon');
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                icon.textContent = '👁️';
+            }
+        }
+
+        async function handleSessionUnlock(e) {
+            if (e) e.preventDefault();
+            const input = document.getElementById('lockScreenPasswordInput');
+            const errEl = document.getElementById('lockScreenErrorMsg');
+            const password = (input ? input.value : '').trim();
+
+            if (!password) {
+                if (errEl) {
+                    errEl.textContent = 'กรุณากรอกรหัสผ่าน';
+                    errEl.classList.remove('hidden');
+                }
+                return;
+            }
+
+            // ตรวจสอบกับรหัสผ่านจริงของเจ้าหน้าที่ปัจจุบัน (หรือ Police@2569 สำหรับ Admin / Initial Password)
+            const expected = currentAuthUser?.pass || 'Police@2569';
+            if (password === expected) {
+                isSessionLocked = false;
+                closeModal('sessionLockModal');
+                if (input) input.value = '';
+                if (errEl) errEl.classList.add('hidden');
+
+                resetSessionIdleTimer();
+                if (currentAuthUser && typeof appendLocalAuditLog === 'function') {
+                    appendLocalAuditLog(currentAuthUser, 'SESSION_UNLOCK', 'SECURITY', currentAuthUser.badge_no, 'ปลดล็อกหน้าจอเซสชันสำเร็จ');
+                    if (typeof syncAuditLogToSupabaseZeroKnowledge === 'function') {
+                        syncAuditLogToSupabaseZeroKnowledge('SESSION_UNLOCK', 'SECURITY', currentAuthUser.badge_no, 'ปลดล็อกหน้าจอสำเร็จ');
+                    }
+                }
+                toast('🔓 ปลดล็อกหน้าจอสำเร็จ ยินดีต้อนรับกลับสู่ระบบ');
+            } else {
+                if (errEl) {
+                    errEl.textContent = '❌ รหัสผ่านไม่ถูกต้อง กรุณากรอกรหัสผ่านของคุณอีกครั้ง';
+                    errEl.classList.remove('hidden');
+                }
+                if (currentAuthUser && typeof appendLocalAuditLog === 'function') {
+                    appendLocalAuditLog(currentAuthUser, 'UNLOCK_FAILED', 'SECURITY', currentAuthUser.badge_no, 'พยายามปลดล็อกหน้าจอด้วยรหัสผ่านไม่ถูกต้อง');
+                }
+            }
+        }
+
+        // ติดตั้งตัวตรวจจับการเคลื่อนไหวเพื่อรีเซ็ต Inactive Timer
+        ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+            window.addEventListener(evt, resetSessionIdleTimer, { passive: true });
+        });
 
         async function syncArrestRecordsFromSecureBackend() {
             const token = getAuthToken();
