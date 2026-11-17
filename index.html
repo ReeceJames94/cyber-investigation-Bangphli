@@ -1486,15 +1486,15 @@
                             </button>
                         </div>
 
-                        <!-- Row 1: ข้อมูลการทำบันทึก (บันทึกที่ & วันเวลาที่บันทึก) -->
+                        <!-- Row 1: ข้อมูลการทำบันทึก (บันทึกที่ & วันเวลาที่บันทึก & เลขทะเบียนมุมขวาบน) -->
                         <div class="border border-zinc-700/80 rounded-xl p-4 space-y-3 bg-[#18181c]/60 text-xs">
                             <div class="font-bold text-zinc-200 flex items-center gap-2">
-                                <span>📝</span> <span>ข้อมูลการทำบันทึก (บันทึกที่ & วันเวลาที่บันทึก)</span>
+                                <span>📝</span> <span>ข้อมูลการทำบันทึก (สถานที่บันทึก, วันเวลา และเลขทะเบียน)</span>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-zinc-300 font-semibold mb-1.5">บันทึกที่</label>
-                                    <input type="text" id="arrRecordLoc" value="สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                                    <label class="block text-zinc-300 font-semibold mb-1.5">สถานที่บันทึก</label>
+                                    <input type="text" id="arrRecordLoc" value="สถานีตำรวจภูธรบางพลี ตำบลบางพลีใหญ่ อำเภอบางพลี จังหวัดสมุทรปราการ" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
                                 </div>
                                 <div>
                                     <div class="flex justify-between items-center mb-1.5">
@@ -1511,6 +1511,24 @@
                                 <div>
                                     <label class="block text-zinc-300 font-semibold mb-1.5">เวลาที่บันทึก</label>
                                     <input type="time" id="arrRecordTime" value="23:43" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                                <div>
+                                    <label class="block text-zinc-400 font-semibold mb-1">ปจว. ข้อ (มุมขวาบน)</label>
+                                    <input type="text" id="arrDailyLogNo" placeholder="เว้นว่าง = พิมพ์เส้นจุด" class="w-full p-2 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-zinc-400 font-semibold mb-1">เวลา (ปจว.)</label>
+                                    <input type="text" id="arrDailyLogTime" placeholder="เช่น 20.00" class="w-full p-2 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-zinc-400 font-semibold mb-1">คดีอาญาที่</label>
+                                    <input type="text" id="arrCriminalCaseNo" placeholder="เช่น .../2569" class="w-full p-2 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-zinc-400 font-semibold mb-1">บัญชีของกลางเลขที่</label>
+                                    <input type="text" id="arrEvidenceBookNo" placeholder="เช่น .../2569" class="w-full p-2 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500">
                                 </div>
                             </div>
                         </div>
@@ -1634,13 +1652,17 @@
                         <!-- Section: ภาพถ่ายประกอบการจับกุม (Screenshot 2) -->
                         <div class="border border-zinc-700/80 rounded-xl p-4 space-y-3 bg-[#18181c]/60 text-xs">
                             <div>
-                                <div class="font-bold text-zinc-200">ภาพถ่ายประกอบการจับกุม</div>
-                                <p class="text-[11px] text-zinc-400 mt-0.5">เพิ่มได้กลุ่มละ 4 รูป (สูงสุด 12) — แต่ละกลุ่มจะขึ้นเป็น 1 หน้าในเอกสารพิมพ์ (มีลายเซ็นผู้จับกุม) วางก่อนแบบแจ้ง ม.22</p>
+                                <div class="font-bold text-zinc-200">ภาพถ่ายประกอบการจับกุม (แสดงในหน้าที่ 4 ของบันทึกจับกุม)</div>
+                                <p class="text-[11px] text-zinc-400 mt-0.5">เพิ่มได้สูงสุด 12 รูป — ระบบจะนำภาพถ่ายไปใส่ในกรอบ "{ภาพประกอบการจับกุม}" ในเอกสารหน้า 4 พร้อมคำอธิบายและลายเซ็น</p>
                             </div>
                             <div id="arrGeneralPhotosGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
                             <button type="button" id="btnAddMoreArrestPhotos" onclick="addMoreArrestPhotoGroup()" class="w-full py-2.5 border border-dashed border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-zinc-200 rounded-xl text-xs font-semibold transition">
                                 + เพิ่มอีก 4 รูป (อีก 1 หน้า)
                             </button>
+                            <div class="pt-1">
+                                <label class="block text-zinc-400 font-semibold mb-1">อธิบายภาพประกอบการจับกุม (หน้า 4)</label>
+                                <input type="text" id="arrPhotoCaption" placeholder="เว้นว่างเพื่อให้ระบบร่างอัตโนมัติ เช่น เจ้าหน้าที่ตำรวจชุดจับกุมแสดงหมายจับของศาลจังหวัด... ให้ผู้ถูกจับได้ดู..." class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500">
+                            </div>
                         </div>
 
                         <!-- Section: รูปมาตรา 22 (Screenshot 2) -->
@@ -1773,15 +1795,27 @@
                                 <div class="flex flex-wrap items-center gap-4 text-xs text-zinc-200">
                                     <label class="inline-flex items-center gap-1.5 cursor-pointer">
                                         <input type="radio" name="arrBasisRadio" value="flagrante" onchange="handleArrestBasisChange()" class="text-blue-500">
-                                        <span>ซึ่งหน้า / จุดตรวจ / ขณะระวังเหตุ</span>
+                                        <span>ความผิดซึ่งหน้า (ม.80)</span>
                                     </label>
                                     <label class="inline-flex items-center gap-1.5 cursor-pointer">
                                         <input type="radio" name="arrBasisRadio" value="warrant" checked onchange="handleArrestBasisChange()" class="text-blue-500">
                                         <span>มีหมายจับ</span>
                                     </label>
                                     <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                                        <input type="radio" name="arrBasisRadio" value="court_order" onchange="handleArrestBasisChange()" class="text-blue-500">
+                                        <span>มีคำสั่งศาล</span>
+                                    </label>
+                                    <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                                        <input type="radio" name="arrBasisRadio" value="suspicious" onchange="handleArrestBasisChange()" class="text-blue-500">
+                                        <span>มีพฤติการณ์อันควรสงสัยฯ</span>
+                                    </label>
+                                    <label class="inline-flex items-center gap-1.5 cursor-pointer">
                                         <input type="radio" name="arrBasisRadio" value="urgent78" onchange="handleArrestBasisChange()" class="text-blue-500">
-                                        <span>พบคนร้ายทำผิดมาแล้ว ยังไม่ออกหมาย (เร่งด่วน ม.78(3))</span>
+                                        <span>จำเป็นเร่งด่วน (ม.66(2) / ม.78(3))</span>
+                                    </label>
+                                    <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                                        <input type="radio" name="arrBasisRadio" value="bail_escape" onchange="handleArrestBasisChange()" class="text-blue-500">
+                                        <span>หนีปล่อยชั่วคราว (ม.117)</span>
                                     </label>
                                     <label class="inline-flex items-center gap-1.5 cursor-pointer">
                                         <input type="radio" name="arrBasisRadio" value="surrender" onchange="handleArrestBasisChange()" class="text-blue-500">
@@ -1820,6 +1854,87 @@
                             </div>
 
                             <textarea id="arrNarrativeText" rows="10" placeholder="พฤติการณ์โดยย่อ — กด ✍️ ร่างตามฐานการจับ หรือ 🤖 ให้ AI สกัดผู้ต้องหา/สถานที่/วันที่" class="w-full p-3.5 bg-[#242429] border border-zinc-700 rounded-xl text-white placeholder-zinc-500 leading-relaxed focus:outline-none focus:border-emerald-500"></textarea>
+                        </div>
+
+                        <!-- Section: ข้อมูลเฉพาะสำหรับแบบแจ้ง ม.22 (ภาพ 5-6) และ ปท.๑ ม.23 (ภาพ 7-8) -->
+                        <div class="border border-zinc-700/80 rounded-xl p-4 space-y-3.5 bg-[#18181c]/60 text-xs">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div class="font-bold text-zinc-200 flex items-center gap-2">
+                                    <span>⚖️</span> <span>ข้อมูลแบบแจ้ง ม.22 (ภาพ 5-6) และ ปท.๑ ม.23 (ภาพ 7-8)</span>
+                                </div>
+                                <span class="text-[10px] text-zinc-400">ปรับแต่งรายละเอียดที่แสดงในแบบฟอร์มทั้ง 8 หน้าอัตโนมัติ</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-zinc-300 font-semibold mb-1.5">การดำเนินการตามสิทธิข้อ 4 (หน้า 1)</label>
+                                    <select id="arrRight4Action" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white">
+                                        <option value="none">— เว้นช่อง (   ) ไว้กรอกมือ —</option>
+                                        <option value="no">( / ) ไม่ขอดำเนินการตามข้อ 4</option>
+                                        <option value="yes">( / ) ขอดำเนินการตามข้อ 4 และได้ดำเนินการเรียบร้อย</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-zinc-300 font-semibold mb-1.5">เหตุสุดวิสัย ม.22 วรรคหนึ่ง (หน้า 2, ม.22 ข้อ ๗, ปท.๑ ข้อ ๘)</label>
+                                    <input type="text" id="arrM22ForceMajeure" placeholder="เว้นว่าง = ไม่มี (-)" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
+                                </div>
+                                <div>
+                                    <label class="block text-zinc-300 font-semibold mb-1.5">หมายเลขโทรศัพท์ผู้รับผิดชอบ ม.22 / ปท.๑</label>
+                                    <input type="text" id="arrOfficerPhone" value="02-3373377" placeholder="เช่น 080-6645563" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500 font-mono">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-zinc-300 font-semibold mb-1.5">สถานที่ควบคุมตัว (ม.22 ข้อ ๔) / ปลายทางรับตัว (ปท.๑ ข้อ ๒)</label>
+                                    <input type="text" id="arrDetentionPlace" value="สถานีตำรวจภูธรบางพลี" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white">
+                                </div>
+                                <div>
+                                    <label class="block text-zinc-300 font-semibold mb-1.5">ที่อยู่สถานที่ปลายทางรับตัว (ปท.๑ ข้อ ๒)</label>
+                                    <input type="text" id="arrDetentionAddress" value="17 หมู่ที่ 8 ถนน สุขาภิบาล 2 ตำบล บางพลีใหญ่ อำเภอ บางพลี สมุทรปราการ 10540" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-zinc-300 font-semibold mb-1.5">ผู้ออกคำสั่งควบคุมตัว (ปท.๑ ข้อ ๔)</label>
+                                    <input type="text" id="arrOrderIssuerName" placeholder="เว้นว่าง = ดึงผู้บังคับบัญชา / หัวหน้าชุด" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
+                                </div>
+                                <div>
+                                    <label class="block text-zinc-300 font-semibold mb-1.5">ตำแหน่งผู้ออกคำสั่งฯ</label>
+                                    <input type="text" id="arrOrderIssuerPos" placeholder="เช่น ผกก.สภ.บางพลี หรือ สว.สส.สภ.บางพลี" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
+                                </div>
+                                <div>
+                                    <label class="block text-zinc-300 font-semibold mb-1.5">สภาพร่างกายก่อนถูกควบคุมตัว (ปท.๑ ข้อ ๖)</label>
+                                    <input type="text" id="arrConditionBefore" value="ปกติทั่วไป" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-zinc-300 font-semibold mb-1.5">พฤติการณ์โดยย่อ (แสดงในแบบ ม.22 ข้อ ๓)</label>
+                                    <textarea id="arrM22BriefNarrative" rows="2" placeholder="เว้นว่างเพื่อให้ระบบสรุปจากข้อหาและพฤติการณ์หลักให้อัตโนมัติ (แบบสั้น 2-3 บรรทัดตามภาพ 5)" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500"></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-zinc-300 font-semibold mb-1.5">บันทึกอื่น ๆ เพิ่มเติม (ปท.๑ หน้าที่ ๒ ข้อ ๙)</label>
+                                    <textarea id="arrM23ExtraNote" rows="2" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white">เจ้าหน้าที่ตำรวจได้มีการบันทึกวิดีโออย่างต่อเนื่องจนถึงส่งตัว/รับตัวให้กับพนักงานสอบสวนโดยวิดีโอดังกล่าวมีการอัพโหลดลง NAS ของหน่วยงาน ท่านสามารถขอวิดีโอดังกล่าวได้</textarea>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-zinc-400 font-semibold mb-1">พยานใน ปท.๑ (ถ้ามี)</label>
+                                    <input type="text" id="arrWitnessName" placeholder="เว้นว่าง หรือใส่ยศ-ชื่อ-สกุลพยาน" class="w-full p-2 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
+                                </div>
+                                <div>
+                                    <label class="block text-zinc-400 font-semibold mb-1">ผู้มารับตัว / ส่งมอบตัว (ปท.๑ ข้อ ๕)</label>
+                                    <input type="text" id="arrReceiverInfo" placeholder="เว้นว่าง = เส้นประให้กรอกหน้างาน" class="w-full p-2 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
+                                </div>
+                                <div>
+                                    <label class="block text-zinc-400 font-semibold mb-1">ข้อมูลอื่น ๆ ที่คณะกรรมการกำหนด (ปท.๑ ข้อ ๗)</label>
+                                    <input type="text" id="arrM23CommitteeNote" placeholder="เว้นว่าง = เส้นประ" class="w-full p-2 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Bottom Action Buttons matching Screenshot 4 -->
@@ -6230,6 +6345,7 @@ ${currentDocPrintHtml}
                             amp: 'บางพลี',
                             tam: 'บางพลีใหญ่',
                             zip: '10540',
+                            scarMark: '-',
                             charges: ['ร่วมกันฉ้อโกงประชาชน และโดยทุจริต หรือโดยหลอกลวง นำเข้าสู่ระบบคอมพิวเตอร์ซึ่งข้อมูลคอมพิวเตอร์ที่บิดเบือนหรือปลอม หรือเปิดหรือยินยอมให้บุคคลอื่นใช้บัญชีเงินฝาก (บัญชีม้า)'],
                             plea: 'รับสารภาพตลอดข้อกล่าวหา'
                         }
@@ -6290,6 +6406,7 @@ ${currentDocPrintHtml}
                 amp: '',
                 tam: '',
                 zip: '',
+                scarMark: '',
                 charges: mainChg ? [mainChg] : [],
                 plea: ''
             };
@@ -6306,11 +6423,21 @@ ${currentDocPrintHtml}
             document.getElementById('arrEditId').value = '';
             document.getElementById('arrFormHeaderTitle').textContent = 'บันทึกจับกุมใหม่';
             if (document.getElementById('arrRecordLoc')) {
-                document.getElementById('arrRecordLoc').value = 'สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑';
+                document.getElementById('arrRecordLoc').value = 'สถานีตำรวจภูธรบางพลี ตำบลบางพลีใหญ่ อำเภอบางพลี จังหวัดสมุทรปราการ';
             }
             if (document.getElementById('arrRecordTime')) {
                 document.getElementById('arrRecordTime').value = `${hh}:${min}`;
             }
+            ['arrDailyLogNo', 'arrDailyLogTime', 'arrCriminalCaseNo', 'arrEvidenceBookNo', 'arrPhotoCaption', 'arrM22ForceMajeure', 'arrOrderIssuerName', 'arrOrderIssuerPos', 'arrM22BriefNarrative', 'arrWitnessName', 'arrReceiverInfo', 'arrM23CommitteeNote'].forEach(fid => {
+                const el = document.getElementById(fid);
+                if (el) el.value = '';
+            });
+            if (document.getElementById('arrRight4Action')) document.getElementById('arrRight4Action').value = 'none';
+            if (document.getElementById('arrOfficerPhone')) document.getElementById('arrOfficerPhone').value = '02-3373377';
+            if (document.getElementById('arrDetentionPlace')) document.getElementById('arrDetentionPlace').value = 'สถานีตำรวจภูธรบางพลี';
+            if (document.getElementById('arrDetentionAddress')) document.getElementById('arrDetentionAddress').value = '17 หมู่ที่ 8 ถนน สุขาภิบาล 2 ตำบล บางพลีใหญ่ อำเภอ บางพลี สมุทรปราการ 10540';
+            if (document.getElementById('arrConditionBefore')) document.getElementById('arrConditionBefore').value = 'ปกติทั่วไป';
+            if (document.getElementById('arrM23ExtraNote')) document.getElementById('arrM23ExtraNote').value = 'เจ้าหน้าที่ตำรวจได้มีการบันทึกวิดีโออย่างต่อเนื่องจนถึงส่งตัว/รับตัวให้กับพนักงานสอบสวนโดยวิดีโอดังกล่าวมีการอัพโหลดลง NAS ของหน่วยงาน ท่านสามารถขอวิดีโอดังกล่าวได้';
             document.getElementById('arrType').value = 'ผู้ใหญ่';
             initThaiDatePicker();
             setRecordDateTodayThai();
@@ -7233,10 +7360,15 @@ ${currentDocPrintHtml}
                     <input type="text" value="${s.address || ''}" oninput="updateSuspectField(${idx}, 'address', this.value, false)" placeholder="ที่อยู่ (บ้านเลขที่ หมู่ ซอย ถนน)" class="w-full p-2.5 bg-[#2a2a32] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
 
                     <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                        <input type="text" list="dlThaiProvinces" value="${s.prov || ''}" oninput="updateSuspectField(${idx}, 'prov', this.value, false)" placeholder="จังหวัด" class="w-full p-2.5 bg-[#2a2a32] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
-                        <input type="text" list="dlBangphliAmphoes" value="${s.amp || ''}" oninput="updateSuspectField(${idx}, 'amp', this.value, false)" placeholder="อำเภอ/เขต" class="w-full p-2.5 bg-[#2a2a32] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
-                        <input type="text" list="dlBangphliTambons" value="${s.tam || ''}" oninput="updateSuspectField(${idx}, 'tam', this.value, false)" placeholder="ตำบล/แขวง" class="w-full p-2.5 bg-[#2a2a32] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
-                        <input type="text" value="${s.zip || ''}" oninput="updateSuspectField(${idx}, 'zip', this.value, false)" placeholder="รหัสไปรษณีย์" class="w-full p-2.5 bg-[#2a2a32] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
+                        <input type="text" list="dlThaiProvinces" value="${s.prov || ''}" oninput="updateSuspectField(${idx}, 'prov', this.value, false)" placeholder="จังหวัด" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
+                        <input type="text" list="dlBangphliAmphoes" value="${s.amp || ''}" oninput="updateSuspectField(${idx}, 'amp', this.value, false)" placeholder="อำเภอ/เขต" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
+                        <input type="text" list="dlBangphliTambons" value="${s.tam || ''}" oninput="updateSuspectField(${idx}, 'tam', this.value, false)" placeholder="ตำบล/แขวง" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
+                        <input type="text" value="${s.zip || ''}" oninput="updateSuspectField(${idx}, 'zip', this.value, false)" placeholder="รหัสไปรษณีย์" class="w-full p-2.5 bg-[#242429] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
+                    </div>
+
+                    <!-- ตำหนิรูปพรรณ (ปท.๑ ข้อ ๑) -->
+                    <div>
+                        <input type="text" value="${s.scarMark || ''}" oninput="updateSuspectField(${idx}, 'scarMark', this.value, false)" placeholder="ตำหนิรูปพรรณที่เห็นเด่นชัด (แสดงใน ปท.๑ ข้อ ๑ เช่น แผลเป็นคิ้วซ้าย หรือปล่อยว่าง)" class="w-full p-2.5 bg-[#2a2a32] border border-zinc-700 rounded-lg text-white placeholder-zinc-500">
                     </div>
 
                     <!-- ข้อหาของผู้ต้องหารายนี้ -->
@@ -7739,7 +7871,7 @@ ${currentDocPrintHtml}
             }
             const noWarrantChk = document.getElementById('arrNoWarrant');
             const warrantBox = document.getElementById('arrWarrantFieldsBox');
-            if (basis === 'warrant' || basis === 'surrender') {
+            if (basis === 'warrant' || basis === 'surrender' || basis === 'court_order') {
                 if (noWarrantChk) noWarrantChk.checked = false;
                 if (warrantBox) warrantBox.classList.remove('hidden');
             } else {
@@ -7852,9 +7984,27 @@ ${currentDocPrintHtml}
             const editId = document.getElementById('arrEditId').value;
             return {
                 id: editId || ('arr_' + Date.now()),
-                recordLocation: document.getElementById('arrRecordLoc')?.value.trim() || 'สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑',
+                recordLocation: document.getElementById('arrRecordLoc')?.value.trim() || 'สถานีตำรวจภูธรบางพลี ตำบลบางพลีใหญ่ อำเภอบางพลี จังหวัดสมุทรปราการ',
                 recordDate: document.getElementById('arrRecordDate')?.value || document.getElementById('arrDate').value,
                 recordTime: document.getElementById('arrRecordTime')?.value || '23:43',
+                dailyLogNo: document.getElementById('arrDailyLogNo')?.value.trim() || '',
+                dailyLogTime: document.getElementById('arrDailyLogTime')?.value.trim() || '',
+                criminalCaseNo: document.getElementById('arrCriminalCaseNo')?.value.trim() || '',
+                evidenceBookNo: document.getElementById('arrEvidenceBookNo')?.value.trim() || '',
+                photoCaption: document.getElementById('arrPhotoCaption')?.value.trim() || '',
+                right4Action: document.getElementById('arrRight4Action')?.value || 'none',
+                m22ForceMajeure: document.getElementById('arrM22ForceMajeure')?.value.trim() || '',
+                officerPhone: document.getElementById('arrOfficerPhone')?.value.trim() || '02-3373377',
+                detentionPlace: document.getElementById('arrDetentionPlace')?.value.trim() || 'สถานีตำรวจภูธรบางพลี',
+                detentionAddress: document.getElementById('arrDetentionAddress')?.value.trim() || '17 หมู่ที่ 8 ถนน สุขาภิบาล 2 ตำบล บางพลีใหญ่ อำเภอ บางพลี สมุทรปราการ 10540',
+                orderIssuerName: document.getElementById('arrOrderIssuerName')?.value.trim() || '',
+                orderIssuerPos: document.getElementById('arrOrderIssuerPos')?.value.trim() || '',
+                conditionBefore: document.getElementById('arrConditionBefore')?.value.trim() || 'ปกติทั่วไป',
+                m22BriefNarrative: document.getElementById('arrM22BriefNarrative')?.value.trim() || '',
+                m23ExtraNote: document.getElementById('arrM23ExtraNote')?.value.trim() || 'เจ้าหน้าที่ตำรวจได้มีการบันทึกวิดีโออย่างต่อเนื่องจนถึงส่งตัว/รับตัวให้กับพนักงานสอบสวนโดยวิดีโอดังกล่าวมีการอัพโหลดลง NAS ของหน่วยงาน ท่านสามารถขอวิดีโอดังกล่าวได้',
+                witnessName: document.getElementById('arrWitnessName')?.value.trim() || '',
+                receiverInfo: document.getElementById('arrReceiverInfo')?.value.trim() || '',
+                m23CommitteeNote: document.getElementById('arrM23CommitteeNote')?.value.trim() || '',
                 type: document.getElementById('arrType').value,
                 date: document.getElementById('arrDate').value,
                 time: document.getElementById('arrTime').value,
@@ -7971,11 +8121,31 @@ ${currentDocPrintHtml}
             document.getElementById('arrEditId').value = r.id;
             document.getElementById('arrFormHeaderTitle').textContent = `แก้ไขบันทึกจับกุม (${r.suspects?.[0]?.firstName || r.id})`;
             if (document.getElementById('arrRecordLoc')) {
-                document.getElementById('arrRecordLoc').value = r.recordLocation || 'สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑';
+                document.getElementById('arrRecordLoc').value = r.recordLocation || 'สถานีตำรวจภูธรบางพลี ตำบลบางพลีใหญ่ อำเภอบางพลี จังหวัดสมุทรปราการ';
             }
             if (document.getElementById('arrRecordTime')) {
                 document.getElementById('arrRecordTime').value = r.recordTime || '23:43';
             }
+            if (document.getElementById('arrDailyLogNo')) document.getElementById('arrDailyLogNo').value = r.dailyLogNo || '';
+            if (document.getElementById('arrDailyLogTime')) document.getElementById('arrDailyLogTime').value = r.dailyLogTime || '';
+            if (document.getElementById('arrCriminalCaseNo')) document.getElementById('arrCriminalCaseNo').value = r.criminalCaseNo || '';
+            if (document.getElementById('arrEvidenceBookNo')) document.getElementById('arrEvidenceBookNo').value = r.evidenceBookNo || '';
+            if (document.getElementById('arrPhotoCaption')) document.getElementById('arrPhotoCaption').value = r.photoCaption || '';
+            if (document.getElementById('arrRight4Action')) document.getElementById('arrRight4Action').value = r.right4Action || 'none';
+            if (document.getElementById('arrM22ForceMajeure')) document.getElementById('arrM22ForceMajeure').value = r.m22ForceMajeure || '';
+            if (document.getElementById('arrOfficerPhone')) document.getElementById('arrOfficerPhone').value = r.officerPhone || '02-3373377';
+            if (document.getElementById('arrDetentionPlace')) document.getElementById('arrDetentionPlace').value = r.detentionPlace || 'สถานีตำรวจภูธรบางพลี';
+            if (document.getElementById('arrDetentionAddress')) document.getElementById('arrDetentionAddress').value = r.detentionAddress || '17 หมู่ที่ 8 ถนน สุขาภิบาล 2 ตำบล บางพลีใหญ่ อำเภอ บางพลี สมุทรปราการ 10540';
+            if (document.getElementById('arrOrderIssuerName')) document.getElementById('arrOrderIssuerName').value = r.orderIssuerName || '';
+            if (document.getElementById('arrOrderIssuerPos')) document.getElementById('arrOrderIssuerPos').value = r.orderIssuerPos || '';
+            if (document.getElementById('arrConditionBefore')) document.getElementById('arrConditionBefore').value = r.conditionBefore || 'ปกติทั่วไป';
+            if (document.getElementById('arrM22BriefNarrative')) document.getElementById('arrM22BriefNarrative').value = r.m22BriefNarrative || '';
+            if (document.getElementById('arrM23ExtraNote')) document.getElementById('arrM23ExtraNote').value = r.m23ExtraNote || 'เจ้าหน้าที่ตำรวจได้มีการบันทึกวิดีโออย่างต่อเนื่องจนถึงส่งตัว/รับตัวให้กับพนักงานสอบสวนโดยวิดีโอดังกล่าวมีการอัพโหลดลง NAS ของหน่วยงาน ท่านสามารถขอวิดีโอดังกล่าวได้';
+            if (document.getElementById('arrWitnessName')) document.getElementById('arrWitnessName').value = r.witnessName || '';
+            if (document.getElementById('arrReceiverInfo')) document.getElementById('arrReceiverInfo').value = r.receiverInfo || '';
+            if (document.getElementById('arrM23CommitteeNote')) document.getElementById('arrM23CommitteeNote').value = r.m23CommitteeNote || '';
+            const basisR = document.querySelector(`input[name="arrBasisRadio"][value="${r.basis || 'warrant'}"]`);
+            if (basisR) basisR.checked = true;
             loadThaiDateIntoSelects(r.recordDate || r.date || '', 'arrRecordDate');
             document.getElementById('arrType').value = r.type || 'ผู้ใหญ่';
             loadThaiDateIntoSelects(r.date || '', 'arrDate');
@@ -8031,165 +8201,669 @@ ${currentDocPrintHtml}
             previewPrintArrestRecordV2();
         }
 
+        // =========================================================================
+        // SHARED DATA FORMATTER & VIEW-MODEL FOR ARREST RECORD (8 PAGES: ภาพ 1-8)
+        // =========================================================================
+        const THAI_RANK_PREFIXES = [
+            'ว่าที่ ร.ต.อ.', 'ว่าที่ ร.ต.ท.', 'ว่าที่ ร.ต.ต.',
+            'พล.ต.อ.', 'พล.ต.ท.', 'พล.ต.ต.',
+            'พ.ต.อ.', 'พ.ต.ท.', 'พ.ต.ต.',
+            'ร.ต.อ.', 'ร.ต.ท.', 'ร.ต.ต.',
+            'ด.ต.', 'จ.ส.ต.', 'ส.ต.อ.', 'ส.ต.ท.', 'ส.ต.ต.',
+            'นาย', 'นางสาว', 'น.ส.', 'นาง', 'ด.ช.', 'ด.ญ.'
+        ];
+
+        function splitThaiRankAndName(fullStr) {
+            const s = (fullStr || '').trim();
+            if (!s) return { rank: '', nameOnly: '' };
+            for (const p of THAI_RANK_PREFIXES) {
+                if (s.startsWith(p)) {
+                    return { rank: p, nameOnly: s.slice(p.length).trim() };
+                }
+            }
+            return { rank: '', nameOnly: s };
+        }
+
+        function prepareArrestDocViewModel(rec) {
+            const thDigits = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
+            const toTh = (str) => {
+                if (!str && str !== 0) return '';
+                return String(str).replace(/[0-9]/g, d => thDigits[parseInt(d, 10)]);
+            };
+            const toAr = (str) => {
+                if (!str && str !== 0) return '';
+                return String(str).replace(/[๐-๙]/g, ch => String(thDigits.indexOf(ch)));
+            };
+
+            const thMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+            const formatArDate = (isoDate) => {
+                if (!isoDate) return '................';
+                const parts = isoDate.split('-');
+                if (parts.length !== 3) return toAr(isoDate);
+                const d = parseInt(parts[2], 10);
+                const m = thMonths[parseInt(parts[1], 10) - 1] || '';
+                const y = parseInt(parts[0], 10) + 543;
+                return `${d} ${m} พ.ศ.${y}`;
+            };
+            const formatThDashDate = (isoDate) => {
+                if (!isoDate) return '................';
+                const parts = isoDate.split('-');
+                if (parts.length !== 3) return toTh(isoDate);
+                const dd = String(parts[2]).padStart(2, '0');
+                const mm = String(parts[1]).padStart(2, '0');
+                const yyyy = parseInt(parts[0], 10) + 543;
+                return toTh(`${dd}-${mm}-${yyyy}`);
+            };
+            const formatArTime = (hhmm) => toAr((hhmm || '20:15').replace(':', '.'));
+            const formatThTime = (hhmm) => toTh((hhmm || '20:15').replace(':', '.'));
+
+            const s0 = rec.suspects?.[0] || {};
+            const suspPrefix = s0.prefix || 'นาย';
+            const suspFirst = s0.firstName || '';
+            const suspLast = s0.lastName || '';
+            const suspNameOnly = `${suspFirst} ${suspLast}`.trim() || '..............................';
+            const suspFullName = `${suspPrefix}${suspFirst ? suspFirst + ' ' : ''}${suspLast}`.trim() || 'ไม่ระบุชื่อ';
+            const suspAgeAr = toAr(s0.age || '-');
+            const suspIdAr = toAr(s0.idCard || '-');
+            const suspAddrAr = toAr(`${s0.address || '-'} ต.${s0.tam || '-'} อ.${s0.amp || '-'} จ.${s0.prov || '-'} ${s0.zip || ''}`.trim());
+
+            const chargesList = (s0.charges && s0.charges.length > 0)
+                ? s0.charges
+                : (rec.mainCharge ? [rec.mainCharge] : ['(ยังไม่ระบุข้อกล่าวหา)']);
+            const chargesJoinedAr = toAr(chargesList.join(' และ '));
+            const firstChargeShortAr = toAr((chargesList[0] || '').split(/[,;\n]/)[0].trim());
+            const evList = (rec.evidences && rec.evidences.length > 0) ? rec.evidences : [];
+
+            const recordLocAr = toAr(rec.recordLocation || 'สถานีตำรวจภูธรบางพลี ตำบลบางพลีใหญ่ อำเภอบางพลี จังหวัดสมุทรปราการ');
+            const recordDateAr = formatArDate(rec.recordDate || rec.date);
+            const recordTimeAr = formatArTime(rec.recordTime || rec.time || '23:43');
+            const arrestDateAr = formatArDate(rec.date);
+            const arrestTimeAr = formatArTime(rec.time || '20:15');
+            const fullArrestLocAr = toAr(`${rec.locDetail || '-'} ตำบล${rec.locTam || 'บางพลีใหญ่'} อำเภอ${rec.locAmp || 'บางพลี'} จังหวัด${rec.locProv || 'สมุทรปราการ'}`);
+
+            const commanders = (rec.commanders || []).filter(c => c.name);
+            const officers = (rec.officers && rec.officers.filter(o => o.name).length > 0)
+                ? rec.officers.filter(o => o.name)
+                : [{ roleType: 'arresting', name: 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล', position: 'รอง สว.สส.สภ.บางพลี' }];
+
+            const cmdStrAr = commanders.length > 0
+                ? toAr(commanders.map(c => `${c.name}${c.position ? ' ' + c.position : ''}`).join(', '))
+                : 'พ.ต.อ.ไพโรจน์ เพ็ชรพลอย ผกก.สภ.บางพลี';
+            const offStrAr = toAr(officers.map(o => `${o.name}${o.position ? ' ' + o.position : ''}`).join(', '));
+
+            const leadOfficer = officers[0];
+            const leadSplit = splitThaiRankAndName(leadOfficer.name);
+            const recorderOfficer = officers[officers.length - 1];
+            const recorderSplit = splitThaiRankAndName(recorderOfficer.name);
+
+            const officerSignItems = officers.map((o, i) => {
+                const sp = splitThaiRankAndName(o.name);
+                return {
+                    rank: sp.rank,
+                    nameOnly: sp.nameOnly || o.name,
+                    roleLabel: (i === officers.length - 1) ? 'ผู้จับกุม/บันทึก/อ่าน' : 'ผู้จับกุม'
+                };
+            });
+
+            const unitShort = (rec.unit || 'สภ.บางพลี').split(/\s+/)[0] || 'สภ.บางพลี';
+            const warrantNoAr = toAr(rec.warrantNo || '-');
+            const warrantCourtAr = toAr(rec.warrantCourt || 'ศาลจังหวัดสมุทรปราการ');
+            const warrantDateAr = formatArDate(rec.warrantDate);
+            const basis = rec.basis || (rec.noWarrant ? 'flagrante' : 'warrant');
+
+            const pleaRaw = s0.plea || 'รับสารภาพตลอดข้อกล่าวหา';
+            const pleaRefuseTestify = /ไม่ยอมให้การ|ไม่ประสงค์ให้การ|ไม่ให้การ/.test(pleaRaw);
+            const pleaUnable = /ไม่สามารถให้การ/.test(pleaRaw);
+            const pleaConfess = /รับสารภาพ/.test(pleaRaw);
+            const pleaDeny = /ปฏิเสธ/.test(pleaRaw);
+            const pleaGiveStatement = !pleaRefuseTestify && !pleaUnable;
+
+            const fmReason = (rec.m22ForceMajeure || '').trim();
+            const hasForceMajeure = fmReason.length > 0 && fmReason !== '-' && fmReason !== 'ไม่มี';
+
+            // Split narrative smoothly across Page 2 & Page 3 matching Images 2-3
+            const rawNarr = toAr((rec.narrative || '').trim());
+            const paras = rawNarr.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+            let narrPage2 = [];
+            let narrPage3 = [];
+            if (paras.length >= 3) {
+                const cut = Math.max(1, paras.length - 1);
+                narrPage2 = paras.slice(0, cut);
+                narrPage3 = paras.slice(cut);
+            } else if (paras.length === 2) {
+                narrPage2 = [paras[0]];
+                narrPage3 = [paras[1]];
+            } else if (paras.length === 1) {
+                const single = paras[0];
+                if (single.length > 520) {
+                    const splitIdx = single.indexOf(' ', 440);
+                    if (splitIdx !== -1) {
+                        narrPage2 = [single.slice(0, splitIdx)];
+                        narrPage3 = [single.slice(splitIdx + 1)];
+                    } else {
+                        narrPage2 = [single];
+                    }
+                } else {
+                    narrPage2 = [single];
+                }
+            }
+
+            const photoCaption = (rec.photoCaption || '').trim() || (!rec.noWarrant && rec.warrantNo
+                ? `เจ้าหน้าที่ตำรวจชุดจับกุมแสดงหมายจับของ${warrantCourtAr} ที่ ${warrantNoAr} ลงวันที่ ${warrantDateAr} ซึ่งต้องหาว่ากระทำความผิดฐาน “${firstChargeShortAr}” ให้ผู้ถูกจับได้ดู และอ่านเนื้อหาหมายจับดังกล่าว`
+                : `เจ้าหน้าที่ตำรวจชุดจับกุมแสดงตัวเข้าจับกุมตัวผู้ถูกจับ แจ้งข้อกล่าวหาฐาน “${firstChargeShortAr}” และแจ้งสิทธิตามกฎหมายให้ผู้ถูกจับทราบและเข้าใจดีแล้ว`);
+
+            const officerPhone = rec.officerPhone || '02-3373377';
+            const detentionPlace = rec.detentionPlace || 'สถานีตำรวจภูธรบางพลี';
+            const detentionAddress = rec.detentionAddress || '17 หมู่ที่ 8 ถนน สุขาภิบาล 2 ตำบล บางพลีใหญ่ อำเภอ บางพลี สมุทรปราการ 10540';
+            const issuerName = (rec.orderIssuerName || '').trim() || (commanders[0]?.name || leadOfficer.name);
+            const issuerPos = (rec.orderIssuerPos || '').trim() || (commanders[0]?.position || leadOfficer.position || 'ผกก.สภ.บางพลี');
+            const witnessRaw = (rec.witnessName || '').trim();
+            const witnessSplit = splitThaiRankAndName(witnessRaw);
+
+            const m22Brief = (rec.m22BriefNarrative || '').trim() || (
+                !rec.noWarrant && rec.warrantNo
+                    ? `จับกุมผู้ต้องหาตามหมายจับของ${warrantCourtAr} ที่ ${warrantNoAr} ลงวันที่ ${warrantDateAr} ข้อหา “${firstChargeShortAr}” แจ้งสิทธิของผู้ต้องหาแล้ว ${pleaRaw} เจ้าพนักงานตำรวจจับกุมและนำส่งพนักงานสอบสวน ${detentionPlace}`
+                    : `จับกุมผู้ต้องหาความผิดซึ่งหน้า ข้อหา “${firstChargeShortAr}” แจ้งสิทธิของผู้ต้องหาแล้ว ${pleaRaw} เจ้าพนักงานตำรวจจับกุมและนำส่งพนักงานสอบสวน ${detentionPlace}`
+            );
+
+            const m23OrderReason = !rec.noWarrant && rec.warrantNo
+                ? `ตามหมายจับของ${warrantCourtAr} ที่ ${warrantNoAr} ลงวันที่ ${warrantDateAr} ฐานความผิด: ${firstChargeShortAr}`
+                : `${chargesJoinedAr}`;
+
+            return {
+                toTh, toAr,
+                s0, suspPrefix, suspFirst, suspLast, suspNameOnly, suspFullName,
+                suspAgeAr, suspIdAr, suspAddrAr,
+                chargesList, chargesJoinedAr, firstChargeShortAr, evList,
+                recordLocAr, recordDateAr, recordTimeAr,
+                arrestDateAr, arrestTimeAr, fullArrestLocAr,
+                arrestDashDateTh: formatThDashDate(rec.date),
+                arrestTimeTh: formatThTime(rec.time || '20:15'),
+                unitShort, cmdStrAr, offStrAr,
+                leadOfficer, leadSplit, recorderOfficer, recorderSplit, officerSignItems,
+                warrantNoAr, warrantCourtAr, warrantDateAr, basis,
+                right4Action: rec.right4Action || 'none',
+                pleaRefuseTestify, pleaGiveStatement, pleaConfess, pleaDeny, pleaUnable,
+                hasForceMajeure, fmReason,
+                narrPage2, narrPage3, photoCaption,
+                dailyLogNo: toAr(rec.dailyLogNo || ''),
+                dailyLogTime: toAr(rec.dailyLogTime || ''),
+                criminalCaseNo: toAr(rec.criminalCaseNo || ''),
+                evidenceBookNo: toAr(rec.evidenceBookNo || ''),
+                officerPhone, detentionPlace, detentionAddress,
+                issuerName, issuerPos, witnessRaw, witnessSplit,
+                m22Brief, m23OrderReason,
+                conditionBefore: rec.conditionBefore || 'ปกติทั่วไป',
+                receiverInfo: (rec.receiverInfo || '').trim(),
+                m23CommitteeNote: (rec.m23CommitteeNote || '').trim(),
+                m23ExtraNote: (rec.m23ExtraNote || '').trim() || 'เจ้าหน้าที่ตำรวจได้มีการบันทึกวิดีโออย่างต่อเนื่องจนถึงส่งตัว/รับตัวให้กับพนักงานสอบสวนโดยวิดีโอดังกล่าวมีการอัพโหลดลง NAS ของหน่วยงาน ท่านสามารถขอวิดีโอดังกล่าวได้',
+                scarMark: (s0.scarMark || '').trim(),
+                generalPhotosList: Object.keys(rec.generalPhotos || {}).sort((a, b) => Number(a) - Number(b)).map(k => rec.generalPhotos[k]).filter(p => p && p.dataUrl),
+                m22Photos: rec.m22Photos || {}
+            };
+        }
+
         function previewPrintArrestRecordV2() {
             const rec = collectCurrentArrestRecordData();
             if (!rec.narrative) {
                 generateArrestNarrativeDraft();
                 rec.narrative = document.getElementById('arrNarrativeText').value.trim();
             }
+            const vm = prepareArrestDocViewModel(rec);
+            const { toTh } = vm;
+            const mk = (b) => b ? '/' : '&nbsp;';
+            const chk = (b) => b ? '☑' : '☐';
 
-            const dateLong = formatThaiDateLongFromIso(rec.date);
-            const cmdListHtml = rec.commanders.filter(c => c.name).map(c => `${c.name} (${c.position || ''})`).join(', ') || '-';
-            const offListHtml = rec.officers.filter(o => o.name).map(o => `${o.name} ${o.position || ''}`).join(', ') || '-';
+            const officerPairsHtml = [];
+            for (let i = 0; i < vm.officerSignItems.length; i += 2) {
+                const L = vm.officerSignItems[i];
+                const R = vm.officerSignItems[i + 1];
+                officerPairsHtml.push(`
+                    <tr>
+                        <td style="width: 50%; padding: 4px 6px 10px 0; vertical-align: top;">
+                            <div>(ลงชื่อ) ${L.rank || ''} ........................................... ${L.roleLabel}</div>
+                            <div style="text-align: center; padding-right: 45px;">( ${L.nameOnly} )</div>
+                        </td>
+                        <td style="width: 50%; padding: 4px 0 10px 6px; vertical-align: top;">
+                            ${R ? `
+                                <div>(ลงชื่อ) ${R.rank || ''} ........................................... ${R.roleLabel}</div>
+                                <div style="text-align: center; padding-right: 45px;">( ${R.nameOnly} )</div>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `);
+            }
 
-            const suspectsBlockHtml = rec.suspects.map((s, idx) => `
-                <div style="margin-bottom: 10px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc;">
-                    <div><strong>ผู้ถูกจับที่ ${idx + 1}:</strong> ${s.prefix || ''}${s.firstName || '-'} ${s.lastName || '-'} &nbsp;&nbsp; <strong>อายุ:</strong> ${s.age || '-'} ปี &nbsp;&nbsp; <strong>สัญชาติ:</strong> ${s.nationality || 'ไทย'} &nbsp;&nbsp; <strong>เชื้อชาติ:</strong> ${s.ethnicity || 'ไทย'}</div>
-                    <div><strong>เลขประจำตัวประชาชน:</strong> <span style="font-family: monospace; font-weight: bold;">${s.idCard || '-'}</span> &nbsp;&nbsp; <strong>อาชีพ:</strong> ${s.occupation || '-'} &nbsp;&nbsp; <strong>โทรศัพท์:</strong> ${s.phone || '-'}</div>
-                    <div><strong>ที่อยู่ตามทะเบียนราษฎร์:</strong> ${s.address || '-'} ต.${s.tam || '-'} อ.${s.amp || '-'} จ.${s.prov || '-'} ${s.zip || ''}</div>
-                    <div><strong>ข้อกล่าวหา:</strong> ${(s.charges && s.charges.length > 0) ? s.charges.join(' / ') : (rec.mainCharge || '-')}</div>
-                    <div><strong>คำให้การชั้นจับกุม:</strong> <strong>${s.plea || 'ให้การรับสารภาพตลอดข้อกล่าวหา'}</strong></div>
-                </div>
-            `).join('');
+            const genPhotosHtml = vm.generalPhotosList.length > 0
+                ? `<div style="display: grid; grid-template-columns: ${vm.generalPhotosList.length === 1 ? '1fr' : '1fr 1fr'}; gap: 8px; padding: 10px; align-items: center; justify-items: center; width: 100%; height: 100%;">
+                    ${vm.generalPhotosList.slice(0, 4).map(p => `<img src="${p.dataUrl}" style="max-height: ${vm.generalPhotosList.length === 1 ? '320px' : '155px'}; max-width: 100%; object-fit: contain;">`).join('')}
+                   </div>`
+                : `<div style="font-size: 20px; padding-top: 12px;">{ภาพประกอบการจับกุม}</div>`;
 
-            const evidenceBlockHtml = rec.evidences.length > 0 ? `
-                <table style="width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 13px;">
-                    <thead>
-                        <tr style="background: #f1f5f9;">
-                            <th style="border: 1px solid #94a3b8; padding: 6px; width: 10%; text-align: center;">ลำดับ</th>
-                            <th style="border: 1px solid #94a3b8; padding: 6px; width: 55%;">รายการของกลาง / ทรัพย์สินที่ตรวจยึด</th>
-                            <th style="border: 1px solid #94a3b8; padding: 6px; width: 35%;">สถานที่/ตำแหน่งที่ตรวจพบ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rec.evidences.map((ev, i) => `
-                            <tr>
-                                <td style="border: 1px solid #94a3b8; padding: 6px; text-align: center;">${i + 1}</td>
-                                <td style="border: 1px solid #94a3b8; padding: 6px;">${ev.description || '-'}</td>
-                                <td style="border: 1px solid #94a3b8; padding: 6px;">${ev.foundLocation || '-'}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            ` : `<div style="margin: 6px 0 12px; color: #475569;">- ไม่มีของกลางในคดีนี้ -</div>`;
+            const m22Cell = (url, ph) => url
+                ? `<img src="${url}" style="max-height: 230px; max-width: 100%; object-fit: contain; display: block; margin: 0 auto;">`
+                : `<div style="color: #111;">${ph}</div>`;
 
-            // Photos Pages if any
-            const generalPhotoKeys = Object.keys(rec.generalPhotos || {});
-            const generalPhotosHtml = generalPhotoKeys.length > 0 ? `
-                <div style="page-break-before: always; padding-top: 20px;">
-                    <div style="text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 12px;">ภาพถ่ายประกอบการจับกุม (${rec.unit})</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        ${generalPhotoKeys.map(k => `
-                            <div style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; border-radius: 6px;">
-                                <img src="${rec.generalPhotos[k].dataUrl}" style="max-height: 200px; width: 100%; object-fit: contain; margin-bottom: 6px;">
-                                <div style="font-size: 12px;">${rec.generalPhotos[k].caption || `รูปที่ ${k}`}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            ` : '';
-
-            const m22PhotoEntries = Object.entries(rec.m22Photos || {}).filter(([k, v]) => !!v);
-            const m22Labels = { front: 'ภาพด้านหน้า', back: 'ภาพด้านหลัง', left: 'ภาพด้านซ้าย', right: 'ภาพด้านขวา' };
-            const m22PhotosHtml = m22PhotoEntries.length > 0 ? `
-                <div style="page-break-before: always; padding-top: 20px;">
-                    <div style="text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 12px;">ภาพถ่ายผู้ถูกจับตาม พ.ร.บ.ป้องกันและปราบปรามการทรมานฯ พ.ศ. 2565 (มาตรา 22)</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        ${m22PhotoEntries.map(([k, v]) => `
-                            <div style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; border-radius: 6px;">
-                                <img src="${v}" style="max-height: 200px; width: 100%; object-fit: contain; margin-bottom: 6px;">
-                                <div style="font-size: 12px; font-weight: bold;">${m22Labels[k] || k}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            ` : '';
+            const dotSpan = (val, minW = '70px') => `<span style="display: inline-block; min-width: ${minW}; max-width: 100%; border-bottom: 1px dotted #000; padding: 0 4px; text-align: center; box-sizing: border-box; overflow-wrap: break-word;">${val || '&nbsp;'}</span>`;
 
             const printHtml = `
-                <div style="font-family: 'Sarabun', 'TH Sarabun New', Tahoma, sans-serif; color: #000; line-height: 1.65; font-size: 14px; max-width: 780px; margin: 0 auto;">
-                    <div style="text-align: center; margin-bottom: 10px;">
-                        <img src="assets/police_logo_transparent.png" style="height: 65px; margin: 0 auto 4px; display: block;" alt="ตราพระแสงดาบเขนและโล่">
-                        <h2 style="margin: 0; font-size: 20px; font-weight: bold;">บันทึกการจับกุม (${rec.type})</h2>
-                        <div style="font-size: 14px; font-weight: bold;">${rec.unit}</div>
-                    </div>
-
-                    <table style="width: 100%; border: none; margin-bottom: 10px; font-size: 13.5px;">
-                        <tr>
-                            <td colspan="2"><strong>บันทึกที่:</strong> ${rec.recordLocation || 'สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑'}</td>
-                        </tr>
-                        <tr>
-                            <td style="width: 50%;"><strong>วัน เดือน ปี ที่บันทึก:</strong> ${formatThaiDateLongFromIso(rec.recordDate)} เวลา ${rec.recordTime || '23:43'} น.</td>
-                            <td style="width: 50%; text-align: right;"><strong>วัน เดือน ปี ที่จับกุม:</strong> ${dateLong} เวลา ${rec.time || '-'} น.</td>
-                        </tr>
-                        <tr>
-                            <td colspan="2"><strong>สถานที่เกิดเหตุ และจับกุม:</strong> ${rec.locDetail || '-'} ต.${rec.locTam || '-'} อ.${rec.locAmp || '-'} จ.${rec.locProv || '-'} ${rec.locZip || ''} ${rec.coords ? `(GPS: ${rec.coords})` : ''}</td>
-                        </tr>
+                <style>
+                    @page { size: A4; margin: 12mm 16mm; }
+                    .arrest-pkg { font-family: 'TH Sarabun New', 'Sarabun', 'Leelawadee UI', Tahoma, sans-serif; color: #000; line-height: 1.48; font-size: 16px; }
+                    .arrest-pkg .a4-page { background: #fff; page-break-after: always; box-sizing: border-box; padding: 12px 16px 14px; margin-bottom: 18px; border-bottom: 2px dashed #cbd5e1; width: 100%; }
+                    .arrest-pkg .a4-page:last-child { page-break-after: auto; border-bottom: none; }
+                    .arrest-pkg p { margin: 0 0 3px 0; }
+                    .arrest-pkg .indent { padding-left: 34px; }
+                    .pt23-tbl { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13.5px; line-height: 1.35; overflow-wrap: break-word; }
+                    .pt23-tbl td { border: 1px solid #000; padding: 3px 5px; vertical-align: top; overflow-wrap: break-word; }
+                    .pt23-num { width: 28px; text-align: center; font-weight: bold; }
+                    .pt23-hdr { font-weight: bold; }
+                    @media print {
+                        .arrest-pkg .a4-page { margin-bottom: 0; border-bottom: none; padding: 0; }
+                    }
+                </style>
+                <div class="arrest-pkg">
+                    <!-- ================= ภาพ 1: บันทึกจับกุม หน้า 1 ================= -->
+                    <div class="a4-page">
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px;">
+                            <tr>
+                                <td style="width: 34%;"></td>
+                                <td style="width: 26%; text-align: center; vertical-align: bottom; font-size: 22px; font-weight: bold;">บันทึกจับกุม</td>
+                                <td style="width: 40%; border: 1px solid #000; padding: 5px 8px; font-size: 14px; line-height: 1.35;">
+                                    <div>ปจว.ข้อ ${vm.dailyLogNo || '....................'} เวลา ${vm.dailyLogTime || '....................'} น.</div>
+                                    <div>คดีอาญาที่ ${vm.criminalCaseNo || '.................../......................'}</div>
+                                    <div>บัญชีของกลางเลขที่ ${vm.evidenceBookNo || '................../...............'}</div>
+                                </td>
+                            </tr>
+                        </table>
+                        <p><strong>สถานที่บันทึก</strong> &nbsp;${vm.recordLocAr}</p>
+                        <p><strong>วัน เดือน ปี ที่บันทึก</strong> &nbsp;${vm.recordDateAr} เวลาประมาณ ${vm.recordTimeAr} น.</p>
+                        <p><strong>วัน เดือน ปี ที่จับกุม</strong> &nbsp;${vm.arrestDateAr} เวลาประมาณ ${vm.arrestTimeAr} น.</p>
+                        <p><strong>สถานที่จับกุม</strong> &nbsp;${vm.fullArrestLocAr}</p>
+                        <p style="text-align: justify;"><strong>นามเจ้าหน้าที่ตำรวจที่ร่วมจับกุม ${vm.unitShort} ภายใต้การอำนวยการของ</strong> ${vm.cmdStrAr}, <strong>พร้อมกำลังชุดปฏิบัติ นำโดย</strong> ${vm.offStrAr}</p>
+                        <p><strong>ได้ร่วมกันจับกุมตัว</strong> ${vm.suspFullName} อายุ ${vm.suspAgeAr} ปี เลขประจำตัวประชาชน ${vm.suspIdAr} <strong>ผู้ต้องหา</strong></p>
+                        <p><strong>อยู่บ้านเลขที่</strong> &nbsp;${vm.suspAddrAr}</p>
                         ${!rec.noWarrant && rec.warrantNo ? `
-                        <tr>
-                            <td colspan="2"><strong>การจับกุมตามหมายจับ:</strong> หมายจับของ${rec.warrantCourt || 'ศาลจังหวัดสมุทรปราการ'} ที่ <strong>${rec.warrantNo}</strong> ลงวันที่ ${formatThaiDateLongFromIso(rec.warrantDate)}</td>
-                        </tr>` : `
-                        <tr>
-                            <td colspan="2"><strong>ฐานการจับกุม:</strong> จับกุมโดยไม่มีหมายจับ (ความผิดซึ่งหน้า / เหตุเร่งด่วนตาม ป.วิ.อาญา)</td>
-                        </tr>`}
-                    </table>
-
-                    <div style="border-top: 1.5px solid #000; margin: 8px 0 12px;"></div>
-
-                    <div style="margin-bottom: 10px;">
-                        <div><strong>ภายใต้อำนวยการของ:</strong> ${cmdListHtml}</div>
-                        <div><strong>เจ้าพนักงานตำรวจผู้จับกุม:</strong> ${offListHtml}</div>
+                            <p><strong>โดยจับกุมตามหมายจับของ</strong> &nbsp;${vm.warrantCourtAr} ที่ ${vm.warrantNoAr} ลงวันที่ ${vm.warrantDateAr}</p>
+                            <p style="text-align: justify;"><strong>ซึ่งต้องหาว่ากระทำความผิดฐาน</strong> “${vm.chargesJoinedAr}” ซึ่งเจ้าพนักงานผู้จับกุมได้แสดงต่อผู้ถูกจับกุมแล้ว สอบถามผู้ต้องหารับว่าเป็นบุคคลเดียวกันตามหมายจับจริง และมีชื่อที่อยู่ตรงกับที่เจ้าหน้าที่ได้แสดงให้ตนดู และตนไม่เคยถูกจับกุมในคดีนี้มาก่อน</p>
+                        ` : `
+                            <p style="text-align: justify;"><strong>โดยกล่าวหาว่ากระทำความผิดฐาน</strong> “${vm.chargesJoinedAr}”</p>
+                        `}
+                        ${vm.evList.length > 0 ? `<p><strong>พร้อมด้วยของกลาง</strong> ${vm.evList.map((e, i) => `${i + 1}. ${vm.toAr(e.description)} (${vm.toAr(e.foundLocation || '')})`).join(', ')}</p>` : ''}
+                        <p><strong>ผู้ต้องหาได้รับทราบสิทธิตามกฎหมาย ดังนี้</strong></p>
+                        <p>1.มีสิทธิจะไม่ให้การหรือให้การก็ได้ และถ้อยคำของผู้ต้องหาอาจใช้เป็นพยานหลักฐานในการพิจารณาคดีได้</p>
+                        <p>2.มีสิทธิพบและปรึกษาทนายความ หรือผู้ซึ่งจะเป็นทนายความเป็นการเฉพาะตัว</p>
+                        <p>3.มีสิทธิแจ้งหรือขอให้เจ้าพนักงานแจ้งให้ญาติหรือผู้ซึ่งไว้วางใจทราบถึงการจับกุมและสถานที่ถูกควบคุมในโอกาสแรก</p>
+                        <p>4.มีสิทธิให้ทนายความหรือผู้ซึ่งตนไว้วางใจ เข้าฟังการสอบสวนปากคำตนได้ในชั้นสอบสวน</p>
+                        <p>5.มีสิทธิได้รับการเยี่ยมหรือติดต่อกับญาติได้ตามสมควร</p>
+                        <p>6.มีสิทธิได้รับการรักษาพยาบาลโดยเร็วเมื่อเจ็บป่วย</p>
+                        <p><strong>ผู้ถูกจับรับทราบสิทธิแล้ว</strong></p>
+                        <p class="indent">( ${mk(vm.right4Action === 'no')} ) ไม่ขอดำเนินการตามข้อ 4</p>
+                        <p class="indent">( ${mk(vm.right4Action === 'yes')} ) ขอดำเนินการตามข้อ 4 และได้ดำเนินการเรียบร้อย</p>
+                        <p class="indent">( ${mk(!rec.noWarrant)} ) ขอให้การรับว่าเป็นบุคคลตามหมายจับ และยังไม่เคยถูกดำเนินคดีนี้มาก่อน ในการจับกุมผู้ต้องหาครั้งนี้</p>
+                        <p>เจ้าหน้าที่ตำรวจชุดจับกุมได้กระทำไปตามอำนาจหน้าที่ &nbsp;( ${mk(!rec.noWarrant && vm.basis !== 'court_order')} ) มีหมายจับ &nbsp;&nbsp;&nbsp;&nbsp; ( ${mk(vm.basis === 'court_order')} ) มีคำสั่งศาล</p>
+                        <p class="indent">( ${mk(vm.basis === 'flagrante')} ) กระทำความผิดซึ่งหน้าดังได้บัญญัติไว้ในมาตรา 80</p>
+                        <p class="indent">( ${mk(vm.basis === 'suspicious')} ) มีพฤติการณ์อันควรสงสัยว่าผู้นั้นน่าจะก่อเหตุร้ายให้เกิดอันตรายแก่บุคคลหรือทรัพย์สินของผู้อื่น โดยมี เครื่องมือ อาวุธ หรือวัตถุอย่างอื่นอันสามารถใช้ในการกระทำความผิด</p>
+                        <p class="indent">( ${mk(vm.basis === 'urgent78')} ) เมื่อมีเหตุที่จะออกหมายจับบุคคลนั้นตามมาตรา 66 (2) แต่มีความจำเป็นเร่งด่วนที่ไม่อาจขอให้ศาลออกหมายจับบุคคลนั้นได้</p>
+                        <div style="text-align: right; padding-right: 40px; margin-top: 10px;">
+                            (ลงชื่อ) ${vm.suspPrefix} ......................................................... ผู้ถูกจับ
+                        </div>
                     </div>
 
-                    <div style="font-weight: bold; margin-bottom: 6px; color: #1e3a8a;">ส่วนที่ 1: ข้อมูลผู้ถูกจับกุมและข้อกล่าวหา</div>
-                    ${suspectsBlockHtml}
+                    <!-- ================= ภาพ 2: บันทึกจับกุม หน้า 2 ================= -->
+                    <div class="a4-page">
+                        <p class="indent">( ${mk(vm.basis === 'bail_escape')} ) เป็นการจับกุมผู้ต้องหาหรือจำเลยที่หนีหรือจะหลบหนีระหว่างถูกปล่อยชั่วคราว ตาม ม.117</p>
+                        <p class="indent">( / ) ในการจับกุมและควบคุมได้กระทำไปตามกฎหมาย โดยคำนึงถึงศักดิ์ศรีความเป็นมนุษย์</p>
+                        <p class="indent" style="text-align: justify;">( ${mk(!vm.hasForceMajeure)} ) ในการควบคุมตัวผู้ถูกจับ เจ้าหน้าที่ผู้จับกุมได้ทำการบันทึกภาพและเสียงอย่างต่อเนื่อง ในขณะจับ และควบคุมตัวผู้ถูกจับในชั้นจับกุมจนกระทั่งส่งตัวให้พนักงานสอบสวน ตามมาตรา 22 วรรคหนึ่ง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565</p>
+                        <p class="indent" style="text-indent: 34px;">( ${mk(vm.hasForceMajeure)} ) มีเหตุสุดวิสัยที่ไม่สามารถบันทึกภาพและเสียงตาม ตามมาตรา 22 วรรคหนึ่ง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 เนื่องจาก ${vm.hasForceMajeure ? vm.fmReason : '–'}</p>
+                        <p style="text-indent: 34px;">ผู้จับกุมไม่ได้กระทำการใดๆ อันเป็นการทรมาน การทำที่โหดร้าย ไร้มนุษยธรรม หรือย่ำยีศักดิ์ศรีความเป็นมนุษย์หรือกระทำให้บุคคลสูญหายแต่อย่างใด</p>
+                        <p style="text-indent: 34px;">เจ้าหน้าที่ผู้จับกุม ได้แจ้งข้อมูลเกี่ยวกับผู้ถูกควบคุมตัว ตามมาตรา 22 วรรคสอง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 ไปยัง www.ptd.ago.go.th เรียบร้อยแล้ว</p>
+                        <p style="text-indent: 34px;">เจ้าหน้าที่ผู้จับกุม ได้แจ้งข้อมูลเกี่ยวกับผู้ถูกควบคุมตัว ตามมาตรา 22 วรรคสอง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 ไปยัง https://arrest.dopa.go.th/0308/arrest/app/place/ เรียบร้อยแล้ว</p>
+                        <p style="text-indent: 34px;">เจ้าหน้าที่ตำรวจผู้จับได้อ่านบันทึกให้ผู้ถูกจับฟังรับว่าถูกต้อง มีการดำเนินการตาม พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 มาตรา 22 และได้มอบสำเนาบันทึกการจับกุมให้แก่ผู้ถูกจับเรียบร้อย</p>
 
-                    <div style="font-weight: bold; margin-top: 12px; margin-bottom: 4px; color: #1e3a8a;">ส่วนที่ 2: บัญชีของกลาง / ทรัพย์สินที่ตรวจยึด</div>
-                    ${evidenceBlockHtml}
+                        <p style="margin-top: 6px;"><strong>ผู้ถูกจับทราบข้อกล่าวหา รายละเอียดเกี่ยวกับเหตุแห่งการจับ และสิทธิของผู้ถูกจับดังกล่าวข้างต้นแล้ว</strong></p>
+                        <p>${chk(vm.pleaRefuseTestify)} ไม่ยอมให้การ &nbsp;&nbsp; ${chk(vm.pleaGiveStatement)} ให้การ &nbsp;&nbsp; ${chk(vm.pleaConfess)} รับสารภาพตลอดข้อกล่าวหา &nbsp;&nbsp; ${chk(vm.pleaDeny)} ปฏิเสธ &nbsp;&nbsp; ${chk(vm.pleaUnable)} ไม่สามารถให้การใดๆ ได้</p>
+                        <p>${chk(!rec.noWarrant)} เป็นกรณีมีหมายจับ เจ้าพนักงานตำรวจผู้จับได้แจ้งให้ผู้ถูกจับทราบ และอ่านข้อความในหมายจับให้ผู้ถูกจับฟังแล้ว</p>
 
-                    <div style="font-weight: bold; margin-top: 12px; margin-bottom: 4px; color: #1e3a8a;">ส่วนที่ 3: พฤติการณ์แห่งคดีและการจับกุม</div>
-                    <div style="white-space: pre-wrap; text-align: justify; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff;">${rec.narrative}</div>
+                        <div style="text-align: justify; margin-top: 4px;">
+                            ${vm.narrPage2.length > 0
+                                ? vm.narrPage2.map((p, idx) => `<p>${idx === 0 ? `<strong>พฤติการณ์แห่งการจับกุม</strong> &nbsp;${p}` : p}</p>`).join('')
+                                : `<p><strong>พฤติการณ์แห่งการจับกุม</strong> &nbsp;-</p>`}
+                        </div>
 
-                    <div style="margin-top: 12px; font-size: 13px; text-align: justify;">
-                        อนึ่ง ในการจับกุมครั้งนี้ เจ้าพนักงานตำรวจผู้จับกุมได้ปฏิบัติตาม พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้บุคคลสูญหาย พ.ศ. 2565 มาตรา 22 และมาตรา 23 โดยได้บันทึกภาพและเสียงอย่างต่อเนื่องในขณะจับและควบคุมตัวจนกระทั่งส่งตัวให้พนักงานสอบสวน และได้แจ้งการควบคุมตัวไปยังพนักงานอัยการและนายอำเภอท้องที่เรียบร้อยแล้ว อ่านบันทึกนี้ให้ผู้ถูกจับฟังและให้อ่านเองแล้วรับว่าถูกต้องทุกประการ จึงลงลายมือชื่อไว้เป็นหลักฐาน
+                        <div style="text-align: center; margin-top: 18px;">
+                            (ลงชื่อ) ${vm.suspPrefix} ......................................................... ผู้ถูกจับ
+                        </div>
                     </div>
 
-                    <table style="width: 100%; margin-top: 35px; text-align: center; font-size: 13px;">
-                        <tr>
-                            <td style="width: 33%; padding-bottom: 35px;">
-                                (ลงชื่อ)...............................................ผู้ถูกจับ<br>
-                                (${rec.suspects[0] ? `${rec.suspects[0].prefix || ''}${rec.suspects[0].firstName || ''} ${rec.suspects[0].lastName || ''}` : '................................'})
-                            </td>
-                            <td style="width: 33%; padding-bottom: 35px;">
-                                (ลงชื่อ)...............................................ผู้จับกุม<br>
-                                (${rec.officers[0]?.name || 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล'})
-                            </td>
-                            <td style="width: 33%; padding-bottom: 35px;">
-                                (ลงชื่อ)...............................................ผู้รับตัว/พงส.<br>
-                                (...............................................)
-                            </td>
-                        </tr>
-                    </table>
+                    <!-- ================= ภาพ 3: บันทึกจับกุม หน้า 3 ================= -->
+                    <div class="a4-page">
+                        ${vm.narrPage3.map(p => `<p style="text-align: justify;">${p}</p>`).join('')}
+                        <p><strong>เหตุเกิดที่</strong> &nbsp;${vm.fullArrestLocAr}</p>
+                        <p style="padding-left: 44px;">วันที่ ${vm.arrestDateAr} เวลาประมาณ ${vm.arrestTimeAr} น.</p>
 
-                    ${generalPhotosHtml}
-                    ${m22PhotosHtml}
+                        <p style="text-indent: 36px; text-align: justify; margin-top: 8px;">อนึ่ง ในการจับกุมผู้ถูกจับครั้งนี้ เจ้าหน้าที่ตำรวจผู้จับกุมมิได้ทำให้ทรัพย์สินของผู้ถูกจับ หรือทรัพย์สินของผู้ใดเสียหาย สูญหาย เสื่อมค่า หรือไร้ประโยชน์ ทั้งมิได้เรียกร้องเอาทรัพย์สินของผู้ถูกจับหรือผู้ใดมาเป็นประโยชน์ต่อส่วนตนแต่อย่างใด และมิได้ทำร้ายร่างกายผู้ใดให้ได้รับอันตรายแก่กายหรือจิตใจแต่อย่างใด เจ้าหน้าที่ตำรวจได้อ่านบันทึกจับกุมนี้ให้ผู้ถูกจับฟังและให้อ่านเองจนเป็นที่เข้าใจแล้ว รับรองว่าถูกต้อง จึงให้ลงลายมือชื่อไว้เป็นหลักฐาน</p>
+
+                        <div style="text-align: center; margin: 22px 0 28px;">
+                            <div>(ลงชื่อ) ${vm.suspPrefix} ......................................................... ผู้ถูกจับ</div>
+                            <div>( ${vm.suspNameOnly} )</div>
+                        </div>
+
+                        <div style="text-align: center; font-weight: bold; margin-bottom: 12px;">รายนามผู้จับกุม เจ้าหน้าที่ตำรวจ${vm.unitShort === 'สภ.บางพลี' ? 'งานสืบสวน สภ.บางพลี' : ' ' + vm.unitShort}</div>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            ${officerPairsHtml.join('')}
+                        </table>
+                    </div>
+
+                    <!-- ================= ภาพ 4: บันทึกจับกุม หน้า 4 ================= -->
+                    <div class="a4-page">
+                        <div style="text-align: center; font-size: 14px; margin-bottom: 4px;">-4-</div>
+                        <div style="text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 12px;">ภาพประกอบการจับกุม</div>
+                        <div style="width: 92%; min-height: 330px; border: 1px solid #000; margin: 0 auto 24px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; padding: 8px;">
+                            ${genPhotosHtml}
+                        </div>
+                        <p style="text-align: justify; margin-bottom: 24px;">อธิบาย : ${vm.photoCaption}</p>
+                        <div style="padding-left: 140px; line-height: 1.6;">
+                            <div style="margin-bottom: 14px;">
+                                <div>(ลงชื่อ) ${vm.suspPrefix} ........................................... ผู้ถูกจับ</div>
+                                <div style="padding-left: 85px;">( ${vm.suspNameOnly} )</div>
+                            </div>
+                            <div>
+                                <div>(ลงชื่อ) ${vm.recorderSplit.rank || ''} ........................................... ผู้จับกุม/บันทึก/อ่าน</div>
+                                <div style="padding-left: 85px;">( ${vm.recorderSplit.nameOnly || vm.recorderOfficer.name} )</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ================= ภาพ 5: มาตรา 22 หน้า 1 ================= -->
+                    <div class="a4-page">
+                        <div style="text-align: center; font-size: 20px; font-weight: bold;">แบบแจ้งเรื่องการควบคุมตามมาตรา ๒๒ วรรคสอง</div>
+                        <div style="text-align: center; font-weight: bold; letter-spacing: 1px; margin-bottom: 8px;">**********************************************************************************</div>
+                        <p style="text-align: justify; margin-bottom: 8px;">รายการข้อมูลในการแจ้งการจับและควบคุมไปยังพนักงานอัยการ และนายอำเภอในท้องที่ที่มีการควบคุมตัว และสำหรับในกรุงเทพมหานครให้แจ้งพนักงานอัยการ และผู้อำนวยการสำนักการสอบสวนและนิติการ กรมการปกครอง ผ่านทางศูนย์รับแจ้งโดยทันทีที่มีข้อมูลครบถ้วน ดังต่อไปนี้</p>
+
+                        <p><strong>(๑) ข้อมูลของผู้ถูกจับและควบคุม (หากไม่ทราบให้ระบุว่าไม่ทราบ)</strong></p>
+                        <p>ชื่อ ${dotSpan(toTh(vm.suspFirst || 'ไม่มี'), '85px')} นามสกุล ${dotSpan(toTh(vm.suspLast || 'ไม่มี'), '100px')} หมายเลขบัตรประชาชน ${dotSpan(toTh(vm.suspIdAr), '150px')}</p>
+                        <p>ที่อยู่ ${dotSpan(toTh(vm.suspAddrAr), '460px')}</p>
+
+                        <p><strong>(๒) วัน เวลา และสถานที่ที่ทำการจับและควบคุม</strong></p>
+                        <p>วันที่ ${dotSpan(vm.arrestDashDateTh, '105px')} เวลา ${dotSpan(vm.arrestTimeTh, '55px')} น. สถานที่จับและควบคุมอยู่ ${dotSpan(toTh(vm.fullArrestLocAr), '300px')}</p>
+
+                        <p><strong>(๓) พฤติการณ์ในการจับและควบคุมบุคคลดังกล่าวโดยย่อ</strong></p>
+                        <p style="border-bottom: 1px dotted #000; padding-bottom: 2px;">${toTh(vm.m22Brief)}</p>
+
+                        <p><strong>(๔) สถานที่ควบคุมตัวบุคคลดังกล่าวไว้</strong></p>
+                        <p>สถานที่ควบคุมตัว ${dotSpan(toTh(vm.detentionPlace), '280px')}</p>
+
+                        <p><strong>(๕) ภาพถ่ายผู้ถูกจับและควบคุม ตามข้อ (๑) (เป็นภาพแนบท้าย)</strong></p>
+                        <p>แผ่นที่ ${dotSpan('๑', '50px')}</p>
+
+                        <p><strong>(๖) ชื่อเจ้าหน้าที่ของรัฐผู้รับผิดชอบที่ทำการจับและควบคุมตามมาตรา ๒๒ (ชื่อ ตำแหน่ง และหมายเลขโทรศัพท์ที่สามารถติดต่อได้)</strong></p>
+                        <p>ชื่อ ${dotSpan(toTh(vm.leadOfficer.name), '150px')} ตำแหน่ง ${dotSpan(toTh(vm.leadOfficer.position || 'รอง สว.สส.สภ.บางพลี'), '150px')} หมายเลขโทรศัพท์ที่สามารถติดต่อได้ ${dotSpan(toTh(vm.officerPhone), '105px')}</p>
+
+                        <p><strong>(๗) เหตุสุดวิสัยในกรณีที่ไม่สามารถบันทึกภาพและเสียงได้ในขณะจับและควบคุม (ถ้ามี)</strong> ${dotSpan(vm.hasForceMajeure ? toTh(vm.fmReason) : '-', '120px')}</p>
+
+                        <p><strong>(๘) ชื่อเจ้าหน้าที่ของรัฐผู้แจ้ง (ชื่อ ตำแหน่ง และหมายเลขโทรศัพท์ที่สามารถติดต่อได้)</strong></p>
+                        <p>ชื่อ ${dotSpan(toTh(vm.leadOfficer.name), '150px')} ตำแหน่ง ${dotSpan(toTh(vm.leadOfficer.position || 'รอง สว.สส.สภ.บางพลี'), '150px')} หมายเลขโทรศัพท์ที่สามารถติดต่อได้ ${dotSpan(toTh(vm.officerPhone), '105px')}</p>
+                    </div>
+
+                    <!-- ================= ภาพ 6: มาตรา 22 หน้า 2 (ภาพแนบท้าย) ================= -->
+                    <div class="a4-page">
+                        <div style="text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 10px;">ภาพแนบท้าย</div>
+                        <div style="text-align: center;">ชื่อ &nbsp;${toTh(vm.suspFirst)} &nbsp;&nbsp; นามสกุล &nbsp;${toTh(vm.suspLast)} &nbsp;&nbsp; หมายเลขบัตรประชาชน &nbsp;${toTh(vm.suspIdAr)}</div>
+                        <div style="margin-bottom: 10px;">ที่อยู่ &nbsp;${toTh(vm.suspAddrAr)}</div>
+
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 36px;">
+                            <tr>
+                                <td style="width: 50%; height: 260px; border: 1px solid #000; vertical-align: top; text-align: center; padding: 6px;">${m22Cell(vm.m22Photos.front, '&lt;pic1&gt;')}</td>
+                                <td style="width: 50%; height: 260px; border: 1px solid #000; vertical-align: top; text-align: center; padding: 6px;">${m22Cell(vm.m22Photos.back, '&lt;pic2&gt;')}</td>
+                            </tr>
+                            <tr>
+                                <td style="width: 50%; height: 260px; border: 1px solid #000; vertical-align: top; text-align: center; padding: 6px;">${m22Cell(vm.m22Photos.left, '&lt;pic3&gt;')}</td>
+                                <td style="width: 50%; height: 260px; border: 1px solid #000; vertical-align: top; text-align: center; padding: 6px;">${m22Cell(vm.m22Photos.right, '&lt;pic4&gt;')}</td>
+                            </tr>
+                        </table>
+
+                        <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 15px;">
+                            <tr>
+                                <td style="width: 50%; vertical-align: top;">
+                                    <div>ลงชื่อ...............................................ผู้ถูกจับกุม</div>
+                                    <div>( &nbsp;${vm.suspNameOnly ? toTh(vm.suspNameOnly) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'} &nbsp;)</div>
+                                </td>
+                                <td style="width: 50%; vertical-align: top;">
+                                    <div>ลงชื่อ ${toTh(vm.leadSplit.rank)}...............................................ผู้จับกุม</div>
+                                    <div>( ${toTh(vm.leadSplit.nameOnly || vm.leadOfficer.name)} )</div>
+                                    <div>${toTh(vm.leadOfficer.position || 'รอง สว.สส.สภ.บางพลี')}</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- ================= ภาพ 7: มาตรา 23 (ปท. ๑ หน้าที่ ๑) ================= -->
+                    <div class="a4-page">
+                        <div style="text-align: right; font-weight: bold;">ปท. ๑ หน้าที่ ๑</div>
+                        <div style="text-align: center; font-weight: bold; font-size: 17px; margin-bottom: 6px;">
+                            แบบบันทึกข้อมูลเกี่ยวกับผู้ถูกควบคุมตัวตามมาตรา ๒๓ แห่งพระราชบัญญัติป้องกัน<br>
+                            และปราบปรามการทรมานและการกระทำให้บุคคลสูญหาย พ.ศ. ๒๕๖๕
+                        </div>
+
+                        <table class="pt23-tbl">
+                            <colgroup>
+                                <col style="width: 5%;">
+                                <col style="width: 43%;">
+                                <col style="width: 5%;">
+                                <col style="width: 47%;">
+                            </colgroup>
+                            <tr>
+                                <td class="pt23-num">๑</td>
+                                <td class="pt23-hdr">ข้อมูลอัตลักษณ์เกี่ยวกับผู้ถูกควบคุมตัว</td>
+                                <td class="pt23-num">๓</td>
+                                <td class="pt23-hdr">คำสั่งที่ให้มีการควบคุมตัว และเหตุแห่งการออกคำสั่งนั้น</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <div>ชื่อ &nbsp;${toTh(vm.suspFullName)}</div>
+                                    <div>เลขบัตรประจำตัว &nbsp;${toTh(vm.suspIdAr)}</div>
+                                    <div>ที่อยู่ &nbsp;${toTh(vm.suspAddrAr)}</div>
+                                    <div>ตำหนิรูปพรรณที่เห็นเด่นชัด(สามารถเห็นได้ด้วยตาเปล่า)</div>
+                                    <div style="text-align: center; padding: 4px 0;">${toTh(vm.scarMark || '-')}</div>
+                                    <div>รูปถ่ายของผู้ถูกควบคุม(ปรากฏตามที่แนบท้ายบันทึก)</div>
+                                </td>
+                                <td colspan="2">
+                                    <div>${!rec.noWarrant && rec.warrantNo ? '☑ <strong>หมายจับศาล</strong>' : '☑ <strong>ความผิดซึ่งหน้า</strong>'}</div>
+                                    <div style="margin-top: 3px;">${toTh(vm.m23OrderReason)}</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="pt23-num">๒</td>
+                                <td class="pt23-hdr">ข้อมูลเกี่ยวกับวันเวลา สถานที่ควบคุมตัว และเจ้าหน้าที่ผู้ควบคุมตัว</td>
+                                <td class="pt23-num">๔</td>
+                                <td class="pt23-hdr">เจ้าหน้าที่ของรัฐผู้ออกคำสั่งให้ควบคุมตัว</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" rowspan="5">
+                                    <div>วันที่ถูกควบคุมตัว ${dotSpan(vm.arrestDashDateTh, '75px')} เวลา ${dotSpan(vm.arrestTimeTh, '40px')} น.</div>
+                                    <div>สถานที่ที่ถูกควบคุมตัว ${dotSpan(toTh(vm.fullArrestLocAr), '140px')}</div>
+                                    <div style="margin-top: 3px;">เจ้าหน้าที่ผู้ทำการควบคุมตัว</div>
+                                    <div>ชื่อ ${dotSpan(toTh(vm.leadOfficer.name), '160px')}</div>
+                                    <div>ตำแหน่ง ${dotSpan(toTh(vm.leadOfficer.position || 'รอง สว.สส.สภ.บางพลี'), '150px')}</div>
+                                    <div>หมายเลขติดต่อ ${dotSpan(toTh(vm.officerPhone), '130px')}</div>
+                                    <div style="margin-top: 3px;">สถานที่ปลายทางที่รับตัว (กรณีที่มีการย้ายสถานที่)</div>
+                                    <div>ชื่อสถานที่ปลายทาง ${dotSpan(toTh(vm.detentionPlace), '140px')}</div>
+                                    <div>ที่อยู่ ${dotSpan(toTh(vm.detentionAddress), '160px')}</div>
+                                    <div style="margin-top: 3px;">เจ้าหน้าที่ผู้รับผิดชอบการย้ายตัว</div>
+                                    <div>ชื่อ ${dotSpan(toTh(vm.leadOfficer.name), '160px')}</div>
+                                    <div>ตำแหน่ง ${dotSpan(toTh(vm.leadOfficer.position || 'รอง สว.สส.สภ.บางพลี'), '150px')}</div>
+                                    <div>หมายเลขติดต่อ ${dotSpan(toTh(vm.officerPhone), '130px')}</div>
+                                </td>
+                                <td colspan="2">
+                                    <div>ชื่อ ${dotSpan(toTh(vm.issuerName), '160px')}</div>
+                                    <div>ตำแหน่ง ${dotSpan(toTh(vm.issuerPos), '150px')}</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="pt23-num">๕</td>
+                                <td class="pt23-hdr">วัน/เวลา/สถานที่ของการปล่อยตัวผู้ถูกควบคุมตัว และผู้มารับตัวผู้ถูกควบคุมตัว/หรือส่งมอบตัว</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <div>วันที่ ........................ เวลา ............ น.</div>
+                                    <div>สถานที่ปล่อยตัว/หรือมอบตัว ...........................................</div>
+                                    <div>ผู้มารับตัว/รับมอบตัว(มี/ไม่มี) ${dotSpan(toTh(vm.receiverInfo), '95px')}</div>
+                                    <div>ชื่อ ............................ นามสกุล ......................</div>
+                                    <div>หมายเลขติดต่อ ......................................................</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="pt23-num">๖</td>
+                                <td class="pt23-hdr">ข้อมูลเกี่ยวกับสภาพร่างกายและจิตใจของผู้ถูกควบคุมตัว (สามารถเห็นได้ด้วยตาเปล่า)</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" rowspan="3">
+                                    <div>ก่อนถูกควบคุมตัว ${dotSpan(toTh(vm.conditionBefore), '140px')}</div>
+                                    <div>ก่อนปล่อยตัว ....................................................</div>
+                                    <div>ในกรณีที่ผู้ถูกควบคุมตัวถึงแก่ความตายระหว่างการควบคุมตัว สาเหตุแห่งการตาย(เท่าที่ทราบเบื้องต้น) ${dotSpan('-', '35px')}</div>
+                                    <div>สถานที่เก็บศพ ${dotSpan('-', '50px')}</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="pt23-num">๗</td>
+                                <td class="pt23-hdr">ข้อมูลอื่น ๆ ที่คณะกรรมการกำหนด</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">${vm.m23CommitteeNote ? toTh(vm.m23CommitteeNote) : '...............................................................'}</td>
+                            </tr>
+                        </table>
+
+                        <div style="text-align: right; font-weight: bold; font-size: 14px; margin: 4px 0 12px;">มีหน้าต่อเป็นบันทึกแนบท้ายเพิ่มเติม</div>
+
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <tr>
+                                <td style="width: 31%; border: 1px solid #000; padding: 6px; vertical-align: top;">
+                                    <div>ลงชื่อ ${toTh(vm.leadSplit.rank)}</div>
+                                    <div style="text-align: center; margin-top: 6px;">( ${toTh(vm.leadSplit.nameOnly || vm.leadOfficer.name)} )</div>
+                                    <div style="text-align: center;">ตำแหน่ง/ผู้ทำบันทึกควบคุม</div>
+                                </td>
+                                <td style="width: 3.5%;"></td>
+                                <td style="width: 31%; border: 1px solid #000; padding: 6px; vertical-align: top;">
+                                    <div>ลงชื่อ</div>
+                                    <div style="text-align: center; margin-top: 6px;">( &nbsp;&nbsp; )</div>
+                                    <div style="text-align: center;">ผู้ถูกควบคุม</div>
+                                </td>
+                                <td style="width: 3.5%;"></td>
+                                <td style="width: 31%; border: 1px solid #000; padding: 6px; vertical-align: top;">
+                                    <div>ลงชื่อ ${vm.witnessRaw ? toTh(vm.witnessSplit.rank) : ''}</div>
+                                    <div style="text-align: center; margin-top: 6px;">( ${vm.witnessRaw ? toTh(vm.witnessSplit.nameOnly || vm.witnessRaw) : '&nbsp;&nbsp;'} )</div>
+                                    <div style="text-align: center;">พยาน(ถ้ามี)</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- ================= ภาพ 8: มาตรา 23 (ปท.๑ หน้าที่ ๒) ================= -->
+                    <div class="a4-page">
+                        <div style="text-align: right; font-weight: bold;">ปท.๑ หน้าที่ ๒</div>
+                        <div style="text-align: center; font-weight: bold; font-size: 18px; margin-bottom: 12px;">บันทึกแนบท้ายเพิ่มเติม</div>
+
+                        <p class="indent"><strong>๘. เหตุสุดวิสัยที่ไม่สามารถบันทึกภาพและเสียงตามมาตรา ๒๒ วรรคหนึ่งได้</strong></p>
+                        <p class="indent" style="border-bottom: 1px dotted #000; padding-bottom: 2px;">${vm.hasForceMajeure ? toTh(vm.fmReason) : 'ไม่มี'}</p>
+                        <p style="border-bottom: 1px dotted #000; height: 22px;"></p>
+                        <p style="border-bottom: 1px dotted #000; height: 22px;"></p>
+                        <p style="border-bottom: 1px dotted #000; height: 22px;"></p>
+                        <p style="border-bottom: 1px dotted #000; height: 22px; margin-bottom: 12px;"></p>
+
+                        <p class="indent"><strong>๙. บันทึกอื่น ๆ เพิ่มเติม (ถ้ามี)</strong></p>
+                        <p style="text-indent: 34px; border-bottom: 1px dotted #000; padding-bottom: 2px;">${toTh(vm.m23ExtraNote)}</p>
+                        <p style="border-bottom: 1px dotted #000; height: 22px;"></p>
+                        <p style="border-bottom: 1px dotted #000; height: 22px;"></p>
+                        <p style="border-bottom: 1px dotted #000; height: 22px;"></p>
+                        <p style="border-bottom: 1px dotted #000; height: 22px;"></p>
+                        <p style="border-bottom: 1px dotted #000; height: 22px; margin-bottom: 14px;"></p>
+
+                        <div style="font-size: 14.5px; line-height: 1.45; margin-bottom: 36px;">
+                            <div><strong>***หมายเหตุ :</strong> ๑. ในกรณีข้อมูลตามรายการ ๑ – ๗ มีจำนวนมากให้ทำเป็นบันทึกแนบท้ายเพิ่มเติมในข้อ ๙</div>
+                            <div style="padding-left: 72px;">๒. ให้เจ้าหน้าที่ซึ่งทำการจับและควบคุม ส่งตัวผู้ถูกควบคุมตัวให้กับผู้รับมอบตัวพร้อมสำเนาบันทึกการควบคุมและเอกสารประกอบ(ถ้ามี) สำหรับนำบันทึกฉบับจริงเก็บในสารบบของหน่วยงาน</div>
+                            <div style="padding-left: 72px;">๓. ให้ผู้รับมอบตัวจัดทำบันทึกการควบคุมในส่วนของตนโดยมีสำเนาบันทึกการควบคุมของผู้ควบคุมคนก่อนเป็นเอกสารแนบท้าย</div>
+                            <div style="padding-left: 72px;">๔. ภาพถ่ายของผู้ถูกควบคุมตามข้อ ๑ ให้ทำเป็นเอกสารภาพถ่ายแนบท้ายบันทึก อย่างน้อยต้องเห็นเนื้อตัวร่างกายตามสภาพภายนอกขณะถูกควบคุมหรือขณะรับมอบตัว (โดยไม่ต้องถอดเสื้อผ้า)</div>
+                        </div>
+
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <tr>
+                                <td style="width: 31%; border: 1px solid #000; padding: 6px; vertical-align: top;">
+                                    <div>ลงชื่อ ${toTh(vm.leadSplit.rank)}</div>
+                                    <div style="text-align: center; margin-top: 6px;">( ${toTh(vm.leadSplit.nameOnly || vm.leadOfficer.name)} )</div>
+                                    <div style="text-align: center;">ตำแหน่ง/ผู้ทำบันทึกควบคุม</div>
+                                </td>
+                                <td style="width: 3.5%;"></td>
+                                <td style="width: 31%; border: 1px solid #000; padding: 6px; vertical-align: top;">
+                                    <div>ลงชื่อ</div>
+                                    <div style="text-align: center; margin-top: 6px;">( &nbsp;&nbsp; )</div>
+                                    <div style="text-align: center;">ผู้ถูกควบคุม</div>
+                                </td>
+                                <td style="width: 3.5%;"></td>
+                                <td style="width: 31%; border: 1px solid #000; padding: 6px; vertical-align: top;">
+                                    <div>ลงชื่อ ${vm.witnessRaw ? toTh(vm.witnessSplit.rank) : ''}</div>
+                                    <div style="text-align: center; margin-top: 6px;">( ${vm.witnessRaw ? toTh(vm.witnessSplit.nameOnly || vm.witnessRaw) : '&nbsp;&nbsp;'} )</div>
+                                    <div style="text-align: center;">พยาน(ถ้ามี)</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
                 </div>
             `;
 
             currentDocViewingItem = null;
             const replaceBtn = document.getElementById('replaceDocBtn');
             if (replaceBtn) replaceBtn.classList.add('hidden');
-            showDocPreviewModal(`บันทึกการจับกุม สภ.บางพลี (${rec.suspects[0]?.firstName || 'ผู้ต้องหา'})`, printHtml);
+            showDocPreviewModal(`บันทึกจับกุม + ม.22 + ปท.๑ สภ.บางพลี (${vm.suspFirst || 'ผู้ต้องหา'})`, printHtml);
         }
 
         // =========================================================================
-        // EXPORT ARREST PACKAGE TO WORD (.DOCX) - มาตรฐานสำนักงานตำรวจแห่งชาติ ๗ หน้า
+        // EXPORT ARREST PACKAGE TO WORD (.DOCX) - มาตรฐานตรงตามภาพ 1-8 (8 หน้า)
         // =========================================================================
+        async function buildDocxImageRun(ImageRun, dataUrl, maxW, maxH) {
+            if (!dataUrl) return null;
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    try {
+                        let w = img.naturalWidth || maxW;
+                        let h = img.naturalHeight || maxH;
+                        const ratio = Math.min(maxW / w, maxH / h, 1);
+                        const finalW = Math.round(w * ratio);
+                        const finalH = Math.round(h * ratio);
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        const pngDataUrl = canvas.toDataURL('image/png');
+                        const b64 = pngDataUrl.split(',')[1];
+                        const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+                        resolve(new ImageRun({
+                            data: bin,
+                            transformation: { width: finalW, height: finalH },
+                            type: 'png'
+                        }));
+                    } catch (e) {
+                        resolve(null);
+                    }
+                };
+                img.onerror = () => resolve(null);
+                img.src = dataUrl;
+            });
+        }
+
         async function exportArrestToWordDocx(recordOrId) {
             if (typeof docx === 'undefined') {
                 toast('⚠️ ไม่พบไลบรารี Word (.docx) กำลังโหลด...');
                 return;
             }
-            const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle, PageBreak } = docx;
+            const {
+                Document, Packer, Paragraph, TextRun, ImageRun,
+                Table, TableRow, TableCell, AlignmentType, WidthType,
+                BorderStyle, PageBreak, VerticalAlign, HeightRule, UnderlineType
+            } = docx;
 
             let rec = null;
             if (typeof recordOrId === 'string') {
@@ -8209,42 +8883,54 @@ ${currentDocPrintHtml}
                 rec.narrative = document.getElementById('arrNarrativeText')?.value.trim() || '';
             }
 
-            toast('⏳ กำลังสร้างไฟล์ Word (.docx) ตามแบบบันทึกจับกุม...');
+            toast('⏳ กำลังสร้างไฟล์ Word (.docx) 8 หน้าตามแบบฟอร์ม (ภาพ 1-8)...');
 
-            // Helpers
-            const thDigits = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
-            const toTh = (str) => {
-                if (!str && str !== 0) return '';
-                return String(str).replace(/[0-9]/g, d => thDigits[parseInt(d, 10)]);
-            };
+            const vm = prepareArrestDocViewModel(rec);
+            const { toTh, toAr } = vm;
 
-            const thMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-            const formatThDate = (isoDate) => {
-                if (!isoDate) return '................';
-                const parts = isoDate.split('-');
-                if (parts.length !== 3) return toTh(isoDate);
-                const d = parseInt(parts[2], 10);
-                const m = thMonths[parseInt(parts[1], 10) - 1] || '';
-                const y = parseInt(parts[0], 10) + 543;
-                return `${toTh(d)} ${m} ${toTh(y)}`;
-            };
+            const FONT = 'TH Sarabun New';
+            const SZ = 30;      // 15pt
+            const SZ_SM = 26;   // 13pt (ตาราง ปท.๑ และกล่องทะเบียน)
+            const SZ_TITLE = 38;// 19pt
+            const SZ_HDR = 34;  // 17pt
 
-            const FONT = 'TH SarabunPSK';
-            const FONT_SIZE = 30; // 15pt
-            const FONT_TITLE = 36; // 18pt
+            const tRun = (text, opts = {}) => new TextRun({
+                text: text ?? '',
+                font: FONT,
+                size: opts.size || SZ,
+                bold: !!opts.bold
+            });
 
-            const tP = (text, opts = {}) => {
-                const { bold = false, align = AlignmentType.LEFT, after = 100, line = 280, size = FONT_SIZE } = opts;
-                return new Paragraph({
-                    alignment: align,
-                    spacing: { after, line },
-                    children: [new TextRun({ text, font: FONT, size, bold })]
+            const dRun = (text, opts = {}) => {
+                const val = (text ?? '').toString().trim();
+                return new TextRun({
+                    text: val ? `  ${val}  ` : '..............................',
+                    font: FONT,
+                    size: opts.size || SZ,
+                    bold: !!opts.bold,
+                    underline: val ? { type: UnderlineType.DOTTED, color: '000000' } : undefined
                 });
             };
 
-            const tRun = (text, opts = {}) => {
-                const { bold = false, size = FONT_SIZE } = opts;
-                return new TextRun({ text, font: FONT, size, bold });
+            const tP = (content, opts = {}) => {
+                const {
+                    bold = false,
+                    align = AlignmentType.LEFT,
+                    before = 0,
+                    after = 55,
+                    line = 250,
+                    size = SZ,
+                    indent = undefined
+                } = opts;
+                const runs = Array.isArray(content)
+                    ? content
+                    : [new TextRun({ text: content ?? '', font: FONT, size, bold })];
+                return new Paragraph({
+                    alignment: align,
+                    spacing: { before, after, line },
+                    indent,
+                    children: runs
+                });
             };
 
             const noBorders = {
@@ -8263,124 +8949,392 @@ ${currentDocPrintHtml}
                 right: { style: BorderStyle.SINGLE, size: 4, color: '000000' }
             };
 
-            // Data extraction
-            const s0 = rec.suspects?.[0] || {};
-            const suspectFullName = `${s0.prefix || ''}${s0.firstName || 'ไม่ระบุชื่อ'} ${s0.lastName || ''}`.trim();
-            const suspectAge = toTh(s0.age || '๐');
-            const suspectIdCard = toTh(s0.idCard || '-');
-            const suspectAddress = `${s0.address || '-'} ต.${s0.tam || '-'} อ.${s0.amp || '-'} จ.${s0.prov || '-'} ${toTh(s0.zip || '')}`.trim();
+            const mk = (b) => b ? '/' : ' ';
+            const chk = (b) => b ? '☑' : '☐';
 
-            const chargesList = (s0.charges && s0.charges.length > 0) ? s0.charges : (rec.mainCharge ? [rec.mainCharge] : ['(ยังไม่ระบุข้อกล่าวหา)']);
-            const evList = (rec.evidences && rec.evidences.length > 0) ? rec.evidences : [];
+            const buildPt23SignaturesTable = () => {
+                const sigMargins = { top: 80, bottom: 80, left: 100, right: 100 };
+                return new Table({
+                    width: { size: 9600, type: WidthType.DXA },
+                    columnWidths: [3000, 300, 3000, 300, 3000],
+                    borders: noBorders,
+                    rows: [
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    width: { size: 3000, type: WidthType.DXA },
+                                    borders: cellBorder,
+                                    margins: sigMargins,
+                                    children: [
+                                        tP(`ลงชื่อ ${toTh(vm.leadSplit.rank)}`, { size: SZ_SM, after: 120 }),
+                                        tP(`( ${toTh(vm.leadSplit.nameOnly || vm.leadOfficer.name)} )`, { size: SZ_SM, align: AlignmentType.CENTER, after: 30 }),
+                                        tP('ตำแหน่ง/ผู้ทำบันทึกควบคุม', { size: SZ_SM, align: AlignmentType.CENTER, after: 0 })
+                                    ]
+                                }),
+                                new TableCell({ width: { size: 300, type: WidthType.DXA }, borders: noBorders, children: [tP('', { after: 0 })] }),
+                                new TableCell({
+                                    width: { size: 3000, type: WidthType.DXA },
+                                    borders: cellBorder,
+                                    margins: sigMargins,
+                                    children: [
+                                        tP('ลงชื่อ', { size: SZ_SM, after: 120 }),
+                                        tP('(     )', { size: SZ_SM, align: AlignmentType.CENTER, after: 30 }),
+                                        tP('ผู้ถูกควบคุม', { size: SZ_SM, align: AlignmentType.CENTER, after: 0 })
+                                    ]
+                                }),
+                                new TableCell({ width: { size: 300, type: WidthType.DXA }, borders: noBorders, children: [tP('', { after: 0 })] }),
+                                new TableCell({
+                                    width: { size: 3000, type: WidthType.DXA },
+                                    borders: cellBorder,
+                                    margins: sigMargins,
+                                    children: [
+                                        tP(`ลงชื่อ ${vm.witnessRaw ? toTh(vm.witnessSplit.rank) : ''}`, { size: SZ_SM, after: 120 }),
+                                        tP(`( ${vm.witnessRaw ? toTh(vm.witnessSplit.nameOnly || vm.witnessRaw) : '     '} )`, { size: SZ_SM, align: AlignmentType.CENTER, after: 30 }),
+                                        tP('พยาน(ถ้ามี)', { size: SZ_SM, align: AlignmentType.CENTER, after: 0 })
+                                    ]
+                                })
+                            ]
+                        })
+                    ]
+                });
+            };
 
-            const recordLoc = rec.recordLocation || 'สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑';
-            const recordDateStr = formatThDate(rec.recordDate || rec.date);
-            const recordTimeStr = toTh(rec.recordTime ? `${rec.recordTime} น.` : (rec.time ? `${rec.time} น.` : '๒๓.๔๓ น.'));
-            const arrestDateStr = formatThDate(rec.date);
-            const arrestTimeStr = toTh(rec.time ? `${rec.time} น.` : '๒๐.๑๕ น.');
-
-            const fullArrestLoc = `${rec.locDetail || '-'} ต.${rec.locTam || 'บางพลีใหญ่'} อ.${rec.locAmp || 'บางพลี'} จ.${rec.locProv || 'สมุทรปราการ'}`;
-
-            const cmdStr = (rec.commanders && rec.commanders.filter(c => c.name).length > 0)
-                ? rec.commanders.filter(c => c.name).map(c => `${c.name} ${c.position || ''}`.trim()).join(', ')
-                : 'พ.ต.อ.ไพโรจน์ เพ็ชรพลอย ผกก.สภ.บางพลี, พ.ต.ท.ศุภกร แสงจันทร์ รอง ผกก.สส.สภ.บางพลี, พ.ต.ต.พิเชษฐ์ ขวัญทองแท้ สว.สส.สภ.บางพลี';
-
-            const offStr = (rec.officers && rec.officers.filter(o => o.name).length > 0)
-                ? rec.officers.filter(o => o.name).map(o => `${o.name} ${o.position || ''}`.trim()).join(', ')
-                : 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล รอง สว.สส.สภ.บางพลี พร้อมพวก';
-
-            const leadOfficerName = (rec.officers && rec.officers[0]?.name) || 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล';
-            const leadOfficerPos = (rec.officers && rec.officers[0]?.position) || 'รอง สว.สส.สภ.บางพลี';
-            const secondOfficerName = (rec.officers && rec.officers[1]?.name) || '';
-
-            // Children list for the Document
             const children = [];
 
-            // ==========================================
-            // PAGE 1: บันทึกการจับกุม (Header & Details)
-            // ==========================================
-            children.push(tP('บันทึกการจับกุม', { bold: true, align: AlignmentType.CENTER, size: FONT_TITLE }));
-            children.push(tP(`บันทึกที่ ${recordLoc}`));
-            children.push(tP(`วัน เดือน ปี ที่บันทึก ${recordDateStr} เวลา ${recordTimeStr}`));
-            children.push(tP(`วัน เดือน ปี ที่จับกุม ${arrestDateStr} เวลา ${arrestTimeStr}`));
-            children.push(tP(`สถานที่เกิดเหตุ และจับกุม ${fullArrestLoc}`));
-            children.push(tP(`ภายใต้อำนวยการของ ${cmdStr}`));
-            children.push(tP(`เจ้าพนักงานผู้จับกุม ${offStr}`));
-            children.push(tP(`ได้ร่วมกันจับกุม ${suspectFullName} อายุ ${suspectAge} ปี (เลขบัตรประจำตัวประชาชน ${suspectIdCard}) ที่อยู่ ${suspectAddress}`));
-            children.push(tP('โดยกล่าวหาว่า', { bold: true }));
-            chargesList.forEach((chg, i) => {
-                children.push(tP(`  ${toTh(i + 1)}. ${toTh(chg)}`));
-            });
+            // =========================================================================
+            // PAGE 1 (ภาพ 1): บันทึกจับกุม หน้าที่ 1 (ตัวเลขอารบิกตามแบบภาพที่ 1)
+            // =========================================================================
+            children.push(new Table({
+                width: { size: 9600, type: WidthType.DXA },
+                columnWidths: [3400, 2400, 3800],
+                borders: noBorders,
+                rows: [
+                    new TableRow({
+                        children: [
+                            new TableCell({ width: { size: 3400, type: WidthType.DXA }, borders: noBorders, children: [tP('', { after: 0 })] }),
+                            new TableCell({
+                                width: { size: 2400, type: WidthType.DXA },
+                                borders: noBorders,
+                                verticalAlign: VerticalAlign.BOTTOM,
+                                children: [tP('บันทึกจับกุม', { bold: true, align: AlignmentType.CENTER, size: SZ_TITLE, after: 0 })]
+                            }),
+                            new TableCell({
+                                width: { size: 3800, type: WidthType.DXA },
+                                borders: cellBorder,
+                                margins: { top: 60, bottom: 60, left: 100, right: 100 },
+                                children: [
+                                    tP(`ปจว.ข้อ ${vm.dailyLogNo || '...............'} เวลา ${vm.dailyLogTime || '....................'} น.`, { size: SZ_SM, after: 20, line: 230 }),
+                                    tP(`คดีอาญาที่ ${vm.criminalCaseNo || '.................../......................'}`, { size: SZ_SM, after: 20, line: 230 }),
+                                    tP(`บัญชีของกลางเลขที่ ${vm.evidenceBookNo || '................../...............'}`, { size: SZ_SM, after: 0, line: 230 })
+                                ]
+                            })
+                        ]
+                    })
+                ]
+            }));
 
-            children.push(tP('พร้อมด้วยของกลาง', { bold: true }));
-            if (evList.length > 0) {
-                evList.forEach((ev, i) => {
-                    children.push(tP(`  ${toTh(i + 1)}. ${toTh(ev.description || '-')} (${toTh(ev.foundLocation || 'พบในความครอบครองของผู้ถูกจับ')})`));
-                });
+            children.push(tP([tRun('สถานที่บันทึก ', { bold: true }), tRun(vm.recordLocAr)], { before: 80 }));
+            children.push(tP([tRun('วัน เดือน ปี ที่บันทึก ', { bold: true }), tRun(`${vm.recordDateAr} เวลาประมาณ ${vm.recordTimeAr} น.`)]));
+            children.push(tP([tRun('วัน เดือน ปี ที่จับกุม ', { bold: true }), tRun(`${vm.arrestDateAr} เวลาประมาณ ${vm.arrestTimeAr} น.`)]));
+            children.push(tP([tRun('สถานที่จับกุม ', { bold: true }), tRun(vm.fullArrestLocAr)]));
+            children.push(tP([
+                tRun(`นามเจ้าหน้าที่ตำรวจที่ร่วมจับกุม ${vm.unitShort} ภายใต้การอำนวยการของ `, { bold: true }),
+                tRun(`${vm.cmdStrAr}, `),
+                tRun('พร้อมกำลังชุดปฏิบัติ นำโดย ', { bold: true }),
+                tRun(vm.offStrAr)
+            ], { align: AlignmentType.BOTH }));
+            children.push(tP([
+                tRun('ได้ร่วมกันจับกุมตัว ', { bold: true }),
+                tRun(`${vm.suspFullName} อายุ ${vm.suspAgeAr} ปี เลขประจำตัวประชาชน ${vm.suspIdAr} `),
+                tRun('ผู้ต้องหา', { bold: true })
+            ]));
+            children.push(tP([tRun('อยู่บ้านเลขที่ ', { bold: true }), tRun(vm.suspAddrAr)]));
+
+            if (!rec.noWarrant && rec.warrantNo) {
+                children.push(tP([tRun('โดยจับกุมตามหมายจับของ ', { bold: true }), tRun(`${vm.warrantCourtAr} ที่ ${vm.warrantNoAr} ลงวันที่ ${vm.warrantDateAr}`)]));
+                children.push(tP([
+                    tRun('ซึ่งต้องหาว่ากระทำความผิดฐาน ', { bold: true }),
+                    tRun(`“${vm.chargesJoinedAr}” ซึ่งเจ้าพนักงานผู้จับกุมได้แสดงต่อผู้ถูกจับกุมแล้ว สอบถามผู้ต้องหารับว่าเป็นบุคคลเดียวกันตามหมายจับจริง และมีชื่อที่อยู่ตรงกับที่เจ้าหน้าที่ได้แสดงให้ตนดู และตนไม่เคยถูกจับกุมในคดีนี้มาก่อน`)
+                ], { align: AlignmentType.BOTH }));
             } else {
-                children.push(tP('  ๑. (ไม่มีของกลาง)'));
+                children.push(tP([
+                    tRun('โดยกล่าวหาว่ากระทำความผิดฐาน ', { bold: true }),
+                    tRun(`“${vm.chargesJoinedAr}”`)
+                ], { align: AlignmentType.BOTH }));
             }
 
-            children.push(tP('พฤติการณ์คดี', { bold: true }));
-            children.push(tP('  พฤติการณ์ในการจับกุม', { bold: true }));
-            const narrativeParagraphs = (rec.narrative || 'ก่อนการจับตัว เจ้าหน้าที่ตำรวจชุดจับกุมได้รับแจ้งเบาะแส จึงได้เดินทางไปตรวจสอบ และแสดงตัวพร้อมแจ้งสิทธิตามกฎหมาย ควบคุมตัวพร้อมของกลางนำส่งพนักงานสอบสวน สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑ เพื่อดำเนินคดีตามกฎหมายต่อไป').split('\n\n');
-            narrativeParagraphs.forEach(para => {
-                if (para.trim()) {
-                    children.push(tP(`  ${toTh(para.trim())}`));
-                }
-            });
+            if (vm.evList.length > 0) {
+                children.push(tP([
+                    tRun('พร้อมด้วยของกลาง ', { bold: true }),
+                    tRun(vm.evList.map((e, i) => `${i + 1}. ${toAr(e.description)} (${toAr(e.foundLocation || '')})`).join(', '))
+                ]));
+            }
 
-            children.push(tP('เจ้าพนักงานชุดจับกุมได้แจ้งสิทธิตามกฎหมายให้ผู้ถูกจับขณะจับทราบดังต่อไปนี้', { bold: true }));
-            children.push(tP('  ๑. มีสิทธิที่จะไม่ให้การหรือให้การก็ได้ และถ้อยคำของผู้ถูกจับอาจใช้เป็นพยานหลักฐานในการพิจารณาคดี'));
-            children.push(tP('  ๒. มีสิทธิที่จะพบและปรึกษาทนายความ หรือผู้ซึ่งจะเป็นทนายความเป็นการเฉพาะตัว'));
-            children.push(tP('  ๓. มีสิทธิให้ทนายความหรือผู้ที่ตนไว้วางใจเข้าฟังการสอบปากคำตนได้ในชั้นสอบสวน'));
-            children.push(tP('  ๔. สิทธิที่จะแจ้งให้ญาติหรือผู้ซึ่งผู้ถูกจับไว้วางใจให้ทราบถึงการจับกุม ที่สามารถดำเนินการได้โดยสะดวกหากไม่เป็นการขัดขวางแห่งการจับหรือการควบคุมผู้ถูกจับ หรือทำให้เกิดความปลอดภัยแก่บุคคลอื่นบุคคลใด'));
-            children.push(tP('ผู้ถูกจับทราบสิทธิแล้ว', { align: AlignmentType.RIGHT, bold: true }));
+            children.push(tP('ผู้ต้องหาได้รับทราบสิทธิตามกฎหมาย ดังนี้', { bold: true, after: 30 }));
+            children.push(tP('1.มีสิทธิจะไม่ให้การหรือให้การก็ได้ และถ้อยคำของผู้ต้องหาอาจใช้เป็นพยานหลักฐานในการพิจารณาคดีได้', { after: 25 }));
+            children.push(tP('2.มีสิทธิพบและปรึกษาทนายความ หรือผู้ซึ่งจะเป็นทนายความเป็นการเฉพาะตัว', { after: 25 }));
+            children.push(tP('3.มีสิทธิแจ้งหรือขอให้เจ้าพนักงานแจ้งให้ญาติหรือผู้ซึ่งไว้วางใจทราบถึงการจับกุมและสถานที่ถูกควบคุมในโอกาสแรก', { after: 25 }));
+            children.push(tP('4.มีสิทธิให้ทนายความหรือผู้ซึ่งตนไว้วางใจ เข้าฟังการสอบสวนปากคำตนได้ในชั้นสอบสวน', { after: 25 }));
+            children.push(tP('5.มีสิทธิได้รับการเยี่ยมหรือติดต่อกับญาติได้ตามสมควร', { after: 25 }));
+            children.push(tP('6.มีสิทธิได้รับการรักษาพยาบาลโดยเร็วเมื่อเจ็บป่วย', { after: 40 }));
 
-            // ==========================================
-            // PAGE 2: อำนาจหน้าที่ ป.วิ.อาญา & พ.ร.บ.ทรมานฯ ม.๒๒
-            // ==========================================
+            children.push(tP('ผู้ถูกจับรับทราบสิทธิแล้ว', { bold: true, after: 30 }));
+            children.push(tP(`( ${mk(vm.right4Action === 'no')} ) ไม่ขอดำเนินการตามข้อ 4`, { indent: { left: 560 }, after: 25 }));
+            children.push(tP(`( ${mk(vm.right4Action === 'yes')} ) ขอดำเนินการตามข้อ 4 และได้ดำเนินการเรียบร้อย`, { indent: { left: 560 }, after: 25 }));
+            children.push(tP(`( ${mk(!rec.noWarrant)} ) ขอให้การรับว่าเป็นบุคคลตามหมายจับ และยังไม่เคยถูกดำเนินคดีนี้มาก่อน ในการจับกุมผู้ต้องหาครั้งนี้`, { indent: { left: 560 }, after: 25 }));
+            children.push(tP(`เจ้าหน้าที่ตำรวจชุดจับกุมได้กระทำไปตามอำนาจหน้าที่ ( ${mk(!rec.noWarrant && vm.basis !== 'court_order')} ) มีหมายจับ     ( ${mk(vm.basis === 'court_order')} ) มีคำสั่งศาล`, { after: 25 }));
+            children.push(tP(`( ${mk(vm.basis === 'flagrante')} ) กระทำความผิดซึ่งหน้าดังได้บัญญัติไว้ในมาตรา 80`, { indent: { left: 560 }, after: 25 }));
+            children.push(tP(`( ${mk(vm.basis === 'suspicious')} ) มีพฤติการณ์อันควรสงสัยว่าผู้นั้นน่าจะก่อเหตุร้ายให้เกิดอันตรายแก่บุคคลหรือทรัพย์สินของผู้อื่น โดยมี เครื่องมือ อาวุธ หรือวัตถุอย่างอื่นอันสามารถใช้ในการกระทำความผิด`, { indent: { left: 560 }, after: 25 }));
+            children.push(tP(`( ${mk(vm.basis === 'urgent78')} ) เมื่อมีเหตุที่จะออกหมายจับบุคคลนั้นตามมาตรา 66 (2) แต่มีความจำเป็นเร่งด่วนที่ไม่อาจขอให้ศาลออกหมายจับบุคคลนั้นได้`, { indent: { left: 560 }, after: 140 }));
+            children.push(tP(`(ลงชื่อ) ${vm.suspPrefix} ......................................................... ผู้ถูกจับ`, { align: AlignmentType.RIGHT, after: 0 }));
+
+            // =========================================================================
+            // PAGE 2 (ภาพ 2): บันทึกจับกุม หน้าที่ 2
+            // =========================================================================
             children.push(new Paragraph({ children: [new PageBreak()] }));
-            children.push(tP('[  ] ไม่ขอดำเนินการตามข้อ ๔   [✓] ขอดำเนินการตามข้อ ๔ และได้ดำเนินการเรียบร้อย'));
-            children.push(tP('ในการจับกุมผู้ต้องหาครั้งนี้ เจ้าหน้าที่ตำรวจชุดจับกุมได้กระทำไปตามอำนาจหน้าที่ โดย'));
-            children.push(tP(rec.noWarrant ? '[  ] มีหมายจับ   [  ] มีคำสั่งศาล' : `[✓] มีหมายจับของ${toTh(rec.warrantCourt || 'ศาลจังหวัดสมุทรปราการ')} ที่ ${toTh(rec.warrantNo || '-')} ลงวันที่ ${formatThDate(rec.warrantDate)}`));
-            children.push(tP('[  ] กระทำความผิดซึ่งหน้าดังได้บัญญัติไว้ในมาตรา ๘๐'));
-            children.push(tP('[  ] มีพฤติการณ์อันควรสงสัยว่าผู้นั้นน่าจะก่อเหตุร้ายให้เกิดอันตรายแก่บุคคลหรือทรัพย์สินของผู้อื่น'));
-            children.push(tP('[  ] เมื่อมีเหตุที่จะออกหมายจับบุคคลนั้นตามมาตรา ๖๖(๒) แต่มีความจำเป็นเร่งด่วนที่ไม่อาจขอให้ศาลออกหมายจับได้'));
-            children.push(tP('[  ] เป็นการจับกุมผู้ต้องหาหรือจำเลยที่หนีหรือจะหลบหนีในระหว่างถูกปล่อยชั่วคราว ตามมาตรา ๑๑๗'));
-            children.push(tP('ในการจับกุมและควบคุมได้กระทำไปตามกฎหมาย โดยคำนึงถึงศักดิ์ศรีความเป็นมนุษย์'));
-            children.push(tP('ในการควบคุมตัวผู้ถูกจับ เจ้าหน้าที่ร่วมจับหรือควบคุมตัวได้ทำการบันทึกภาพและเสียงอย่างต่อเนื่องในขณะจับและควบคุมตัวผู้ถูกจับในชั้นจับกุมจนกระทั่งส่งตัวให้พนักงานสอบสวน ตามมาตรา ๒๒ วรรคหนึ่ง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้บุคคลสูญหาย พ.ศ.๒๕๖๕'));
-            children.push(tP('ผู้จับแจ้งไม่มีการกระทำการใดอันเป็นการทรมาน การกระทำให้บุคคลสูญหาย หรือการกระทำที่โหดร้าย ไร้มนุษยธรรม หรือย่ำยีศักดิ์ศรีความเป็นมนุษย์ ต่อผู้ถูกจับแต่อย่างใด'));
-            children.push(tP('เจ้าหน้าที่ผู้จับได้แจ้งข้อมูลเกี่ยวกับผู้ถูกควบคุมตัว ตามมาตรา ๒๒ วรรคสอง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้บุคคลสูญหาย พ.ศ.๒๕๖๕ ไปยังศูนย์ป้องกันและปราบปรามการทรมานและการกระทำให้บุคคลสูญหาย ประจำสำนักงานอัยการสูงสุด ทราบโดยทันทีทาง E-mail ptd@ago.go.th'));
-            children.push(tP('เจ้าหน้าที่ผู้จับได้แจ้งข้อมูลเกี่ยวกับผู้ถูกควบคุมตัว ตามมาตรา ๒๒ วรรคสอง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้บุคคลสูญหาย พ.ศ.๒๕๖๕ ไปยังฝ่ายปกครองเขต กรุงเทพมหานคร ทราบโดยทันทีทาง http://arrest.dopa.go.th/0308/arrest/core/user/'));
-            children.push(tP('[  ] มีพฤติการณ์ที่ไม่สามารถบันทึกภาพและเสียงได้ในขณะจับและควบคุมตัว เนื่องด้วยเหตุสุดวิสัย'));
-            children.push(tP('เจ้าหน้าที่ผู้จับกุมได้จัดทำบันทึกการจับกุม และอ่านให้ผู้ถูกจับฟัง และผู้ถูกจับได้อ่านด้วยตนเองแล้ว รับว่าถูกต้อง มีการดำเนินการตาม พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้บุคคลสูญหาย พ.ศ.๒๕๖๕ มาตรา ๒๒ และได้มอบสำเนาบันทึกการจับกุมให้ผู้ถูกจับเรียบร้อย จึงได้ลงลายมือชื่อไว้เป็นหลักฐาน'));
-            children.push(tP('ในการจับกุมครั้งนี้เจ้าพนักงานตำรวจที่ทำการจับกุมมิได้ใช้กำลัง ขู่เข็ญ หลอกลวง หรือให้สัญญาด้วยประการใดๆ ต่อผู้ต้องหาหรือบุคคลอื่น ทั้งมิได้ทำร้ายร่างกายให้บุคคลใดได้รับอันตรายแก่กายและจิตใจแต่อย่างใด มิได้เรียกร้องหรือเรียกรับหรือยอมจะรับทรัพย์สินหรือประโยชน์อื่นใดมาเป็นประโยชน์ส่วนตนหรือบุคคลอื่น และมิได้ทำให้เสียหาย ทำลาย ซ่อนเร้น เอาไปเสีย หรือทำให้สูญหายซึ่งทรัพย์สินของผู้ต้องหาหรือของบุคคลใดแต่อย่างใด และได้มอบบันทึกการจับกุมทั้งหมดให้ผู้ถูกจับ ๑ ชุด'));
+            children.push(tP(`( ${mk(vm.basis === 'bail_escape')} ) เป็นการจับกุมผู้ต้องหาหรือจำเลยที่หนีหรือจะหลบหนีระหว่างถูกปล่อยชั่วคราว ตาม ม.117`, { indent: { left: 560 }, after: 35 }));
+            children.push(tP('( / ) ในการจับกุมและควบคุมได้กระทำไปตามกฎหมาย โดยคำนึงถึงศักดิ์ศรีความเป็นมนุษย์', { indent: { left: 560 }, after: 35 }));
+            children.push(tP(`( ${mk(!vm.hasForceMajeure)} ) ในการควบคุมตัวผู้ถูกจับ เจ้าหน้าที่ผู้จับกุมได้ทำการบันทึกภาพและเสียงอย่างต่อเนื่อง ในขณะจับ และควบคุมตัวผู้ถูกจับในชั้นจับกุมจนกระทั่งส่งตัวให้พนักงานสอบสวน ตามมาตรา 22 วรรคหนึ่ง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565`, { indent: { left: 560 }, align: AlignmentType.BOTH, after: 35 }));
+            children.push(tP(`( ${mk(vm.hasForceMajeure)} ) มีเหตุสุดวิสัยที่ไม่สามารถบันทึกภาพและเสียงตาม ตามมาตรา 22 วรรคหนึ่ง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 เนื่องจาก ${vm.hasForceMajeure ? vm.fmReason : '–'}`, { indent: { left: 560, firstLine: 560 }, after: 35 }));
+            children.push(tP('ผู้จับกุมไม่ได้กระทำการใดๆ อันเป็นการทรมาน การทำที่โหดร้าย ไร้มนุษยธรรม หรือย่ำยีศักดิ์ศรีความเป็นมนุษย์หรือกระทำให้บุคคลสูญหายแต่อย่างใด', { indent: { firstLine: 560 }, after: 35 }));
+            children.push(tP('เจ้าหน้าที่ผู้จับกุม ได้แจ้งข้อมูลเกี่ยวกับผู้ถูกควบคุมตัว ตามมาตรา 22 วรรคสอง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 ไปยัง www.ptd.ago.go.th เรียบร้อยแล้ว', { indent: { firstLine: 560 }, after: 35 }));
+            children.push(tP('เจ้าหน้าที่ผู้จับกุม ได้แจ้งข้อมูลเกี่ยวกับผู้ถูกควบคุมตัว ตามมาตรา 22 วรรคสอง แห่ง พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 ไปยัง https://arrest.dopa.go.th/0308/arrest/app/place/ เรียบร้อยแล้ว', { indent: { firstLine: 560 }, after: 35 }));
+            children.push(tP('เจ้าหน้าที่ตำรวจผู้จับได้อ่านบันทึกให้ผู้ถูกจับฟังรับว่าถูกต้อง มีการดำเนินการตาม พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 มาตรา 22 และได้มอบสำเนาบันทึกการจับกุมให้แก่ผู้ถูกจับเรียบร้อย', { indent: { firstLine: 560 }, after: 70 }));
 
-            // Signatures block
+            children.push(tP('ผู้ถูกจับทราบข้อกล่าวหา รายละเอียดเกี่ยวกับเหตุแห่งการจับ และสิทธิของผู้ถูกจับดังกล่าวข้างต้นแล้ว', { bold: true, after: 35 }));
+            children.push(tP(`${chk(vm.pleaRefuseTestify)} ไม่ยอมให้การ   ${chk(vm.pleaGiveStatement)} ให้การ   ${chk(vm.pleaConfess)} รับสารภาพตลอดข้อกล่าวหา   ${chk(vm.pleaDeny)} ปฏิเสธ   ${chk(vm.pleaUnable)} ไม่สามารถให้การใดๆ ได้`, { after: 35 }));
+            children.push(tP(`${chk(!rec.noWarrant)} เป็นกรณีมีหมายจับ เจ้าพนักงานตำรวจผู้จับได้แจ้งให้ผู้ถูกจับทราบ และอ่านข้อความในหมายจับให้ผู้ถูกจับฟังแล้ว`, { after: 60 }));
+
+            if (vm.narrPage2.length > 0) {
+                vm.narrPage2.forEach((para, idx) => {
+                    if (idx === 0) {
+                        children.push(tP([tRun('พฤติการณ์แห่งการจับกุม ', { bold: true }), tRun(para)], { align: AlignmentType.BOTH, after: 55 }));
+                    } else {
+                        children.push(tP(para, { align: AlignmentType.BOTH, after: 55 }));
+                    }
+                });
+            } else {
+                children.push(tP([tRun('พฤติการณ์แห่งการจับกุม ', { bold: true }), tRun('-')], { after: 55 }));
+            }
+
+            children.push(tP(`(ลงชื่อ) ${vm.suspPrefix} ......................................................... ผู้ถูกจับ`, { align: AlignmentType.CENTER, before: 160, after: 0 }));
+
+            // =========================================================================
+            // PAGE 3 (ภาพ 3): บันทึกจับกุม หน้าที่ 3 (เหตุเกิดที่ + อนึ่ง + รายนามผู้จับกุม)
+            // =========================================================================
+            children.push(new Paragraph({ children: [new PageBreak()] }));
+            vm.narrPage3.forEach(para => {
+                children.push(tP(para, { align: AlignmentType.BOTH, after: 55 }));
+            });
+            children.push(tP([tRun('เหตุเกิดที่ ', { bold: true }), tRun(vm.fullArrestLocAr)], { after: 35 }));
+            children.push(tP(`วันที่ ${vm.arrestDateAr} เวลาประมาณ ${vm.arrestTimeAr} น.`, { indent: { left: 680 }, after: 90 }));
+
+            children.push(tP(
+                'อนึ่ง ในการจับกุมผู้ถูกจับครั้งนี้ เจ้าหน้าที่ตำรวจผู้จับกุมมิได้ทำให้ทรัพย์สินของผู้ถูกจับ หรือทรัพย์สินของผู้ใดเสียหาย สูญหาย เสื่อมค่า หรือไร้ประโยชน์ ทั้งมิได้เรียกร้องเอาทรัพย์สินของผู้ถูกจับหรือผู้ใดมาเป็นประโยชน์ต่อส่วนตนแต่อย่างใด และมิได้ทำร้ายร่างกายผู้ใดให้ได้รับอันตรายแก่กายหรือจิตใจแต่อย่างใด เจ้าหน้าที่ตำรวจได้อ่านบันทึกจับกุมนี้ให้ผู้ถูกจับฟังและให้อ่านเองจนเป็นที่เข้าใจแล้ว รับรองว่าถูกต้อง จึงให้ลงลายมือชื่อไว้เป็นหลักฐาน',
+                { indent: { firstLine: 680 }, align: AlignmentType.BOTH, after: 220 }
+            ));
+
+            children.push(tP(`(ลงชื่อ) ${vm.suspPrefix} ......................................................... ผู้ถูกจับ`, { align: AlignmentType.CENTER, after: 20 }));
+            children.push(tP(`( ${vm.suspNameOnly} )`, { align: AlignmentType.CENTER, after: 260 }));
+
+            children.push(tP(`รายนามผู้จับกุม เจ้าหน้าที่ตำรวจ${vm.unitShort === 'สภ.บางพลี' ? 'งานสืบสวน สภ.บางพลี' : ' ' + vm.unitShort}`, { bold: true, align: AlignmentType.CENTER, after: 140 }));
+
+            const offRows = [];
+            for (let i = 0; i < vm.officerSignItems.length; i += 2) {
+                const L = vm.officerSignItems[i];
+                const R = vm.officerSignItems[i + 1];
+                offRows.push(new TableRow({
+                    children: [
+                        new TableCell({
+                            width: { size: 4800, type: WidthType.DXA },
+                            borders: noBorders,
+                            margins: { top: 40, bottom: 90, left: 0, right: 80 },
+                            children: [
+                                tP(`(ลงชื่อ) ${L.rank} ......................................... ${L.roleLabel}`, { after: 15 }),
+                                tP(`( ${L.nameOnly} )`, { align: AlignmentType.CENTER, after: 0 })
+                            ]
+                        }),
+                        new TableCell({
+                            width: { size: 4800, type: WidthType.DXA },
+                            borders: noBorders,
+                            margins: { top: 40, bottom: 90, left: 80, right: 0 },
+                            children: R ? [
+                                tP(`(ลงชื่อ) ${R.rank} ......................................... ${R.roleLabel}`, { after: 15 }),
+                                tP(`( ${R.nameOnly} )`, { align: AlignmentType.CENTER, after: 0 })
+                            ] : [tP('', { after: 0 })]
+                        })
+                    ]
+                }));
+            }
             children.push(new Table({
-                width: { size: 100, type: WidthType.PERCENTAGE },
+                width: { size: 9600, type: WidthType.DXA },
+                columnWidths: [4800, 4800],
+                borders: noBorders,
+                rows: offRows
+            }));
+
+            // =========================================================================
+            // PAGE 4 (ภาพ 4): ภาพประกอบการจับกุม (-4-)
+            // =========================================================================
+            children.push(new Paragraph({ children: [new PageBreak()] }));
+            children.push(tP('-4-', { align: AlignmentType.CENTER, size: SZ_SM, after: 40 }));
+            children.push(tP('ภาพประกอบการจับกุม', { align: AlignmentType.CENTER, size: SZ_TITLE, bold: false, after: 180 }));
+
+            const page4BoxChildren = [];
+            if (vm.generalPhotosList.length > 0) {
+                for (const p of vm.generalPhotosList.slice(0, 2)) {
+                    const ir = await buildDocxImageRun(ImageRun, p.dataUrl, 420, 220);
+                    if (ir) {
+                        page4BoxChildren.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 80, after: 80 }, children: [ir] }));
+                    }
+                }
+            }
+            if (page4BoxChildren.length === 0) {
+                page4BoxChildren.push(new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    spacing: { before: 120, after: 200 },
+                    children: [new TextRun({ text: '{ภาพประกอบการจับกุม}', font: FONT, size: 40 })]
+                }));
+            }
+
+            children.push(new Table({
+                width: { size: 8800, type: WidthType.DXA },
+                columnWidths: [8800],
+                alignment: AlignmentType.CENTER,
+                borders: cellBorder,
+                rows: [
+                    new TableRow({
+                        height: { value: 4800, rule: HeightRule.ATLEAST },
+                        children: [
+                            new TableCell({
+                                width: { size: 8800, type: WidthType.DXA },
+                                borders: cellBorder,
+                                margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                                children: page4BoxChildren
+                            })
+                        ]
+                    })
+                ]
+            }));
+
+            children.push(tP(`อธิบาย : ${vm.photoCaption}`, { before: 280, after: 280, align: AlignmentType.BOTH }));
+            children.push(tP(`(ลงชื่อ) ${vm.suspPrefix} .................................................... ผู้ถูกจับ`, { indent: { left: 2600 }, after: 20 }));
+            children.push(tP(`( ${vm.suspNameOnly} )`, { indent: { left: 4000 }, after: 180 }));
+            children.push(tP(`(ลงชื่อ) ${vm.recorderSplit.rank} .................................................... ผู้จับกุม/บันทึก/อ่าน`, { indent: { left: 2600 }, after: 20 }));
+            children.push(tP(`( ${vm.recorderSplit.nameOnly || vm.recorderOfficer.name} )`, { indent: { left: 4000 }, after: 0 }));
+
+            // =========================================================================
+            // PAGE 5 (ภาพ 5): แบบแจ้งเรื่องการควบคุมตามมาตรา ๒๒ วรรคสอง (เลขไทย)
+            // =========================================================================
+            children.push(new Paragraph({ children: [new PageBreak()] }));
+            children.push(tP('แบบแจ้งเรื่องการควบคุมตามมาตรา ๒๒ วรรคสอง', { bold: true, align: AlignmentType.CENTER, size: SZ_TITLE, after: 20 }));
+            children.push(tP('*****************************************************************************', { bold: true, align: AlignmentType.CENTER, after: 90 }));
+            children.push(tP(
+                'รายการข้อมูลในการแจ้งการจับและควบคุมไปยังพนักงานอัยการ และนายอำเภอในท้องที่ที่มีการควบคุมตัว และสำหรับในกรุงเทพมหานครให้แจ้งพนักงานอัยการ และผู้อำนวยการสำนักการสอบสวนและนิติการ กรมการปกครอง ผ่านทางศูนย์รับแจ้งโดยทันทีที่มีข้อมูลครบถ้วน ดังต่อไปนี้',
+                { align: AlignmentType.BOTH, after: 90 }
+            ));
+
+            children.push(tP('(๑) ข้อมูลของผู้ถูกจับและควบคุม (หากไม่ทราบให้ระบุว่าไม่ทราบ)', { bold: true, after: 25 }));
+            children.push(tP([
+                tRun('ชื่อ'), dRun(toTh(vm.suspFirst || 'ไม่มี')),
+                tRun('นามสกุล'), dRun(toTh(vm.suspLast || 'ไม่มี')),
+                tRun('หมายเลขบัตรประชาชน'), dRun(toTh(vm.suspIdAr))
+            ], { after: 25 }));
+            children.push(tP([tRun('ที่อยู่'), dRun(toTh(vm.suspAddrAr))], { after: 90 }));
+
+            children.push(tP('(๒) วัน เวลา และสถานที่ที่ทำการจับและควบคุม', { bold: true, after: 25 }));
+            children.push(tP([
+                tRun('วันที่'), dRun(vm.arrestDashDateTh),
+                tRun('เวลา'), dRun(vm.arrestTimeTh),
+                tRun('น. สถานที่จับและควบคุมอยู่'), dRun(toTh(vm.fullArrestLocAr))
+            ], { after: 90 }));
+
+            children.push(tP('(๓) พฤติการณ์ในการจับและควบคุมบุคคลดังกล่าวโดยย่อ', { bold: true, after: 25 }));
+            children.push(tP([dRun(toTh(vm.m22Brief))], { align: AlignmentType.BOTH, after: 90 }));
+
+            children.push(tP('(๔) สถานที่ควบคุมตัวบุคคลดังกล่าวไว้', { bold: true, after: 25 }));
+            children.push(tP([tRun('สถานที่ควบคุมตัว'), dRun(toTh(vm.detentionPlace))], { after: 90 }));
+
+            children.push(tP('(๕) ภาพถ่ายผู้ถูกจับและควบคุม ตามข้อ (๑) (เป็นภาพแนบท้าย)', { bold: true, after: 25 }));
+            children.push(tP([tRun('แผ่นที่'), dRun('๑')], { after: 90 }));
+
+            children.push(tP('(๖) ชื่อเจ้าหน้าที่ของรัฐผู้รับผิดชอบที่ทำการจับและควบคุมตามมาตรา ๒๒ (ชื่อ ตำแหน่ง และหมายเลขโทรศัพท์ที่สามารถติดต่อได้)', { bold: true, after: 25 }));
+            children.push(tP([
+                tRun('ชื่อ'), dRun(toTh(vm.leadOfficer.name)),
+                tRun('ตำแหน่ง'), dRun(toTh(vm.leadOfficer.position || 'รอง สว.สส.สภ.บางพลี')),
+                tRun('หมายเลขโทรศัพท์ที่สามารถติดต่อได้'), dRun(toTh(vm.officerPhone))
+            ], { after: 90 }));
+
+            children.push(tP([
+                tRun('(๗) เหตุสุดวิสัยในกรณีที่ไม่สามารถบันทึกภาพและเสียงได้ในขณะจับและควบคุม (ถ้ามี) ', { bold: true }),
+                dRun(vm.hasForceMajeure ? toTh(vm.fmReason) : '-')
+            ], { after: 90 }));
+
+            children.push(tP('(๘) ชื่อเจ้าหน้าที่ของรัฐผู้แจ้ง (ชื่อ ตำแหน่ง และหมายเลขโทรศัพท์ที่สามารถติดต่อได้)', { bold: true, after: 25 }));
+            children.push(tP([
+                tRun('ชื่อ'), dRun(toTh(vm.leadOfficer.name)),
+                tRun('ตำแหน่ง'), dRun(toTh(vm.leadOfficer.position || 'รอง สว.สส.สภ.บางพลี')),
+                tRun('หมายเลขโทรศัพท์ที่สามารถติดต่อได้'), dRun(toTh(vm.officerPhone))
+            ], { after: 0 }));
+
+            // =========================================================================
+            // PAGE 6 (ภาพ 6): ภาพแนบท้าย (มาตรา ๒๒)
+            // =========================================================================
+            children.push(new Paragraph({ children: [new PageBreak()] }));
+            children.push(tP('ภาพแนบท้าย', { bold: true, align: AlignmentType.CENTER, size: SZ_TITLE, after: 100 }));
+            children.push(tP(`ชื่อ  ${toTh(vm.suspFirst)}   นามสกุล  ${toTh(vm.suspLast)}   หมายเลขบัตรประชาชน  ${toTh(vm.suspIdAr)}`, { align: AlignmentType.CENTER, after: 30 }));
+            children.push(tP(`ที่อยู่  ${toTh(vm.suspAddrAr)}`, { after: 120 }));
+
+            const buildM22PicCell = async (url, label) => {
+                const ir = url ? await buildDocxImageRun(ImageRun, url, 215, 165) : null;
+                return new TableCell({
+                    width: { size: 4800, type: WidthType.DXA },
+                    borders: cellBorder,
+                    margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                    children: ir
+                        ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 40, after: 40 }, children: [ir] })]
+                        : [tP(label, { align: AlignmentType.CENTER, before: 40, after: 0 })]
+                });
+            };
+
+            const cellPic1 = await buildM22PicCell(vm.m22Photos.front, '<pic1>');
+            const cellPic2 = await buildM22PicCell(vm.m22Photos.back, '<pic2>');
+            const cellPic3 = await buildM22PicCell(vm.m22Photos.left, '<pic3>');
+            const cellPic4 = await buildM22PicCell(vm.m22Photos.right, '<pic4>');
+
+            children.push(new Table({
+                width: { size: 9600, type: WidthType.DXA },
+                columnWidths: [4800, 4800],
+                borders: cellBorder,
+                rows: [
+                    new TableRow({ height: { value: 3800, rule: HeightRule.ATLEAST }, children: [cellPic1, cellPic2] }),
+                    new TableRow({ height: { value: 3800, rule: HeightRule.ATLEAST }, children: [cellPic3, cellPic4] })
+                ]
+            }));
+
+            children.push(tP(' ', { after: 180 }));
+            children.push(new Table({
+                width: { size: 9600, type: WidthType.DXA },
+                columnWidths: [4800, 4800],
                 borders: noBorders,
                 rows: [
                     new TableRow({
                         children: [
                             new TableCell({
-                                width: { size: 50, type: WidthType.PERCENTAGE },
+                                width: { size: 4800, type: WidthType.DXA },
                                 borders: noBorders,
                                 children: [
-                                    tP('(ลงชื่อ) .................................................... ผู้ถูกจับ/ได้รับสำเนาบันทึกจับกุมแล้ว', { align: AlignmentType.CENTER }),
-                                    tP(`( ${suspectFullName} )`, { align: AlignmentType.CENTER }),
+                                    tP('ลงชื่อ....................................................ผู้ถูกจับกุม', { align: AlignmentType.CENTER, after: 20 }),
+                                    tP(`(  ${vm.suspNameOnly ? toTh(vm.suspNameOnly) : '       '}  )`, { align: AlignmentType.CENTER, after: 0 })
                                 ]
                             }),
                             new TableCell({
-                                width: { size: 50, type: WidthType.PERCENTAGE },
+                                width: { size: 4800, type: WidthType.DXA },
                                 borders: noBorders,
                                 children: [
-                                    tP('เจ้าหน้าที่ชุดจับกุม สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑', { align: AlignmentType.CENTER, bold: true }),
-                                    tP('(ลงชื่อ) .................................................... ผู้จับกุม/บันทึก/อ่าน', { align: AlignmentType.CENTER }),
-                                    tP(`( ${leadOfficerName} )`, { align: AlignmentType.CENTER }),
-                                    secondOfficerName ? tP('(ลงชื่อ) .................................................... ผู้ร่วมจับกุม', { align: AlignmentType.CENTER }) : tP(' '),
-                                    secondOfficerName ? tP(`( ${secondOfficerName} )`, { align: AlignmentType.CENTER }) : tP(' '),
+                                    tP(`ลงชื่อ ${toTh(vm.leadSplit.rank)}............................................ผู้จับกุม`, { align: AlignmentType.CENTER, after: 20 }),
+                                    tP(`( ${toTh(vm.leadSplit.nameOnly || vm.leadOfficer.name)} )`, { align: AlignmentType.CENTER, after: 20 }),
+                                    tP(`${toTh(vm.leadOfficer.position || 'รอง สว.สส.สภ.บางพลี')}`, { align: AlignmentType.CENTER, after: 0 })
                                 ]
                             })
                         ]
@@ -8388,81 +9342,173 @@ ${currentDocPrintHtml}
                 ]
             }));
 
-            // ==========================================
-            // PAGE 3: แบบแจ้งเรื่องการควบคุมตามมาตรา ๒๒ วรรคสอง
-            // ==========================================
+            // =========================================================================
+            // PAGE 7 (ภาพ 7): ปท. ๑ หน้าที่ ๑ (มาตรา ๒๓) - ตาราง 4 คอลัมน์ตรงตามภาพ 7
+            // =========================================================================
             children.push(new Paragraph({ children: [new PageBreak()] }));
-            children.push(tP('แบบแจ้งเรื่องการควบคุมตามมาตรา ๒๒ วรรคสอง', { bold: true, align: AlignmentType.CENTER, size: FONT_TITLE }));
-            children.push(tP('รายการข้อมูลในการแจ้งการจับและควบคุมไปยังพนักงานอัยการ และนายอำเภอในท้องที่ที่มีการควบคุมตัว สำหรับในกรุงเทพมหานครให้แจ้งพนักงานอัยการ และผู้อำนวยการสำนักการสอบสวนและนิติการ กรมการปกครอง ผ่านทางศูนย์รับแจ้งโดยทันทีที่มีข้อมูลครบถ้วน ดังต่อไปนี้'));
-            children.push(tP('(๑) ข้อมูลของผู้ถูกจับและควบคุม (หากไม่ทราบให้ระบุว่าไม่ทราบ)', { bold: true }));
-            children.push(tP(`    ${suspectFullName} อายุ ${suspectAge} ปี เลขบัตรประจำตัวประชาชน ${suspectIdCard} ที่อยู่ ${suspectAddress}`));
-            children.push(tP('(๒) วัน เวลา และสถานที่ทำการจับและควบคุม', { bold: true }));
-            children.push(tP(`    วัน เดือน ปี ที่จับกุม ${arrestDateStr} เวลา ${arrestTimeStr} สถานที่ ${fullArrestLoc}`));
-            children.push(tP('(๓) พฤติการณ์ในการจับและควบคุมบุคคลดังกล่าวโดยย่อ', { bold: true }));
-            children.push(tP('    พฤติการณ์ในการจับกุม', { bold: true }));
-            narrativeParagraphs.forEach(para => {
-                if (para.trim()) {
-                    children.push(tP(`    ${toTh(para.trim())}`));
-                }
-            });
-            children.push(tP('    ควบคุมตัวพร้อมของกลางนำส่งพนักงานสอบสวน สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑ เพื่อดำเนินคดีตามกฎหมายต่อไป'));
-            children.push(tP('(๔) สถานที่ควบคุมตัวบุคคลดังกล่าวไว้', { bold: true }));
-            children.push(tP('    สถานที่ควบคุมตัว (สน./สภ./กก.) สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑'));
-            children.push(tP('(๕) ภาพถ่ายผู้ถูกจับและควบคุม ตามข้อ (๑) (เป็นภาพแนบท้าย)', { bold: true }));
-            children.push(tP('(๖) ชื่อเจ้าหน้าที่ของรัฐผู้รับผิดชอบที่ทำการจับและควบคุมตามมาตรา ๒๒ (ชื่อ ตำแหน่ง และหมายเลขโทรศัพท์)', { bold: true }));
-            children.push(tP(`    ${leadOfficerName} ตำแหน่ง ${leadOfficerPos} หมายเลขโทรศัพท์ ๐๒-๓๓๗๓๓๗๗`));
-            children.push(tP('(๗) เหตุสุดวิสัยในกรณีที่ไม่สามารถบันทึกภาพและเสียงได้ในขณะจับและควบคุม (ถ้ามี)', { bold: true }));
-            children.push(tP('    -'));
-            children.push(tP('(๘) ชื่อเจ้าหน้าที่ของรัฐผู้แจ้ง (ชื่อ ตำแหน่ง และหมายเลขโทรศัพท์)', { bold: true }));
-            children.push(tP(`    ${leadOfficerName} ตำแหน่ง ${leadOfficerPos} หมายเลขโทรศัพท์ ๐๒-๓๓๗๓๓๗๗`));
+            children.push(tP('ปท. ๑ หน้าที่ ๑', { align: AlignmentType.RIGHT, bold: true, size: SZ, after: 20 }));
+            children.push(tP('แบบบันทึกข้อมูลเกี่ยวกับผู้ถูกควบคุมตัวตามมาตรา ๒๓ แห่งพระราชบัญญัติป้องกัน', { bold: true, align: AlignmentType.CENTER, size: SZ_HDR, after: 10 }));
+            children.push(tP('และปราบปรามการทรมานและการกระทำให้บุคคลสูญหาย พ.ศ. ๒๕๖๕', { bold: true, align: AlignmentType.CENTER, size: SZ_HDR, after: 80 }));
 
-            // ==========================================
-            // PAGE 4: ภาพถ่ายผู้ถูกจับและของกลาง (มาตรา ๒๒)
-            // ==========================================
-            children.push(new Paragraph({ children: [new PageBreak()] }));
-            children.push(tP('ภาพถ่ายผู้ถูกจับและของกลาง', { bold: true, align: AlignmentType.CENTER, size: FONT_TITLE }));
-            children.push(tP('(ภาพแนบท้าย ตามแบบแจ้งเรื่องการควบคุมตามมาตรา ๒๒ วรรคสอง ข้อ (๕))', { align: AlignmentType.CENTER }));
+            const ptMargins = { top: 45, bottom: 45, left: 80, right: 80 };
+            const ptP = (c, o = {}) => tP(c, { size: SZ_SM, line: 220, after: 20, ...o });
 
             children.push(new Table({
-                width: { size: 100, type: WidthType.PERCENTAGE },
+                width: { size: 9600, type: WidthType.DXA },
+                columnWidths: [450, 4050, 450, 4650],
                 borders: cellBorder,
                 rows: [
+                    // Row 0: Header ๑ & Header ๓
+                    new TableRow({
+                        children: [
+                            new TableCell({ width: { size: 450, type: WidthType.DXA }, borders: cellBorder, margins: ptMargins, children: [ptP('๑', { bold: true, align: AlignmentType.CENTER, after: 0 })] }),
+                            new TableCell({ width: { size: 4050, type: WidthType.DXA }, borders: cellBorder, margins: ptMargins, children: [ptP('ข้อมูลอัตลักษณ์เกี่ยวกับผู้ถูกควบคุมตัว', { bold: true, after: 0 })] }),
+                            new TableCell({ width: { size: 450, type: WidthType.DXA }, borders: cellBorder, margins: ptMargins, children: [ptP('๓', { bold: true, align: AlignmentType.CENTER, after: 0 })] }),
+                            new TableCell({ width: { size: 4650, type: WidthType.DXA }, borders: cellBorder, margins: ptMargins, children: [ptP('คำสั่งที่ให้มีการควบคุมตัว และเหตุแห่งการออกคำสั่งนั้น', { bold: true, after: 0 })] })
+                        ]
+                    }),
+                    // Row 1: Content ๑ & Content ๓
                     new TableRow({
                         children: [
                             new TableCell({
-                                width: { size: 50, type: WidthType.PERCENTAGE },
+                                columnSpan: 2,
+                                width: { size: 4500, type: WidthType.DXA },
                                 borders: cellBorder,
+                                margins: ptMargins,
                                 children: [
-                                    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 800, after: 800 }, children: [tRun('(ติดภาพถ่าย)', { bold: true })] }),
-                                    tP('ภาพด้านหน้า', { align: AlignmentType.CENTER, bold: true })
+                                    ptP(`ชื่อ  ${toTh(vm.suspFullName)}`),
+                                    ptP(`เลขบัตรประจำตัว  ${toTh(vm.suspIdAr)}`),
+                                    ptP(`ที่อยู่  ${toTh(vm.suspAddrAr)}`),
+                                    ptP('ตำหนิรูปพรรณที่เห็นเด่นชัด(สามารถเห็นได้ด้วยตาเปล่า)'),
+                                    ptP(toTh(vm.scarMark || '-'), { align: AlignmentType.CENTER }),
+                                    ptP('รูปถ่ายของผู้ถูกควบคุม(ปรากฏตามที่แนบท้ายบันทึก)', { after: 0 })
                                 ]
                             }),
                             new TableCell({
-                                width: { size: 50, type: WidthType.PERCENTAGE },
+                                columnSpan: 2,
+                                width: { size: 5100, type: WidthType.DXA },
                                 borders: cellBorder,
+                                margins: ptMargins,
                                 children: [
-                                    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 800, after: 800 }, children: [tRun('(ติดภาพถ่าย)', { bold: true })] }),
-                                    tP('ภาพด้านหลัง', { align: AlignmentType.CENTER, bold: true })
+                                    ptP(!rec.noWarrant && rec.warrantNo ? '☑ หมายจับศาล' : '☑ ความผิดซึ่งหน้า', { bold: true }),
+                                    ptP(toTh(vm.m23OrderReason), { after: 0 })
                                 ]
                             })
                         ]
                     }),
+                    // Row 2: Header ๒ & Header ๔
+                    new TableRow({
+                        children: [
+                            new TableCell({ width: { size: 450, type: WidthType.DXA }, borders: cellBorder, margins: ptMargins, children: [ptP('๒', { bold: true, align: AlignmentType.CENTER, after: 0 })] }),
+                            new TableCell({ width: { size: 4050, type: WidthType.DXA }, borders: cellBorder, margins: ptMargins, children: [ptP('ข้อมูลเกี่ยวกับวันเวลา สถานที่ควบคุมตัว และเจ้าหน้าที่ผู้ควบคุมตัว', { bold: true, after: 0 })] }),
+                            new TableCell({ width: { size: 450, type: WidthType.DXA }, borders: cellBorder, margins: ptMargins, children: [ptP('๔', { bold: true, align: AlignmentType.CENTER, after: 0 })] }),
+                            new TableCell({ width: { size: 4650, type: WidthType.DXA }, borders: cellBorder, margins: ptMargins, children: [ptP('เจ้าหน้าที่ของรัฐผู้ออกคำสั่งให้ควบคุมตัว', { bold: true, after: 0 })] })
+                        ]
+                    }),
+                    // Row 3: Content ๒ (rowSpan: 5) & Content ๔
                     new TableRow({
                         children: [
                             new TableCell({
-                                width: { size: 50, type: WidthType.PERCENTAGE },
+                                columnSpan: 2,
+                                rowSpan: 5,
+                                width: { size: 4500, type: WidthType.DXA },
                                 borders: cellBorder,
+                                margins: ptMargins,
                                 children: [
-                                    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 800, after: 800 }, children: [tRun('(ติดภาพถ่าย)', { bold: true })] }),
-                                    tP('ภาพด้านซ้าย', { align: AlignmentType.CENTER, bold: true })
+                                    ptP([tRun('วันที่ถูกควบคุมตัว', { size: SZ_SM }), dRun(vm.arrestDashDateTh, { size: SZ_SM }), tRun('เวลา', { size: SZ_SM }), dRun(vm.arrestTimeTh, { size: SZ_SM }), tRun('น.', { size: SZ_SM })]),
+                                    ptP([tRun('สถานที่ที่ถูกควบคุมตัว', { size: SZ_SM }), dRun(toTh(vm.fullArrestLocAr), { size: SZ_SM })]),
+                                    ptP('เจ้าหน้าที่ผู้ทำการควบคุมตัว', { before: 40 }),
+                                    ptP([tRun('ชื่อ', { size: SZ_SM }), dRun(toTh(vm.leadOfficer.name), { size: SZ_SM })]),
+                                    ptP([tRun('ตำแหน่ง', { size: SZ_SM }), dRun(toTh(vm.leadOfficer.position || 'รอง สว.สส.สภ.บางพลี'), { size: SZ_SM })]),
+                                    ptP([tRun('หมายเลขติดต่อ', { size: SZ_SM }), dRun(toTh(vm.officerPhone), { size: SZ_SM })]),
+                                    ptP('สถานที่ปลายทางที่รับตัว (กรณีที่มีการย้ายสถานที่)', { before: 40 }),
+                                    ptP([tRun('ชื่อสถานที่ปลายทาง', { size: SZ_SM }), dRun(toTh(vm.detentionPlace), { size: SZ_SM })]),
+                                    ptP([tRun('ที่อยู่', { size: SZ_SM }), dRun(toTh(vm.detentionAddress), { size: SZ_SM })]),
+                                    ptP('เจ้าหน้าที่ผู้รับผิดชอบการย้ายตัว', { before: 40 }),
+                                    ptP([tRun('ชื่อ', { size: SZ_SM }), dRun(toTh(vm.leadOfficer.name), { size: SZ_SM })]),
+                                    ptP([tRun('ตำแหน่ง', { size: SZ_SM }), dRun(toTh(vm.leadOfficer.position || 'รอง สว.สส.สภ.บางพลี'), { size: SZ_SM })]),
+                                    ptP([tRun('หมายเลขติดต่อ', { size: SZ_SM }), dRun(toTh(vm.officerPhone), { size: SZ_SM })], { after: 0 })
                                 ]
                             }),
                             new TableCell({
-                                width: { size: 50, type: WidthType.PERCENTAGE },
+                                columnSpan: 2,
+                                width: { size: 5100, type: WidthType.DXA },
                                 borders: cellBorder,
+                                margins: ptMargins,
                                 children: [
-                                    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 800, after: 800 }, children: [tRun('(ติดภาพถ่าย)', { bold: true })] }),
-                                    tP('ภาพด้านขวา', { align: AlignmentType.CENTER, bold: true })
+                                    ptP([tRun('ชื่อ', { size: SZ_SM }), dRun(toTh(vm.issuerName), { size: SZ_SM })]),
+                                    ptP([tRun('ตำแหน่ง', { size: SZ_SM }), dRun(toTh(vm.issuerPos), { size: SZ_SM })], { after: 0 })
+                                ]
+                            })
+                        ]
+                    }),
+                    // Row 4: Header ๕
+                    new TableRow({
+                        children: [
+                            new TableCell({ width: { size: 450, type: WidthType.DXA }, borders: cellBorder, margins: ptMargins, children: [ptP('๕', { bold: true, align: AlignmentType.CENTER, after: 0 })] }),
+                            new TableCell({ width: { size: 4650, type: WidthType.DXA }, borders: cellBorder, margins: ptMargins, children: [ptP('วัน/เวลา/สถานที่ของการปล่อยตัวผู้ถูกควบคุมตัว และผู้มารับตัวผู้ถูกควบคุมตัว/หรือส่งมอบตัว', { bold: true, after: 0 })] })
+                        ]
+                    }),
+                    // Row 5: Content ๕
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                columnSpan: 2,
+                                width: { size: 5100, type: WidthType.DXA },
+                                borders: cellBorder,
+                                margins: ptMargins,
+                                children: [
+                                    ptP('วันที่ .............................. เวลา ................... น.'),
+                                    ptP('สถานที่ปล่อยตัว/หรือมอบตัว .........................................................'),
+                                    ptP([tRun('ผู้มารับตัว/รับมอบตัว(มี/ไม่มี)', { size: SZ_SM }), dRun(toTh(vm.receiverInfo), { size: SZ_SM })]),
+                                    ptP('ชื่อ .................................... นามสกุล .........................'),
+                                    ptP('หมายเลขติดต่อ..............................................................', { after: 0 })
+                                ]
+                            })
+                        ]
+                    }),
+                    // Row 6: Header ๖
+                    new TableRow({
+                        children: [
+                            new TableCell({ width: { size: 450, type: WidthType.DXA }, borders: cellBorder, margins: ptMargins, children: [ptP('๖', { bold: true, align: AlignmentType.CENTER, after: 0 })] }),
+                            new TableCell({ width: { size: 4650, type: WidthType.DXA }, borders: cellBorder, margins: ptMargins, children: [ptP('ข้อมูลเกี่ยวกับสภาพร่างกายและจิตใจของผู้ถูกควบคุมตัว (สามารถเห็นได้ด้วยตาเปล่า)', { bold: true, after: 0 })] })
+                        ]
+                    }),
+                    // Row 7: Content ๖ (rowSpan: 3)
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                columnSpan: 2,
+                                rowSpan: 3,
+                                width: { size: 5100, type: WidthType.DXA },
+                                borders: cellBorder,
+                                margins: ptMargins,
+                                children: [
+                                    ptP([tRun('ก่อนถูกควบคุมตัว', { size: SZ_SM }), dRun(toTh(vm.conditionBefore), { size: SZ_SM })]),
+                                    ptP('ก่อนปล่อยตัว ......................................................'),
+                                    ptP([tRun('ในกรณีที่ผู้ถูกควบคุมตัวถึงแก่ความตายระหว่างการควบคุมตัว สาเหตุแห่งการตาย(เท่าที่ทราบเบื้องต้น)', { size: SZ_SM }), dRun('-', { size: SZ_SM })]),
+                                    ptP([tRun('สถานที่เก็บศพ', { size: SZ_SM }), dRun('-', { size: SZ_SM })], { after: 0 })
+                                ]
+                            })
+                        ]
+                    }),
+                    // Row 8: Header ๗
+                    new TableRow({
+                        children: [
+                            new TableCell({ width: { size: 450, type: WidthType.DXA }, borders: cellBorder, margins: ptMargins, children: [ptP('๗', { bold: true, align: AlignmentType.CENTER, after: 0 })] }),
+                            new TableCell({ width: { size: 4050, type: WidthType.DXA }, borders: cellBorder, margins: ptMargins, children: [ptP('ข้อมูลอื่น ๆ ที่คณะกรรมการกำหนด', { bold: true, after: 0 })] })
+                        ]
+                    }),
+                    // Row 9: Content ๗
+                    new TableRow({
+                        children: [
+                            new TableCell({
+                                columnSpan: 2,
+                                width: { size: 4500, type: WidthType.DXA },
+                                borders: cellBorder,
+                                margins: ptMargins,
+                                children: [
+                                    ptP(vm.m23CommitteeNote ? toTh(vm.m23CommitteeNote) : '......................................................', { after: 0 })
                                 ]
                             })
                         ]
@@ -8470,187 +9516,45 @@ ${currentDocPrintHtml}
                 ]
             }));
 
-            children.push(tP(' '));
-            children.push(tP('(ลงชื่อ) .................................................... ผู้ถูกจับ', { align: AlignmentType.CENTER }));
-            children.push(tP(`( ${suspectFullName} )`, { align: AlignmentType.CENTER }));
-            children.push(tP('(ลงชื่อ) .................................................... ผู้จับกุม/บันทึก/อ่าน', { align: AlignmentType.CENTER }));
-            children.push(tP(`( ${leadOfficerName} )`, { align: AlignmentType.CENTER }));
+            children.push(tP('มีหน้าต่อเป็นบันทึกแนบท้ายเพิ่มเติม', { align: AlignmentType.RIGHT, bold: true, size: SZ_SM, before: 40, after: 140 }));
+            children.push(buildPt23SignaturesTable());
 
-            // ==========================================
-            // PAGE 5: ปท. ๑ หน้าที่ ๑ (มาตรา ๒๓)
-            // ==========================================
+            // =========================================================================
+            // PAGE 8 (ภาพ 8): ปท.๑ หน้าที่ ๒ (บันทึกแนบท้ายเพิ่มเติม)
+            // =========================================================================
             children.push(new Paragraph({ children: [new PageBreak()] }));
-            children.push(tP('ปท. ๑ หน้าที่ ๑', { align: AlignmentType.RIGHT, bold: true }));
-            children.push(tP('แบบบันทึกข้อมูลเกี่ยวกับผู้ถูกควบคุมตัวตามมาตรา ๒๓ แห่งพระราชบัญญัติป้องกัน', { bold: true, align: AlignmentType.CENTER, size: 32 }));
-            children.push(tP('และปราบปรามการทรมานและการกระทำให้บุคคลสูญหาย พ.ศ. ๒๕๖๕', { bold: true, align: AlignmentType.CENTER, size: 32 }));
+            children.push(tP('ปท.๑ หน้าที่ ๒', { align: AlignmentType.RIGHT, bold: true, size: SZ, after: 20 }));
+            children.push(tP('บันทึกแนบท้ายเพิ่มเติม', { bold: true, align: AlignmentType.CENTER, size: SZ_TITLE, after: 120 }));
 
-            children.push(new Table({
-                width: { size: 100, type: WidthType.PERCENTAGE },
-                borders: cellBorder,
-                rows: [
-                    new TableRow({
-                        children: [
-                            new TableCell({
-                                width: { size: 50, type: WidthType.PERCENTAGE },
-                                borders: cellBorder,
-                                children: [
-                                    tP('๑ ข้อมูลอัตลักษณ์เกี่ยวกับผู้ถูกควบคุมตัว', { bold: true }),
-                                    tP(`ชื่อ-นามสกุล: ${suspectFullName}`),
-                                    tP(`เลขบัตรประชาชน: ${suspectIdCard}`),
-                                    tP('หนังสือเดินทาง: -'),
-                                    tP(`ที่อยู่: ${suspectAddress}`),
-                                    tP('หรือตำหนิรูปพรรณที่เห็นเด่นชัด (สามารถเห็นได้ด้วยตาเปล่า): -'),
-                                    tP('รูปถ่ายของผู้ถูกควบคุม: (ปรากฏตามที่แนบท้ายบันทึก)'),
-                                    tP(' '),
-                                    tP('๒ ข้อมูลเกี่ยวกับวันเวลา สถานที่ควบคุมตัว และเจ้าหน้าที่ผู้ควบคุมตัว', { bold: true }),
-                                    tP(`วันที่ถูกควบคุมตัว: ${arrestDateStr} เวลา ${arrestTimeStr}`),
-                                    tP(`สถานที่ที่ถูกควบคุมตัว: ${rec.locDetail || '-'}`),
-                                    tP(`ตำบล/แขวง: ${rec.locTam || 'บางพลีใหญ่'} อำเภอ/เขต: ${rec.locAmp || 'บางพลี'} จังหวัด: ${rec.locProv || 'สมุทรปราการ'}`),
-                                    tP(`เจ้าหน้าที่ผู้ทำการควบคุมตัว: ${leadOfficerName}`),
-                                    tP(`ตำแหน่ง: ${leadOfficerPos} หมายเลขติดต่อ: ๐๒-๓๓๗๓๓๗๗`),
-                                    tP('สถานที่ปลายทางที่รับตัว (กรณีที่มีการย้ายสถานที่):'),
-                                    tP('ชื่อสถานที่ปลายทาง: สภ.บางพลี ต.บางพลีใหญ่ อ.บางพลี จ.สมุทรปราการ'),
-                                    tP(`เจ้าหน้าที่ผู้รับผิดชอบการย้ายตัว: ${leadOfficerName} ${leadOfficerPos}`),
-                                ]
-                            }),
-                            new TableCell({
-                                width: { size: 50, type: WidthType.PERCENTAGE },
-                                borders: cellBorder,
-                                children: [
-                                    tP('๓ คำสั่งที่ให้มีการควบคุมตัว และเหตุแห่งการออกคำสั่งนั้น', { bold: true }),
-                                    tP(`[  ] ความผิดซึ่งหน้าฐาน: ${rec.noWarrant ? (chargesList[0] || '-') : '-'}`),
-                                    tP(`[✓] ตามหมายจับเลขที่: ${!rec.noWarrant && rec.warrantNo ? toTh(rec.warrantNo) : '-'}`),
-                                    tP(`ศาลผู้ออกหมาย: ${!rec.noWarrant && rec.warrantCourt ? toTh(rec.warrantCourt) : '-'}`),
-                                    tP('คำสั่ง: หมายจับคดีอาญา'),
-                                    tP('เหตุแห่งการออกคำสั่ง: ต้องหาว่ากระทำความผิดอาญาตามหมายจับ'),
-                                    tP('อื่น ๆ ที่มีกฎหมายกำหนดให้อำนาจ: -'),
-                                    tP(' '),
-                                    tP('๔ เจ้าหน้าที่ของรัฐผู้ออกคำสั่งให้ควบคุมตัว', { bold: true }),
-                                    tP(`ชื่อ-นามสกุล: ${(rec.commanders && rec.commanders[0]?.name) || 'พ.ต.อ.ไพโรจน์ เพ็ชรพลอย'} ตำแหน่ง: ผกก.สภ.บางพลี`),
-                                    tP(' '),
-                                    tP('๕ วัน/เวลา/สถานที่ของการปล่อยตัว และผู้มารับตัว/ส่งมอบตัว', { bold: true }),
-                                    tP(`วันที่: ${recordDateStr} เวลา ${recordTimeStr}`),
-                                    tP('สถานที่ปล่อยตัว/หรือมอบตัว: สภ.บางพลี'),
-                                    tP('ผู้มารับตัว/รับมอบตัว: ส่งมอบตัวพนักงานสอบสวน สภ.บางพลี'),
-                                    tP('ชื่อ-นามสกุล: พงส.เวร สภ.บางพลี หมายเลขติดต่อ: ๐๒-๓๓๗๓๓๗๗'),
-                                    tP(' '),
-                                    tP('๖ ข้อมูลสภาพร่างกายและจิตใจของผู้ถูกควบคุมตัว (สามารถเห็นได้ด้วยตาเปล่า)', { bold: true }),
-                                    tP('[✓] ก่อนถูกควบคุมตัวปกติ'),
-                                    tP('[✓] ก่อนปล่อยตัวหรือส่งตัวให้พนักงานสอบสวนปกติ'),
-                                    tP('ในกรณีที่ผู้ถูกควบคุมตัวถึงแก่ความตายระหว่างการควบคุมตัว: -'),
-                                    tP('สาเหตุแห่งการตาย (เท่าที่ทราบเบื้องต้น): -'),
-                                    tP('สถานที่เก็บศพ: -'),
-                                    tP(' '),
-                                    tP('๗ ข้อมูลอื่น ๆ ที่คณะกรรมการกำหนด', { bold: true }),
-                                    tP('(ไม่มี)'),
-                                ]
-                            })
-                        ]
-                    })
-                ]
-            }));
+            children.push(tP('๘. เหตุสุดวิสัยที่ไม่สามารถบันทึกภาพและเสียงตามมาตรา ๒๒ วรรคหนึ่งได้', { bold: true, indent: { left: 560 }, after: 35 }));
+            children.push(tP([dRun(vm.hasForceMajeure ? toTh(vm.fmReason) : 'ไม่มี')], { indent: { left: 560 }, after: 35 }));
+            const fullDottedLine = '........................................................................................................................................';
+            for (let k = 0; k < 4; k++) {
+                children.push(tP(fullDottedLine, { after: k === 3 ? 120 : 35 }));
+            }
 
-            children.push(tP(' '));
-            children.push(new Table({
-                width: { size: 100, type: WidthType.PERCENTAGE },
-                borders: cellBorder,
-                rows: [
-                    new TableRow({
-                        children: [
-                            new TableCell({
-                                width: { size: 33, type: WidthType.PERCENTAGE },
-                                borders: cellBorder,
-                                children: [
-                                    tP('ลงชื่อ .........................................', { align: AlignmentType.CENTER }),
-                                    tP(`( ${leadOfficerName} )`, { align: AlignmentType.CENTER }),
-                                    tP('ตำแหน่ง/ผู้ทำบันทึกควบคุม', { align: AlignmentType.CENTER, bold: true })
-                                ]
-                            }),
-                            new TableCell({
-                                width: { size: 33, type: WidthType.PERCENTAGE },
-                                borders: cellBorder,
-                                children: [
-                                    tP('ลงชื่อ .........................................', { align: AlignmentType.CENTER }),
-                                    tP(`( ${suspectFullName} )`, { align: AlignmentType.CENTER }),
-                                    tP('ผู้ถูกควบคุม', { align: AlignmentType.CENTER, bold: true })
-                                ]
-                            }),
-                            new TableCell({
-                                width: { size: 34, type: WidthType.PERCENTAGE },
-                                borders: cellBorder,
-                                children: [
-                                    tP('ลงชื่อ .........................................', { align: AlignmentType.CENTER }),
-                                    tP('( ......................................... )', { align: AlignmentType.CENTER }),
-                                    tP('พยาน (ถ้ามี)', { align: AlignmentType.CENTER, bold: true })
-                                ]
-                            })
-                        ]
-                    })
-                ]
-            }));
+            children.push(tP('๙. บันทึกอื่น ๆ เพิ่มเติม (ถ้ามี)', { bold: true, indent: { left: 560 }, after: 35 }));
+            children.push(tP([dRun(toTh(vm.m23ExtraNote))], { indent: { firstLine: 560 }, align: AlignmentType.BOTH, after: 35 }));
+            for (let k = 0; k < 5; k++) {
+                children.push(tP(fullDottedLine, { after: k === 4 ? 140 : 35 }));
+            }
 
-            // ==========================================
-            // PAGE 6: ปท. ๑ หน้าที่ ๒
-            // ==========================================
-            children.push(new Paragraph({ children: [new PageBreak()] }));
-            children.push(tP('ปท. ๑ หน้าที่ ๒', { align: AlignmentType.RIGHT, bold: true }));
-            children.push(tP('บันทึกแนบท้ายเพิ่มเติม', { bold: true, align: AlignmentType.CENTER, size: 32 }));
-            children.push(tP('๘. เหตุสุดวิสัยที่ไม่สามารถบันทึกภาพและเสียงตามมาตรา ๒๒ วรรคหนึ่งได้', { bold: true }));
-            children.push(tP('   -'));
-            children.push(tP('๙. บันทึกอื่น ๆ เพิ่มเติม (ถ้ามี)', { bold: true }));
-            children.push(tP('   -'));
-            children.push(tP(' '));
+            children.push(tP([
+                tRun('***หมายเหตุ : ', { bold: true, size: SZ_SM }),
+                tRun('๑. ในกรณีข้อมูลตามรายการ ๑ – ๗ มีจำนวนมากให้ทำเป็นบันทึกแนบท้ายเพิ่มเติมในข้อ ๙', { size: SZ_SM })
+            ], { after: 30 }));
+            children.push(tP('๒. ให้เจ้าหน้าที่ซึ่งทำการจับและควบคุม ส่งตัวผู้ถูกควบคุมตัวให้กับผู้รับมอบตัวพร้อมสำเนาบันทึกการควบคุมและเอกสารประกอบ(ถ้ามี) สำหรับนำบันทึกฉบับจริงเก็บในสารบบของหน่วยงาน', { size: SZ_SM, indent: { left: 1080 }, align: AlignmentType.BOTH, after: 30 }));
+            children.push(tP('๓. ให้ผู้รับมอบตัวจัดทำบันทึกการควบคุมในส่วนของตนโดยมีสำเนาบันทึกการควบคุมของผู้ควบคุมคนก่อนเป็นเอกสารแนบท้าย', { size: SZ_SM, indent: { left: 1080 }, align: AlignmentType.BOTH, after: 30 }));
+            children.push(tP('๔. ภาพถ่ายของผู้ถูกควบคุมตามข้อ ๑ ให้ทำเป็นเอกสารภาพถ่ายแนบท้ายบันทึก อย่างน้อยต้องเห็นเนื้อตัวร่างกายตามสภาพภายนอกขณะถูกควบคุมหรือขณะรับมอบตัว (โดยไม่ต้องถอดเสื้อผ้า)', { size: SZ_SM, indent: { left: 1080 }, align: AlignmentType.BOTH, after: 300 }));
 
-            children.push(new Table({
-                width: { size: 100, type: WidthType.PERCENTAGE },
-                borders: cellBorder,
-                rows: [
-                    new TableRow({
-                        children: [
-                            new TableCell({
-                                width: { size: 33, type: WidthType.PERCENTAGE },
-                                borders: cellBorder,
-                                children: [
-                                    tP('ลงชื่อ .........................................', { align: AlignmentType.CENTER }),
-                                    tP(`( ${leadOfficerName} )`, { align: AlignmentType.CENTER }),
-                                    tP('ตำแหน่ง/ผู้ทำบันทึกควบคุม', { align: AlignmentType.CENTER, bold: true })
-                                ]
-                            }),
-                            new TableCell({
-                                width: { size: 33, type: WidthType.PERCENTAGE },
-                                borders: cellBorder,
-                                children: [
-                                    tP('ลงชื่อ .........................................', { align: AlignmentType.CENTER }),
-                                    tP(`( ${suspectFullName} )`, { align: AlignmentType.CENTER }),
-                                    tP('ผู้ถูกควบคุม', { align: AlignmentType.CENTER, bold: true })
-                                ]
-                            }),
-                            new TableCell({
-                                width: { size: 34, type: WidthType.PERCENTAGE },
-                                borders: cellBorder,
-                                children: [
-                                    tP('ลงชื่อ .........................................', { align: AlignmentType.CENTER }),
-                                    tP('( ......................................... )', { align: AlignmentType.CENTER }),
-                                    tP('พยาน (ถ้ามี)', { align: AlignmentType.CENTER, bold: true })
-                                ]
-                            })
-                        ]
-                    })
-                ]
-            }));
-
-            children.push(tP(' '));
-            children.push(tP('***หมายเหตุ', { bold: true }));
-            children.push(tP('  ๑. ในกรณีข้อมูลตามรายการ ๑ - ๗ มีจำนวนมากให้ทำเป็นบันทึกแนบท้ายเพิ่มเติมในข้อ ๙'));
-            children.push(tP('  ๒. ให้เจ้าหน้าที่ของรัฐซึ่งทำการจับและควบคุม ส่งตัวผู้ถูกควบคุมตัวให้กับผู้รับมอบตัว พร้อมสำเนา ปท.๑ และเอกสารประกอบ (ถ้ามี) สำหรับนำบันทึกฉบับจริงเก็บในสารบบของหน่วยงาน'));
-            children.push(tP('  ๓. ให้ผู้รับมอบตัวจัดทำ ปท.๑ ในส่วนของตน โดยมีสำเนา ปท.๑ ของผู้ควบคุมคนก่อนเป็นเอกสารแนบท้าย'));
-            children.push(tP('  ๔. ภาพถ่ายของผู้ถูกควบคุมตามข้อ ๑ ให้ทำเป็นเอกสารภาพถ่ายแนบท้าย ปท.๑ อย่างน้อยต้องเห็นเนื้อตัวร่างกายตามสภาพภายนอกขณะถูกควบคุมหรือขณะรับมอบตัว โดยไม่ต้องถอดเสื้อผ้า'));
+            children.push(buildPt23SignaturesTable());
 
             const doc = new Document({
                 sections: [{
                     properties: {
                         page: {
-                            margin: { top: 1200, bottom: 1200, left: 1440, right: 1440 }
+                            size: { width: 11906, height: 16838 },
+                            margin: { top: 850, bottom: 850, left: 1134, right: 1134 }
                         }
                     },
                     children
@@ -8659,9 +9563,9 @@ ${currentDocPrintHtml}
 
             // Filename generation requested:
             // "โดยชื่อไฟล์ให้ใช้ชื่อผู้ต้องหา ตามด้วยข้อหาสั้นๆและ วว/ดด/ปป"
-            const cleanForFileName = (str) => {
-                return (str || '').replace(/[/\\?%*:|"<>]/g, '').trim();
-            };
+            const cleanForFileName = (str) => (str || '').replace(/[/\\?%*:|"<>]/g, '').trim();
+            const suspectFullName = vm.suspFullName;
+            const chargesList = vm.chargesList;
 
             let firstChargeShort = (chargesList[0] || 'ข้อหา')
                 .split(/[,;\nและ]/)[0]
@@ -8670,7 +9574,6 @@ ${currentDocPrintHtml}
                 .slice(0, 30);
             if (!firstChargeShort) firstChargeShort = 'ข้อหา';
 
-            // วว/ดด/ปป in filename (using - because Windows does not allow / in filenames)
             let datePart = '';
             const dateRaw = rec.date || new Date().toISOString().split('T')[0];
             const dParts = dateRaw.split('-');
