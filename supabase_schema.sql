@@ -239,44 +239,47 @@ WITH CHECK (
 );
 
 -- =========================================================================================
--- 5. ตาราง newpolice_connections: เกตเวย์ควบคุมการเชื่อมต่อซิ้งค์ข้อมูลโครงการ newpolice
--- กำหนดให้สถานะเริ่มต้นเป็น 'pending' (รอแอดมินอนุมัติ) และต้องให้แอดมินอนุมัติก่อนจึงเข้าถึงข้อมูลได้
+-- 5. ตาราง newpolice_user_requests: ระบบอนุมัติสิทธิ์เข้าถึงข้อมูล Cyber Invest สำหรับเจ้าหน้าที่โครงการ newpolice
+-- ข้อกำหนด: ไม่ดึงข้อมูลจาก newpolice แต่ให้อนุมัติสิทธิ์เข้าถึงข้อมูล cyber invest เป็นรายคน
+-- เจ้าหน้าที่แต่ละคนจาก newpolice ต้องส่งคำขอเชื่อมต่อเข้ามา และแอดมินพิจารณาอนุมัติเป็นรายบุคคล
 -- =========================================================================================
-CREATE TABLE IF NOT EXISTS public.newpolice_connections (
-    id TEXT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS public.newpolice_user_requests (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     station_code TEXT NOT NULL DEFAULT 'POLICE-STN-BANGPHLI-001',
-    project_code TEXT NOT NULL DEFAULT 'newpolice',
-    project_name TEXT NOT NULL DEFAULT 'โครงการ newpolice (ระบบงานสืบสวนสอบสวนคดีอาญาและคดีไซเบอร์ ตร.)',
-    gateway_node TEXT NOT NULL DEFAULT 'NP-GW-BANGPHLI-SYNC',
-    origin_ip TEXT NOT NULL DEFAULT '10.220.14.88',
+    request_code TEXT UNIQUE NOT NULL,
+    badge_no TEXT NOT NULL,
+    rank_name TEXT NOT NULL,
+    position TEXT NOT NULL,
+    agency TEXT NOT NULL,
+    phone TEXT,
+    purpose TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-    data_scope TEXT NOT NULL,
-    item_count INTEGER DEFAULT 0,
-    payload_encrypted TEXT,
-    auth_handshake_key TEXT,
+    access_token TEXT,
+    ip_address TEXT DEFAULT '10.220.14.88',
     requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     reviewed_by TEXT,
     reviewed_by_name TEXT,
     reviewed_at TIMESTAMPTZ,
     notes TEXT,
-    CONSTRAINT chk_newpolice_station CHECK (station_code = 'POLICE-STN-BANGPHLI-001')
+    CONSTRAINT chk_newpolice_req_station CHECK (station_code = 'POLICE-STN-BANGPHLI-001')
 );
 
-ALTER TABLE public.newpolice_connections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.newpolice_user_requests ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "newpolice_select_bangphli"
-ON public.newpolice_connections FOR SELECT
+CREATE POLICY "newpolice_requests_select_bangphli"
+ON public.newpolice_user_requests FOR SELECT
 TO anon, authenticated
 USING (station_code = 'POLICE-STN-BANGPHLI-001');
 
-CREATE POLICY "newpolice_insert_bangphli"
-ON public.newpolice_connections FOR INSERT
+CREATE POLICY "newpolice_requests_insert_bangphli"
+ON public.newpolice_user_requests FOR INSERT
 TO anon, authenticated
 WITH CHECK (station_code = 'POLICE-STN-BANGPHLI-001');
 
-CREATE POLICY "newpolice_update_bangphli"
-ON public.newpolice_connections FOR UPDATE
+CREATE POLICY "newpolice_requests_update_bangphli"
+ON public.newpolice_user_requests FOR UPDATE
 TO anon, authenticated
 USING (station_code = 'POLICE-STN-BANGPHLI-001')
 WITH CHECK (station_code = 'POLICE-STN-BANGPHLI-001');
+
 
