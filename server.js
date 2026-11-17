@@ -231,11 +231,28 @@ CREATE TABLE IF NOT EXISTS cyber_details (
     status TEXT DEFAULT 'พบพงส.',
     urgency TEXT DEFAULT '[]',
     legal_actions TEXT DEFAULT '{"summons1": false, "summons2": false, "warrant": false}',
+    victim_profile TEXT,
+    freeze_info TEXT,
+    transfer_records TEXT,
+    inquiry_answers TEXT,
+    victim_submitted_at TEXT,
     station_code TEXT DEFAULT 'POLICE-STN-BANGPHLI-001',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
 `);
+
+// Migration: Ensure victim self-reporting columns exist in cyber_details
+try {
+    const cyberCols = db.prepare(`PRAGMA table_info(cyber_details);`).all().map(c => c.name);
+    if (!cyberCols.includes('victim_profile')) db.prepare('ALTER TABLE cyber_details ADD COLUMN victim_profile TEXT;').run();
+    if (!cyberCols.includes('freeze_info')) db.prepare('ALTER TABLE cyber_details ADD COLUMN freeze_info TEXT;').run();
+    if (!cyberCols.includes('transfer_records')) db.prepare('ALTER TABLE cyber_details ADD COLUMN transfer_records TEXT;').run();
+    if (!cyberCols.includes('inquiry_answers')) db.prepare('ALTER TABLE cyber_details ADD COLUMN inquiry_answers TEXT;').run();
+    if (!cyberCols.includes('victim_submitted_at')) db.prepare('ALTER TABLE cyber_details ADD COLUMN victim_submitted_at TEXT;').run();
+} catch(e) {
+    console.error('[DB MIGRATION cyber_details]', e.message);
+}
 
 // Pre-seed cyber_details if empty
 const countCyberDetails = db.prepare('SELECT COUNT(*) as count FROM cyber_details;').get().count;
@@ -1038,62 +1055,75 @@ const server = http.createServer(async (req, res) => {
 
             // 4f. NEWPOLICE: LIST CYBER INVEST CASES (OPEN ENDPOINT MATCHING CYBER INVEST PORTAL)
             if (pathname === '/api/external/newpolice/cases' && (req.method === 'GET' || req.method === 'HEAD')) {
-                const casesList = [
-                    {
-                        id: 'cyber-c_1',
-                        caseNo: 'T6911087326',
-                        date: '2026-11-08',
-                        victim: 'ฐิติพร ชุมชอบ 0655492824',
-                        type: 'หลอกลวงซื้อขายสินค้าออนไลน์',
-                        amount: 8000,
-                        status: 'พบพงส.',
-                        accounts: [{ bank: 'Max card เลขอ้างอิง', no: '320001000578130', name: 'เบญจมาภรณ์ บุญทนา' }],
-                        investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
-                        detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
-                        summons1: true,
-                        summons1Date: '2026-11-09',
-                        summons2: false,
-                        summons2Date: '',
-                        warrant: false
-                    },
-                    {
-                        id: 'cyber-c_2',
-                        caseNo: 'T6911087748',
-                        date: '2026-11-08',
-                        victim: 'ปริญ มหโชคภัทรวิมล 0918955919',
-                        type: 'หลอกลวงซื้อขายสินค้าออนไลน์',
-                        amount: 9000,
-                        status: 'พบพงส.',
-                        accounts: [{ bank: 'ธกส', no: '020228673257', name: 'ชฎาพร ป่าเกลือ' }],
-                        investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
-                        detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
-                        summons1: true,
-                        summons1Date: '2026-11-09',
-                        summons2: true,
-                        summons2Date: '2026-11-15',
-                        warrant: true
-                    },
-                    {
-                        id: 'cyber-c_3',
-                        caseNo: 'T6911087788',
-                        date: '2026-11-08',
-                        victim: 'นายเจริญ บุญวานิบาล 0819958712',
-                        type: 'หลอกลวงซื้อขายสินค้าออนไลน์',
-                        amount: 1599,
-                        status: 'พบพงส.',
-                        accounts: [
-                            { bank: 'Qr Code: เลขอ้างอิง', no: 'xxxxxx7621', name: 'ชินกร กันทะวงษ์' },
-                            { bank: 'Qr Code: เลขอ้างอิง', no: 'xxxxxx7917', name: 'วีศรุต ไชยสุรินทร์' }
-                        ],
-                        investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
-                        detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
-                        summons1: false,
-                        summons1Date: '',
-                        summons2: false,
-                        summons2Date: '',
-                        warrant: false
-                    }
-                ];
+                const urlObj = new URL(req.url, 'http://localhost');
+                const requestedInvestigator = (urlObj.searchParams.get('investigator') || '').trim();
+                const requestedCaseNo = (urlObj.searchParams.get('caseNo') || '').trim();
+
+                let query = 'SELECT * FROM cyber_details WHERE 1=1';
+                const params = [];
+                if (requestedCaseNo) {
+                    query += ' AND UPPER(case_no) = ?';
+                    params.push(requestedCaseNo.toUpperCase());
+                }
+                if (requestedInvestigator) {
+                    const cleanName = requestedInvestigator.replace(/^ว่าที่\s*/, '').replace(/^[พรรดจส]\.?[ตโทอ]\.?[ตโทอ]?\.?\s*/, '').trim();
+                    query += ' AND (investigator_name LIKE ? OR investigator_name = ?)';
+                    params.push(`%${cleanName}%`, requestedInvestigator);
+                }
+                query += ' ORDER BY created_at DESC;';
+
+                let rows = [];
+                try {
+                    rows = db.prepare(query).all(...params);
+                } catch(e) {
+                    console.error('[NEWPOLICE CASES DB ERROR]', e);
+                }
+
+                const casesList = rows.map(r => {
+                    let accs = [];
+                    try { accs = JSON.parse(r.mule_accounts || '[]'); } catch(e) {}
+                    let leg = {};
+                    try { leg = JSON.parse(r.legal_actions || '{}'); } catch(e) {}
+                    let vProf = null;
+                    try { if (r.victim_profile) vProf = JSON.parse(r.victim_profile); } catch(e) {}
+                    let frz = null;
+                    try { if (r.freeze_info) frz = JSON.parse(r.freeze_info); } catch(e) {}
+                    let tRecs = [];
+                    try { if (r.transfer_records) tRecs = JSON.parse(r.transfer_records); } catch(e) {}
+                    let inqAns = [];
+                    try { if (r.inquiry_answers) inqAns = JSON.parse(r.inquiry_answers); } catch(e) {}
+
+                    return {
+                        id: r.id,
+                        caseNo: r.case_no,
+                        date: r.incident_date,
+                        victim: `${r.victim_name} ${r.victim_phone || ''}`.trim(),
+                        type: r.fraud_category,
+                        amount: Number(r.damage_amount) || 0,
+                        status: r.status,
+                        accounts: accs,
+                        investigator: r.investigator_name,
+                        detective: r.detective_name || r.investigator_name,
+                        summons1: !!leg.summons1,
+                        summons1Date: leg.summons1Date || '',
+                        summons2: !!leg.summons2,
+                        summons2Date: leg.summons2Date || '',
+                        warrant: !!leg.warrant,
+                        // โครงสร้างฟิลด์ใหม่จากผู้เสียหาย (Lightweight Mode: ไม่มี Base64 fileData)
+                        victimProfile: vProf,
+                        victim_profile: vProf,
+                        freezeInfo: frz,
+                        freeze_info: frz,
+                        transferRecords: tRecs,
+                        transfer_records: tRecs,
+                        inquiryAnswers: inqAns,
+                        inquiry_answers: inqAns,
+                        victimSubmittedAt: r.victim_submitted_at || null,
+                        victim_submitted_at: r.victim_submitted_at || null,
+                        station_code: r.station_code || 'POLICE-STN-BANGPHLI-001'
+                    };
+                });
+
                 if (req.method === 'HEAD') {
                     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
                     res.end();
@@ -1101,6 +1131,7 @@ const server = http.createServer(async (req, res) => {
                 }
                 return sendJson(res, 200, {
                     success: true,
+                    total_cases: casesList.length,
                     cases: casesList
                 });
             }
@@ -1266,6 +1297,11 @@ const server = http.createServer(async (req, res) => {
                         role: 'สืบสวนผู้รับผิดชอบ'
                     },
                     legal_actions: JSON.parse(r.legal_actions || '{}'),
+                    victim_profile: r.victim_profile ? JSON.parse(r.victim_profile) : null,
+                    freeze_info: r.freeze_info ? JSON.parse(r.freeze_info) : null,
+                    transfer_records: r.transfer_records ? JSON.parse(r.transfer_records) : [],
+                    inquiry_answers: r.inquiry_answers ? JSON.parse(r.inquiry_answers) : [],
+                    victim_submitted_at: r.victim_submitted_at || null,
                     station_code: r.station_code || 'POLICE-STN-BANGPHLI-001',
                     station_name: 'สถานีตำรวจภูธรบางพลี'
                 }));
@@ -1284,6 +1320,182 @@ const server = http.createServer(async (req, res) => {
                     total_cases: casesExport.length,
                     export_timestamp: new Date().toISOString(),
                     cases: casesExport
+                });
+            }
+
+            // 4h. VICTIM PRE-INVESTIGATION: VERIFY CREDENTIALS & SELF-SERVICE (NO OFFICER LOGIN REQUIRED)
+            if (pathname === '/api/victim/verify' && req.method === 'POST') {
+                const body = await readBody(req);
+                const rawCaseNo = (body.caseNo || '').trim();
+                const cleanCaseNo = rawCaseNo.toUpperCase();
+                const rawPhone = (body.phone || '').trim();
+                const cleanPhone = rawPhone.replace(/[-\s]/g, '');
+                const consentAccepted = !!body.consentAccepted;
+
+                if (!consentAccepted) {
+                    return sendJson(res, 400, {
+                        success: false,
+                        error: 'กรุณายินยอมข้อตกลงและคำยินยอม PDPA เพื่อการสืบสวนสอบสวนก่อนดำเนินการ'
+                    });
+                }
+
+                if (!cleanCaseNo || !cleanPhone) {
+                    return sendJson(res, 400, {
+                        success: false,
+                        error: 'กรุณาระบุเลข Case ID และหมายเลขโทรศัพท์ให้ครบถ้วน'
+                    });
+                }
+
+                // ค้นหาเคสใน SQLite cyber_details
+                const row = db.prepare(`SELECT * FROM cyber_details WHERE UPPER(case_no) = ?;`).get(cleanCaseNo);
+
+                if (!row) {
+                    return sendJson(res, 404, {
+                        success: false,
+                        error: 'ไม่พบเลข Case ID นี้ในระบบ กรุณาตรวจสอบเลขรับแจ้งความให้ถูกต้อง'
+                    });
+                }
+
+                // ดึงหมายเลขโทรศัพท์จากข้อมูลในระบบ (victim_phone หรือ victim_name)
+                const phoneCandidates = [
+                    (row.victim_phone || '').replace(/\D/g, ''),
+                    (row.victim_name || '').replace(/\D/g, '')
+                ].filter(p => p.length >= 9);
+
+                const isPhoneMatched = phoneCandidates.some(p => p.endsWith(cleanPhone) || cleanPhone.endsWith(p));
+
+                if (!isPhoneMatched) {
+                    return sendJson(res, 401, {
+                        success: false,
+                        error: 'หมายเลขโทรศัพท์ไม่ตรงกับข้อมูลผู้เสียหายที่ได้แจ้งความไว้ในระบบ สภ.บางพลี'
+                    });
+                }
+
+                // Data Masking เพื่อความปลอดภัยตามมาตรฐาน PDPA 2.5
+                const maskPhone = (p) => {
+                    const clean = (p || '').replace(/\D/g, '');
+                    if (clean.length === 10) return `${clean.slice(0, 3)}-xxx-${clean.slice(6)}`;
+                    return clean.slice(0, 3) + '***' + clean.slice(-2);
+                };
+
+                const maskName = (name) => {
+                    const clean = (name || '').replace(/\d+/g, '').trim();
+                    const parts = clean.split(/\s+/);
+                    if (parts.length >= 2) {
+                        return `${parts[0]} ${parts[1].charAt(0)}...`;
+                    }
+                    return clean ? `${clean.slice(0, 4)}...` : 'ผู้เสียหาย';
+                };
+
+                // บัญชีม้าเดิม
+                let muleAccounts = [];
+                try { muleAccounts = JSON.parse(row.mule_accounts || '[]'); } catch(e) {}
+
+                // ข้อมูลที่กรอกไว้เดิม (ถ้ามี)
+                let existingProfile = null;
+                let existingFreeze = null;
+                let existingTransfers = [];
+                let existingAnswers = [];
+                try { if (row.victim_profile) existingProfile = JSON.parse(row.victim_profile); } catch(e) {}
+                try { if (row.freeze_info) existingFreeze = JSON.parse(row.freeze_info); } catch(e) {}
+                try { if (row.transfer_records) existingTransfers = JSON.parse(row.transfer_records); } catch(e) {}
+                try { if (row.inquiry_answers) existingAnswers = JSON.parse(row.inquiry_answers); } catch(e) {}
+
+                return sendJson(res, 200, {
+                    success: true,
+                    verified: true,
+                    caseNo: row.case_no,
+                    incidentDate: row.incident_date,
+                    fraudCategory: row.fraud_category,
+                    damageAmount: Number(row.damage_amount) || 0,
+                    investigatorName: row.investigator_name,
+                    stationName: 'สถานีตำรวจภูธรบางพลี',
+                    maskedPhone: maskPhone(cleanPhone),
+                    maskedName: maskName(row.victim_name),
+                    accounts: muleAccounts,
+                    status: row.status,
+                    alreadySubmitted: row.status === 'ผู้เสียหายกรอกข้อมูลแล้ว' || !!row.victim_submitted_at,
+                    victimSubmittedAt: row.victim_submitted_at,
+                    draft: {
+                        victimProfile: existingProfile,
+                        freezeInfo: existingFreeze,
+                        transferRecords: existingTransfers,
+                        inquiryAnswers: existingAnswers
+                    }
+                });
+            }
+
+            // 4i. VICTIM PRE-INVESTIGATION: SUBMIT FORM & UPDATE CASE DATA DIRECTLY
+            if (pathname === '/api/victim/submit' && req.method === 'POST') {
+                const body = await readBody(req);
+                const rawCaseNo = (body.caseNo || '').trim();
+                const cleanCaseNo = rawCaseNo.toUpperCase();
+                const rawPhone = (body.phone || '').trim().replace(/[-\s]/g, '');
+
+                if (!cleanCaseNo || !rawPhone) {
+                    return sendJson(res, 400, { success: false, error: 'ข้อมูลระบุตัวตน Case ID หรือเบอร์โทรศัพท์ไม่สมบูรณ์' });
+                }
+
+                const row = db.prepare(`SELECT * FROM cyber_details WHERE UPPER(case_no) = ?;`).get(cleanCaseNo);
+                if (!row) {
+                    return sendJson(res, 404, { success: false, error: 'ไม่พบเคสในระบบ' });
+                }
+
+                // Verify phone matches record
+                const phoneCandidates = [
+                    (row.victim_phone || '').replace(/\D/g, ''),
+                    (row.victim_name || '').replace(/\D/g, '')
+                ].filter(p => p.length >= 9);
+                const isPhoneMatched = phoneCandidates.some(p => p.endsWith(rawPhone) || rawPhone.endsWith(p));
+                if (!isPhoneMatched) {
+                    return sendJson(res, 401, { success: false, error: 'หมายเลขโทรศัพท์ไม่ตรงกับข้อมูลในระบบ' });
+                }
+
+                const victimProfile = body.victimProfile || {};
+                const freezeInfo = body.freezeInfo || {};
+                const transferRecords = Array.isArray(body.transferRecords) ? body.transferRecords : [];
+                const inquiryAnswers = Array.isArray(body.inquiryAnswers) ? body.inquiryAnswers : [];
+
+                const nowIso = new Date().toISOString();
+
+                // อัปเดตตาราง cyber_details ใน SQLite
+                db.prepare(`
+                    UPDATE cyber_details
+                    SET victim_profile = ?,
+                        freeze_info = ?,
+                        transfer_records = ?,
+                        inquiry_answers = ?,
+                        status = 'ผู้เสียหายกรอกข้อมูลแล้ว',
+                        victim_submitted_at = ?,
+                        updated_at = ?
+                    WHERE UPPER(case_no) = ?;
+                `).run(
+                    JSON.stringify(victimProfile),
+                    JSON.stringify(freezeInfo),
+                    JSON.stringify(transferRecords),
+                    JSON.stringify(inquiryAnswers),
+                    nowIso,
+                    nowIso,
+                    cleanCaseNo
+                );
+
+                // บันทึก Audit Log
+                recordAuditLog(
+                    { user_name: `ผู้เสียหาย (${cleanCaseNo})`, user_badge: 'CITIZEN', user_role: 'victim' },
+                    'VICTIM_FORM_SUBMITTED',
+                    'CASE',
+                    cleanCaseNo,
+                    `ผู้เสียหายได้กรอกข้อมูลและส่งมอบหลักฐานล่วงหน้าผ่าน /victim-form เรียบร้อยแล้ว (ยอดโอน ${transferRecords.length} รายการ)`,
+                    req
+                );
+
+                return sendJson(res, 200, {
+                    success: true,
+                    caseNo: row.case_no,
+                    victimSubmittedAt: nowIso,
+                    investigatorName: row.investigator_name,
+                    stationName: 'สถานีตำรวจภูธรบางพลี',
+                    message: 'บันทึกข้อมูลและส่งมอบพยานหลักฐานล่วงหน้าให้พนักงานสอบสวน สภ.บางพลี เรียบร้อยแล้ว'
                 });
             }
 
@@ -1688,6 +1900,8 @@ const server = http.createServer(async (req, res) => {
         let safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
         if (safePath === '/' || safePath === '\\') {
             safePath = '/index.html';
+        } else if (safePath === '/victim-form' || safePath === '\\victim-form' || safePath === '/victim-form/' || safePath === '\\victim-form\\') {
+            safePath = '/victim-form.html';
         }
 
         const filePath = path.join(__dirname, safePath);

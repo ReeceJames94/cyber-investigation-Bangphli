@@ -353,10 +353,22 @@ CREATE TABLE IF NOT EXISTS public.cyber_details (
     status TEXT NOT NULL DEFAULT 'พบพงส.',
     urgency TEXT[] DEFAULT ARRAY[]::TEXT[],
     legal_actions JSONB DEFAULT '{"summons1": false, "summons2": false, "warrant": false}'::jsonb,
+    victim_profile JSONB,
+    freeze_info JSONB,
+    transfer_records JSONB DEFAULT '[]'::jsonb,
+    inquiry_answers JSONB DEFAULT '[]'::jsonb,
+    victim_submitted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT chk_cyber_details_station CHECK (station_code = 'POLICE-STN-BANGPHLI-001')
 );
+
+-- Migration for existing instances
+ALTER TABLE public.cyber_details ADD COLUMN IF NOT EXISTS victim_profile JSONB;
+ALTER TABLE public.cyber_details ADD COLUMN IF NOT EXISTS freeze_info JSONB;
+ALTER TABLE public.cyber_details ADD COLUMN IF NOT EXISTS transfer_records JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.cyber_details ADD COLUMN IF NOT EXISTS inquiry_answers JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.cyber_details ADD COLUMN IF NOT EXISTS victim_submitted_at TIMESTAMPTZ;
 
 CREATE INDEX IF NOT EXISTS idx_cyber_details_case_no ON public.cyber_details(case_no);
 CREATE INDEX IF NOT EXISTS idx_cyber_details_investigator ON public.cyber_details(investigator_name);

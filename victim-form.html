@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>แบบฟอร์มบันทึกข้อมูลและพยานหลักฐานคดีออนไลน์ล่วงหน้า | สภ.บางพลี</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        police: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Kanit', 'Sarabun', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Kanit', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .sarabun { font-family: 'Sarabun', sans-serif; }
+        /* Smooth transitions */
+        .fade-enter { opacity: 0; transform: translateY(8px); }
+        .fade-enter-active { opacity: 1; transform: translateY(0); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-amber-500 selection:text-slate-950">
+
+    <!-- Header Banner -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 shadow-lg backdrop-blur bg-slate-900/90">
+        <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-xl shadow-md shadow-amber-500/20 shrink-0">
+                    🛡️
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-xs font-bold text-amber-400">สภ.บางพลี</span>
+                        <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold">PDPA 2.5 SECURE</span>
+                    </div>
+                    <h1 class="text-sm font-bold text-white tracking-tight">ระบบบันทึกข้อมูลคดีออนไลน์ล่วงหน้า</h1>
+                </div>
+            </div>
+            <div class="text-right">
+                <span id="autoSaveIndicator" class="text-[11px] text-slate-400 font-medium hidden sm:inline-flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-slate-600 inline-block"></span> พร้อมใช้งาน
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-3xl w-full mx-auto p-4 sm:p-6 space-y-5">
+
+        <!-- =================================================================== -->
+        <!-- STEP 1: SELF-VERIFICATION & PDPA CONSENT SCREEN                      -->
+        <!-- =================================================================== -->
+        <section id="verificationSection" class="space-y-4">
+            <!-- Notice Card -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                <div class="flex items-start gap-3.5">
+                    <div class="text-2xl mt-0.5">🔒</div>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-white">ยืนยันตัวตนผู้เสียหาย (Self-Verification)</h2>
+                        <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                            เพื่อความปลอดภัยของข้อมูลส่วนบุคคลตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA) กรุณากรอกเลขรหัสแจ้งความและเบอร์โทรศัพท์ที่ใช้แจ้งความ เพื่อเข้าสู่แบบฟอร์มเฉพาะของคดีท่าน
+                        </p>
+                    </div>
+                </div>
+
+                <div class="space-y-3 pt-2">
+                    <div>
+                        <label for="inputCaseId" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                            เลข Case ID (รหัสแจ้งความออนไลน์) <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="text" id="inputCaseId" placeholder="เช่น T6911087326" autocomplete="off" autocapitalize="characters"
+                                class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-sm font-mono uppercase tracking-wider text-amber-400 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
+                            <span class="absolute right-3.5 top-3.5 text-xs text-slate-500">📁</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="inputPhone" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                            หมายเลขโทรศัพท์ที่แจ้งความไว้ <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="tel" id="inputPhone" placeholder="เบอร์โทรศัพท์ 10 หลัก (เช่น 0655492824)" autocomplete="tel" maxlength="12"
+                                class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
+                            <span class="absolute right-3.5 top-3.5 text-xs text-slate-500">📱</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PDPA Consent Box -->
+                <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-2.5">
+                    <div class="flex items-center gap-2 text-xs font-bold text-amber-400">
+                        <span>📜</span> <span>คำยินยอมการเก็บรวบรวมข้อมูลส่วนบุคคล (PDPA Consent)</span>
+                    </div>
+                    <div class="max-h-28 overflow-y-auto pr-1 text-[11px] text-slate-400 space-y-1.5 sarabun leading-relaxed border-b border-slate-800 pb-2">
+                        <p>สถานีตำรวจภูธรบางพลี จะเก็บรวบรวม ใช้ และเปิดเผยข้อมูลส่วนบุคคล พยานหลักฐาน สลิปการโอนเงิน และบัญชีธนาคารของท่าน เพื่อประโยชน์ในการสืบสวนสอบสวน ดำเนินคดีอาญา รวบรวมสำนวนการสอบสวน และประสานงานสถาบันการเงินในการระงับธุรกรรม/อายัดบัญชีคนร้าย ตามอำนาจหน้าที่ใน ป.วิ.อาญา และ พ.ร.ก. มาตรการป้องกันและปราบปรามอาชญากรรมทางเทคโนโลยี พ.ศ. 2566</p>
+                        <p class="text-[10px] text-slate-500">ข้อมูลทั้งหมดจะได้รับการเข้ารหัสด้วยมาตรฐานความปลอดภัย AES-256-GCM และจัดเก็บตามมาตรฐาน PDPA</p>
+                    </div>
+                    <label class="flex items-start gap-2.5 cursor-pointer pt-1">
+                        <input type="checkbox" id="consentCheckbox" class="mt-0.5 rounded border-slate-700 text-amber-500 focus:ring-amber-500 w-4 h-4 bg-slate-900">
+                        <span class="text-xs text-slate-300 font-medium leading-tight">
+                            ข้าพเจ้าได้อ่าน เข้าใจ และยินยอมให้ สภ.บางพลี ประมวลผลข้อมูลส่วนบุคคลเพื่อการดำเนินคดี <span class="text-rose-500">*</span>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Error Message Alert -->
+                <div id="verifyErrorBox" class="hidden p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-medium flex items-center gap-2">
+                    <span>⚠️</span> <span id="verifyErrorMsg">ข้อมูลไม่ถูกต้อง</span>
+                </div>
+
+                <!-- Action Button -->
+                <button type="button" onclick="handleVerifyVictim()" id="btnVerify"
+                    class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-2xl text-sm transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2">
+                    <span>🔓</span> <span>ยินยอมและเข้าสู่แบบฟอร์มคดี</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- STEP 2: VICTIM 4-PART FORM (LOCKED UNTIL VERIFIED)                 -->
+        <!-- =================================================================== -->
+        <section id="formSection" class="hidden space-y-5">
+
+            <!-- Case Overview Bar (Data Masked) -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-amber-400 bg-amber-400/15 px-2.5 py-0.5 rounded-full" id="dspCaseNo">CASE: -</span>
+                        <span class="text-[11px] text-slate-400" id="dspDate">วันที่รับแจ้ง: -</span>
+                    </div>
+                    <span id="dspStatusBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30">
+                        พร้อมบันทึกข้อมูล
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
+                        <span class="text-slate-400 text-[11px]">ผู้เสียหาย:</span>
+                        <div class="font-bold text-white text-sm mt-0.5" id="dspVictimName">-</div>
+                        <div class="text-[11px] text-slate-400 mt-0.5" id="dspVictimPhone">เบอร์โทร: -</div>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
+                        <span class="text-slate-400 text-[11px]">พนักงานสอบสวนเจ้าของเรื่อง:</span>
+                        <div class="font-bold text-amber-400 text-sm mt-0.5" id="dspOfficer">-</div>
+                        <div class="text-[11px] text-slate-400 mt-0.5">สถานีตำรวจภูธรบางพลี</div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800/80 text-xs">
+                    <span class="text-slate-400 text-[11px]">ประเภทกลโกงออนไลน์:</span>
+                    <div class="font-bold text-white mt-0.5" id="dspFraudType">-</div>
+                </div>
+            </div>
+
+            <!-- FORM START -->
+            <form id="victimDetailedForm" onsubmit="event.preventDefault(); handleVictimFormSubmit();" class="space-y-5">
+
+                <!-- ----------------------------------------------------------- -->
+                <!-- ส่วนที่ 1: ข้อมูลส่วนตัวผู้เสียหาย (victimProfile)           -->
+                <!-- ----------------------------------------------------------- -->
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                    <div class="flex items-center gap-2.5 border-b border-slate-800 pb-3">
+                        <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">๑</span>
+                        <h3 class="text-sm sm:text-base font-bold text-white">ข้อมูลส่วนตัวและบัญชีธนาคารของผู้เสียหาย (victimProfile)</h3>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                        <div class="sm:col-span-3">
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">คำนำหน้า <span class="text-rose-500">*</span></label>
+                            <select id="vpPrefix" onchange="autoSaveForm()" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                                <option value="นาย">นาย</option>
+                                <option value="นาง">นาง</option>
+                                <option value="นางสาว">นางสาว</option>
+                                <option value="อื่นๆ">อื่นๆ</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-4">
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">ชื่อจริง <span class="text-rose-500">*</span></label>
+                            <input type="text" id="vpFirstName" oninput="autoSaveForm()" required placeholder="เช่น ฐิติพร"
+                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        </div>
+                        <div class="sm:col-span-5">
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">นามสกุล <span class="text-rose-500">*</span></label>
+                            <input type="text" id="vpLastName" oninput="autoSaveForm()" required placeholder="เช่น ชุมชอบ"
+                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        </div>
+
+                        <div class="sm:col-span-6">
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">เลขประจำตัวประชาชน 13 หลัก <span class="text-rose-500">*</span></label>
+                            <input type="text" id="vpIdCard" oninput="formatIdCardInput(this); autoSaveForm();" maxlength="17" required placeholder="x-xxxx-xxxxx-xx-x"
+                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-mono text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">อายุ (ปี) <span class="text-rose-500">*</span></label>
+                            <input type="number" id="vpAge" oninput="autoSaveForm()" min="1" max="120" required placeholder="เช่น 32"
+                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">อาชีพ <span class="text-rose-500">*</span></label>
+                            <input type="text" id="vpOccupation" oninput="autoSaveForm()" required placeholder="เช่น พนักงานบริษัท"
+                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        </div>
+
+                        <div class="sm:col-span-12">
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">ที่อยู่ปัจจุบันที่สามารถติดต่อได้ <span class="text-rose-500">*</span></label>
+                            <input type="text" id="vpAddress" oninput="autoSaveForm()" required placeholder="บ้านเลขที่, หมู่, ซอย, ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์"
+                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        </div>
+
+                        <div class="sm:col-span-6">
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">เบอร์โทรศัพท์ที่ติดต่อได้สะดวก <span class="text-rose-500">*</span></label>
+                            <input type="tel" id="vpPhone" oninput="autoSaveForm()" required placeholder="08xxxxxxxx"
+                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Sub-card: บัญชีธนาคารของผู้เสียหายที่ใช้โอน -->
+                    <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 mt-3">
+                        <div class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                            <span>💳</span> <span>ข้อมูลบัญชีธนาคารของผู้เสียหาย (ต้นทางที่ใช้โอนเงิน)</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-400 mb-1">ธนาคารต้นทาง <span class="text-rose-500">*</span></label>
+                                <input type="text" id="vpBank" oninput="autoSaveForm()" required placeholder="เช่น กสิกรไทย, ไทยพาณิชย์"
+                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-400 mb-1">เลขบัญชีผู้เสียหาย <span class="text-rose-500">*</span></label>
+                                <input type="text" id="vpAccountNo" oninput="autoSaveForm()" required placeholder="เลขที่บัญชี 10-12 หลัก"
+                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-400 mb-1">ชื่อบัญชี <span class="text-rose-500">*</span></label>
+                                <input type="text" id="vpAccountName" oninput="autoSaveForm()" required placeholder="ชื่อ-นามสกุล เจ้าของบัญชี"
+                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ----------------------------------------------------------- -->
+                <!-- ส่วนที่ 2: ข้อมูลแจ้งอายัด 1441 (freezeInfo)                -->
+                <!-- ----------------------------------------------------------- -->
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                    <div class="flex items-center gap-2.5 border-b border-slate-800 pb-3">
+                        <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">๒</span>
+                        <h3 class="text-sm sm:text-base font-bold text-white">ข้อมูลการแจ้งระงับบัญชี 1441 AOC / ธนาคาร (freezeInfo)</h3>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-2">
+                                ท่านได้โทรแจ้งระงับบัญชีผ่านสายด่วน 1441 (AOC) หรือธนาคารแล้วหรือไม่? <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-amber-500/50 transition">
+                                    <input type="radio" name="fiReported" value="yes" onchange="toggleFreezeFields(true); autoSaveForm();" class="text-amber-500 focus:ring-amber-500">
+                                    <span class="text-xs font-bold text-white">✅ แจ้งแล้ว</span>
+                                </label>
+                                <label class="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-amber-500/50 transition">
+                                    <input type="radio" name="fiReported" value="no" checked onchange="toggleFreezeFields(false); autoSaveForm();" class="text-amber-500 focus:ring-amber-500">
+                                    <span class="text-xs font-bold text-slate-400">ยังไม่ได้แจ้ง</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Expanded Freeze Details -->
+                        <div id="freezeDetailsBox" class="hidden bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">วันและเวลาที่โทรแจ้ง 1441 / ธนาคาร</label>
+                                    <input type="datetime-local" id="fiReportDateTime" onchange="calc72HoursFreeze(); autoSaveForm();"
+                                        class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">รหัสอ้างอิง Bank Case ID</label>
+                                    <input type="text" id="fiBankCaseId" oninput="autoSaveForm()" placeholder="เช่น B691108-0042 หรือรหัสที่ได้รับจากสายด่วน"
+                                        class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                </div>
+                            </div>
+
+                            <div id="freeze72Notice" class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 space-y-1">
+                                <div class="font-bold flex items-center gap-1.5">
+                                    <span>⏱️</span> <span>กรอบเวลาการอายัดชั่วคราว 72 ชม.</span>
+                                </div>
+                                <p class="text-slate-400 text-[10px] leading-relaxed">
+                                    ตาม พ.ร.ก. มาตรการป้องกันและปราบปรามอาชญากรรมทางเทคโนโลยี ธนาคารจะระงับธุรกรรมไว้ชั่วคราว 72 ชั่วโมง เพื่อให้พนักงานสอบสวน สภ.บางพลี ออกหมายอายัดเงินในบัญชีม้าต่อไป
+                                </p>
+                                <div id="freezeCountdownText" class="font-bold text-xs text-amber-400 pt-0.5"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ----------------------------------------------------------- -->
+                <!-- ส่วนที่ 3: ตารางรายการโอนเงิน (transferRecords)             -->
+                <!-- ----------------------------------------------------------- -->
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">๓</span>
+                            <div>
+                                <h3 class="text-sm sm:text-base font-bold text-white">ตารางรายการโอนเงินให้คนร้าย (transferRecords)</h3>
+                                <p class="text-[11px] text-slate-400">กรอกรายการโอนเงินแต่ละครั้งตามสลิป เพื่อให้ พงส. ออกหมายเรียก/อายัด</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="addTransferRecordRow()"
+                            class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/30 text-xs font-bold transition flex items-center gap-1">
+                            <span>➕</span> <span>เพิ่มรายการโอน</span>
+                        </button>
+                    </div>
+
+                    <!-- Seeded Account Reference from Officer -->
+                    <div id="seedAccountsBox" class="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-1">
+                        <span class="text-slate-400 font-semibold text-[11px]">📌 บัญชีม้า/คนร้าย ที่ปรากฏในสารบบคดีเดิม:</span>
+                        <div id="seedAccountsList" class="space-y-1 pt-1">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Transfer Records Container -->
+                    <div id="transferRecordsContainer" class="space-y-3">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <!-- Comparison & Summary Bar -->
+                    <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                        <div>
+                            <span class="text-slate-400">ยอดความเสียหายในคดีที่แจ้งไว้:</span>
+                            <span class="font-bold text-white text-sm ml-1" id="sumExpectedAmount">0 ฿</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400">รวมยอดเงินโอนที่ระบุ:</span>
+                            <span class="font-bold text-amber-400 text-sm ml-1" id="sumCalculatedAmount">0 ฿</span>
+                        </div>
+                        <div id="amountMatchStatusBadge" class="w-full sm:w-auto text-[11px] px-2.5 py-1 rounded-xl font-bold text-center">
+                            -
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ----------------------------------------------------------- -->
+                <!-- ส่วนที่ 4: คำถามตามประเภทกลโกง (inquiryAnswers)              -->
+                <!-- ----------------------------------------------------------- -->
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+                    <div class="flex items-center gap-2.5 border-b border-slate-800 pb-3">
+                        <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">๔</span>
+                        <div>
+                            <h3 class="text-sm sm:text-base font-bold text-white">ประเด็นสอบสวนเฉพาะตามประเภทกลโกง (inquiryAnswers)</h3>
+                            <p class="text-[11px] text-slate-400" id="inquiryCategoryLabel">หมวดหมู่กลโกง: -</p>
+                        </div>
+                    </div>
+
+                    <div id="inquiryQuestionsContainer" class="space-y-3.5">
+                        <!-- Populated dynamically based on 14 fraud categories -->
+                    </div>
+                </div>
+
+                <!-- Submission Confirmation Bar -->
+                <div class="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+                    <div class="text-xs text-slate-400 leading-relaxed sarabun">
+                        <span class="font-bold text-amber-400">คำเตือน:</span> เมื่อท่านกดยืนยันส่งข้อมูล ระบบจะทำการเข้ารหัสข้อมูลส่วนบุคคลและส่งมอบเข้าสู่สำนวนการสอบสวนของ สภ.บางพลี ทันที และจะล็อกแบบฟอร์มเพื่อป้องกันการแก้ไขซ้ำ
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3 pt-1">
+                        <button type="submit" id="btnSubmitForm"
+                            class="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold rounded-2xl text-sm transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
+                            <span>📨</span> <span>ยืนยันส่งข้อมูลให้เจ้าหน้าที่ สภ.บางพลี</span>
+                        </button>
+                    </div>
+                </div>
+
+            </form>
+            <!-- FORM END -->
+
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- STEP 3: SUBMISSION SUCCESS TICKET (GREEN TICKET)                    -->
+        <!-- =================================================================== -->
+        <section id="ticketSection" class="hidden">
+            <div class="bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 text-center relative overflow-hidden">
+                <!-- Glowing effect -->
+                <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-3xl flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
+                    ✓
+                </div>
+
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-500/30">
+                        OFFICIAL SUBMISSION RECEIPT
+                    </span>
+                    <h2 class="text-xl sm:text-2xl font-bold text-white mt-2">บันทึกข้อมูลล่วงหน้าสำเร็จเรียบร้อยแล้ว</h2>
+                    <p class="text-xs text-slate-300 mt-1">ข้อมูลและรายการโอนเงินของท่านได้ถูกส่งมอบเข้าสู่สารบบคดี สภ.บางพลี เรียบร้อยแล้ว</p>
+                </div>
+
+                <!-- Green Ticket Details Box -->
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 text-left text-xs space-y-3 font-sans">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                        <span class="text-slate-400">เลข Case ID:</span>
+                        <span class="font-bold text-amber-400 font-mono text-sm" id="tkCaseNo">-</span>
+                    </div>
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                        <span class="text-slate-400">ผู้เสียหาย:</span>
+                        <span class="font-bold text-white" id="tkVictim">-</span>
+                    </div>
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                        <span class="text-slate-400">พนักงานสอบสวนผู้รับผิดชอบ:</span>
+                        <span class="font-bold text-emerald-400" id="tkOfficer">-</span>
+                    </div>
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                        <span class="text-slate-400">หน่วยงาน:</span>
+                        <span class="font-bold text-slate-200">สถานีตำรวจภูธรบางพลี</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400">วันเวลาที่ส่งมอบข้อมูล:</span>
+                        <span class="font-mono text-slate-300" id="tkTimestamp">-</span>
+                    </div>
+                </div>
+
+                <!-- Instruction Box -->
+                <div class="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 text-left text-xs space-y-2 sarabun">
+                    <div class="font-bold text-amber-400 flex items-center gap-1.5">
+                        <span>📌</span> <span>ขั้นตอนถัดไปสำหรับผู้เสียหาย</span>
+                    </div>
+                    <ol class="list-decimal list-inside space-y-1 text-slate-300 text-[11px] leading-relaxed">
+                        <li>โปรดเตรียม <strong>บัตรประชาชนตัวจริง</strong> และ <strong>สลิปการโอนเงินฉบับจริง</strong></li>
+                        <li>เตรียม <strong>รายการเดินบัญชี (Statement)</strong> จากแอปพลิเคชันธนาคารช่วงวันเกิดเหตุ</li>
+                        <li>เดินทางมาพบพนักงานสอบสวนเจ้าของเรื่อง ณ สภ.บางพลี เพื่อลงลายมือชื่อในคำให้การตามเวลานัดหมาย</li>
+                    </ol>
+                </div>
+
+                <!-- Action Button -->
+                <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                    <button type="button" onclick="window.print()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-2xl text-xs transition flex items-center justify-center gap-2">
+                        <span>🖨️</span> <span>พิมพ์ / บันทึกใบรับข้อมูลนี้ (PDF)</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-4 text-center text-[11px] text-slate-500 border-t border-slate-900 mt-auto">
+        งานสืบสวนและสอบสวน สถานีตำรวจภูธรบางพลี (สภ.บางพลี) &copy; 2569 | มาตรฐานความปลอดภัย PDPA
+    </footer>
+
+    <!-- =================================================================== -->
+    <!-- JAVASCRIPT LOGIC                                                    -->
+    <!-- =================================================================== -->
+    <script>
+        // 14 Fraud Categories Master Template
+        const INQUIRY_TEMPLATES = [
+            { title: '1. หลอกลวงซื้อขายสินค้าออนไลน์', points: ['สั่งซื้อสินค้าผ่านช่องทางใด (Facebook, Line, TikTok, เว็บไซต์)', 'ตรวจสอบหลักฐานการโอนเงิน สลิป และบัญชีปลายทาง', 'วันเวลาที่ตกลงส่งสินค้าและช่องทางการติดต่อที่ถูกบล็อก'] },
+            { title: '2. หลอกให้โอนเงินเพื่อทำงาน (หารายได้พิเศษ)', points: ['พบเห็นโฆษณาชักชวนทำงานจากที่ใด', 'ขั้นตอนการโอนเงินสำรองจ่ายเพื่อรับค่าคอมมิชชั่นแต่ละรอบ', 'ลิงก์เว็บไซต์หรือแอปพลิเคชันที่คนร้ายให้สมัครสมาชิก'] },
+            { title: '3. หลอกให้กู้เงินออนไลน์', points: ['ช่องทางที่ติดต่อขอกู้เงินและวงเงินที่ขอกู้', 'เหตุผลที่คนร้ายอ้างให้โอนเงินค่ามัดจำ ค่าปลดล็อกระบบ หรือค่าแก้ไขเลขบัญชี', 'ตรวจสอบสลิปการโอนเงินทุกครั้งที่โอนให้คนร้าย'] },
+            { title: '4. ข่มขู่ทางโทรศัพท์ (Call Center)', points: ['เบอร์โทรศัพท์ที่โทรเข้ามาแอบอ้างเป็นเจ้าหน้าที่หน่วยงานใด', 'พฤติการณ์การข่มขู่ว่าเกี่ยวข้องกับการฟอกเงินหรือคดียาเสพติด', 'ช่องทางที่ให้แอดไลน์พูดคุยและโอนเงินเพื่อตรวจสอบ'] },
+            { title: '5. หลอกให้ลงทุนผ่านระบบคอมพิวเตอร์', points: ['แพลตฟอร์มหรือแอปพลิเคชันที่ชักชวนให้ลงทุน (หุ้น, คริปโต, ทองคำ)', 'ช่วงแรกได้รับผลตอบแทนจริงหรือไม่ จำนวนเท่าใด', 'ยอดเงินลงทุนทั้งหมดและบัญชีม้าที่รับโอนเงิน'] },
+            { title: '6. หลอกให้รักแล้วโอนเงิน (Romance Scam)', points: ['รู้จักกันผ่านแอปพลิเคชันใด โปรไฟล์คนร้ายอ้างเป็นใคร', 'เหตุผลที่ขอให้โอนเงิน (ส่งพัสดุติดด่านศุลกากร, ค่ารักษาพยาบาล, ลงทุนร่วมกัน)'] },
+            { title: '7. หลอกให้รักแล้วลงทุน (Hybrid Scam)', points: ['ความสัมพันธ์และการชักชวนให้ลงทุนควบคู่กัน', 'แพลตฟอร์มเทรดปลอมที่คนร้ายส่งลิงก์ให้ดาวน์โหลด'] },
+            { title: '8. แฮ็กบัญชีโซเชียลมีเดียหลอกยืมเงิน', points: ['บัญชีโซเชียลที่ถูกแฮ็กเป็นของใคร และคนร้ายทักมายืมเงินอย่างไร', 'บัญชีธนาคารปลายทางที่โอนเงินไปให้'] },
+            { title: '9. หลอกให้ติดตั้งโปรแกรมควบคุมระบบ (รีโมท/แอปดูดเงิน)', points: ['คนร้ายแอบอ้างเป็นหน่วยงานใดหลอกให้กดลิงก์ติดตั้งไฟล์ .apk', 'ช่วงเวลาที่หน้าจอโทรศัพท์ค้างและเงินถูกโอนออกจากบัญชีอัตโนมัติ', 'ตรวจสอบรายการเดินบัญชี (Statement) ปลายทางที่เงินถูกดูดไป'] },
+            { title: '10. หลอกลวงเกี่ยวกับสินทรัพย์ดิจิทัล (Crypto)', points: ['กระเป๋าเงินดิจิทัล (Wallet Address) ต้นทางและปลายทาง', 'รหัสธุรกรรม (TxID / Hash) ที่โอนเหรียญออกไป'] },
+            { title: '11. หลอกลวงให้โอนเงินโดยแอบอ้างเป็นบุคคลอื่น', points: ['แอบอ้างเป็นญาติ ผู้บังคับบัญชา หรือคนรู้จัก', 'เบอร์โทรหรือบัญชีไลน์ที่ใช้ติดต่อขอยืมเงิน'] },
+            { title: '12. หลอกลวงให้ทำประกัน/รับรางวัล/โชคลาภ', points: ['ข้อความ SMS หรือโทรศัพท์แจ้งว่าได้รับรางวัลใหญ่', 'เงื่อนไขให้โอนเงินค่าภาษีหรือค่าธรรมเนียมก่อนรับรางวัล'] },
+            { title: '13. หลอกลวงเกี่ยวกับการจองที่พัก/ตั๋วเครื่องบิน', points: ['เพจปลอมที่แอบอ้างชื่อโรงแรม รีสอร์ท หรือสายการบิน', 'ตรวจสอบความแตกต่างของชื่อบัญชีรับโอนกับชื่อสถานประกอบการ'] },
+            { title: '14. คดีอาชญากรรมทางเทคโนโลยีประเภทอื่นๆ', points: ['รายละเอียดพฤติการณ์แห่งคดีโดยละเอียด', 'พยานหลักฐานทางอิเล็กทรอนิกส์ที่รวบรวมได้'] }
+        ];
+
+        let activeCase = null;
+        let transferRows = [];
+        let activeInquiryPoints = [];
+
+        // Auto-fill Case ID from URL Query Parameter
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const qCaseNo = urlParams.get('caseNo') || urlParams.get('case_no') || urlParams.get('id');
+            if (qCaseNo) {
+                const caseInput = document.getElementById('inputCaseId');
+                if (caseInput) caseInput.value = qCaseNo.trim().toUpperCase();
+            }
+        });
+
+        // ---------------------------------------------------------------------
+        // STEP 1: VERIFICATION & PDPA CONSENT
+        // ---------------------------------------------------------------------
+        async function handleVerifyVictim() {
+            const errBox = document.getElementById('verifyErrorBox');
+            const errMsg = document.getElementById('verifyErrorMsg');
+            errBox.classList.add('hidden');
+
+            const caseInput = document.getElementById('inputCaseId').value.trim().toUpperCase();
+            const phoneInput = document.getElementById('inputPhone').value.trim().replace(/[-\s]/g, '');
+            const consent = document.getElementById('consentCheckbox').checked;
+
+            if (!consent) {
+                errBox.classList.remove('hidden');
+                errMsg.textContent = 'กรุณากดติ๊กยินยอมข้อตกลง PDPA เพื่อการสืบสวนสอบสวนก่อนดำเนินการ';
+                return;
+            }
+
+            if (!caseInput || !phoneInput) {
+                errBox.classList.remove('hidden');
+                errMsg.textContent = 'กรุณาระบุเลข Case ID และหมายเลขโทรศัพท์ให้ครบถ้วน';
+                return;
+            }
+
+            const btn = document.getElementById('btnVerify');
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> <span>กำลังตรวจสอบข้อมูล...</span>';
+
+            try {
+                // Call Server API
+                const resp = await fetch('/api/victim/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        caseNo: caseInput,
+                        phone: phoneInput,
+                        consentAccepted: true
+                    })
+                });
+
+                const data = await resp.json();
+
+                if (!resp.ok || !data.success) {
+                    // Fallback to localStorage if server is offline or in standalone file:// mode
+                    const localCase = verifyFromLocalStorage(caseInput, phoneInput);
+                    if (localCase) {
+                        unlockFormWithCase(localCase);
+                        return;
+                    }
+                    throw new Error(data.error || 'เลข Case ID หรือหมายเลขโทรศัพท์ไม่ตรงกับข้อมูลในระบบ สภ.บางพลี');
+                }
+
+                unlockFormWithCase(data);
+            } catch (err) {
+                console.warn('Verify error:', err);
+                // Fallback check in localStorage
+                const localCase = verifyFromLocalStorage(caseInput, phoneInput);
+                if (localCase) {
+                    unlockFormWithCase(localCase);
+                } else {
+                    errBox.classList.remove('hidden');
+                    errMsg.textContent = err.message || 'ไม่สามารถยืนยันตัวตนได้ กรุณาตรวจสอบข้อมูลอีกครั้ง';
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>🔓</span> <span>ยินยอมและเข้าสู่แบบฟอร์มคดี</span>';
+            }
+        }
+
+        // Local fallback for standalone environment
+        function verifyFromLocalStorage(caseNo, phone) {
+            try {
+                const raw = localStorage.getItem('cyber_cases');
+                if (!raw) return null;
+                const cases = JSON.parse(raw);
+                if (!Array.isArray(cases)) return null;
+
+                const found = cases.find(c => {
+                    const cNo = (c.caseNo || c.caseId || '').trim().toUpperCase();
+                    if (cNo !== caseNo) return false;
+                    const cPhone = (c.victim || '').replace(/\D/g, '');
+                    return cPhone.endsWith(phone) || phone.endsWith(cPhone);
+                });
+
+                if (found) {
+                    const victimParts = (found.victim || '').split(/\s+/);
+                    const cleanPhone = (found.victim || '').replace(/\D/g, '').slice(-10);
+                    return {
+                        success: true,
+                        caseNo: found.caseNo,
+                        incidentDate: found.date,
+                        fraudCategory: found.type,
+                        damageAmount: Number(found.amount || found.damage || 0),
+                        investigatorName: found.investigator || 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        maskedPhone: cleanPhone ? `${cleanPhone.slice(0,3)}-xxx-${cleanPhone.slice(6)}` : '08x-xxx-xxxx',
+                        maskedName: victimParts[0] ? `${victimParts[0]} ${victimParts[1] ? victimParts[1].charAt(0) + '...' : ''}` : 'ผู้เสียหาย',
+                        accounts: found.accounts || [],
+                        status: found.status,
+                        alreadySubmitted: found.status === 'ผู้เสียหายกรอกข้อมูลแล้ว' || !!found.victimSubmittedAt,
+                        victimSubmittedAt: found.victimSubmittedAt,
+                        draft: {
+                            victimProfile: found.victimProfile || null,
+                            freezeInfo: found.freezeInfo || null,
+                            transferRecords: found.transferRecords || [],
+                            inquiryAnswers: found.inquiryAnswers || []
+                        }
+                    };
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        // ---------------------------------------------------------------------
+        // UNLOCK FORM
+        // ---------------------------------------------------------------------
+        function unlockFormWithCase(caseData) {
+            activeCase = caseData;
+
+            document.getElementById('verificationSection').classList.add('hidden');
+
+            if (caseData.alreadySubmitted) {
+                // If already submitted, jump directly to Success Ticket and lock form
+                showSubmissionTicket(caseData);
+                return;
+            }
+
+            document.getElementById('formSection').classList.remove('hidden');
+
+            // Render Header Overview
+            document.getElementById('dspCaseNo').textContent = `CASE: ${caseData.caseNo}`;
+            document.getElementById('dspDate').textContent = `วันที่รับแจ้ง: ${caseData.incidentDate || '-'}`;
+            document.getElementById('dspVictimName').textContent = caseData.maskedName || 'ผู้เสียหาย';
+            document.getElementById('dspVictimPhone').textContent = `เบอร์โทร: ${caseData.maskedPhone || '-'}`;
+            document.getElementById('dspOfficer').textContent = caseData.investigatorName || '-';
+            document.getElementById('dspFraudType').textContent = caseData.fraudCategory || '-';
+
+            // Expected Amount
+            const amt = Number(caseData.damageAmount) || 0;
+            document.getElementById('sumExpectedAmount').textContent = `${amt.toLocaleString()} ฿`;
+
+            // Render Seeded Accounts
+            const seedBox = document.getElementById('seedAccountsList');
+            seedBox.innerHTML = '';
+            if (caseData.accounts && caseData.accounts.length > 0) {
+                caseData.accounts.forEach(acc => {
+                    const accText = typeof acc === 'string' ? acc : `${acc.bank || ''} ${acc.no || ''} ${acc.name ? '(' + acc.name + ')' : ''}`;
+                    const el = document.createElement('div');
+                    el.className = 'text-xs text-amber-300 font-mono bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-800';
+                    el.textContent = accText;
+                    seedBox.appendChild(el);
+                });
+            } else {
+                seedBox.innerHTML = '<span class="text-slate-500 text-[11px]">- ไม่มีข้อมูลบัญชีม้าบันทึกไว้ในเบื้องต้น -</span>';
+            }
+
+            // Render Inquiry Questions for this fraud category
+            renderInquiryQuestions(caseData.fraudCategory);
+
+            // Restore Draft if exists in sessionStorage or server draft
+            restoreDraftData(caseData);
+
+            // Ensure at least 1 transfer row exists
+            if (transferRows.length === 0) {
+                addTransferRecordRow();
+            }
+
+            // Focus on first input
+            setTimeout(() => {
+                const el = document.getElementById('vpFirstName');
+                if (el) el.focus();
+            }, 200);
+        }
+
+        // ---------------------------------------------------------------------
+        // INQUIRY CATEGORY MATCHING (14 กลโกง)
+        // ---------------------------------------------------------------------
+        function renderInquiryQuestions(fraudType = '') {
+            const container = document.getElementById('inquiryQuestionsContainer');
+            container.innerHTML = '';
+
+            const cleanType = (fraudType || '').trim().toLowerCase();
+
+            // Match category by stripping number prefix and using includes
+            let matched = INQUIRY_TEMPLATES.find(cat => {
+                const titleWithoutNumber = cat.title.replace(/^\d+\.\s*/, '').trim().toLowerCase();
+                return cleanType.includes(titleWithoutNumber) || titleWithoutNumber.includes(cleanType);
+            });
+
+            // Fallback to Category 14
+            if (!matched) {
+                matched = INQUIRY_TEMPLATES[13]; // 14. คดีอาชญากรรมทางเทคโนโลยีประเภทอื่นๆ
+            }
+
+            document.getElementById('inquiryCategoryLabel').textContent = `หมวดหมู่กลโกง: ${matched.title}`;
+            activeInquiryPoints = matched.points || [];
+
+            activeInquiryPoints.forEach((point, idx) => {
+                const row = document.createElement('div');
+                row.className = 'bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-1.5';
+                row.innerHTML = `
+                    <label class="block text-xs font-semibold text-amber-400">
+                        ประเด็นที่ ${idx + 1}: ${point} <span class="text-rose-500">*</span>
+                    </label>
+                    <textarea id="inqAnswer_${idx}" oninput="autoSaveForm()" rows="2" required placeholder="พิมพ์ข้อเท็จจริงและรายละเอียดของท่าน..."
+                        class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500"></textarea>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // ---------------------------------------------------------------------
+        // TRANSFER RECORDS DYNAMIC ROWS
+        // ---------------------------------------------------------------------
+        function addTransferRecordRow(data = null) {
+            const container = document.getElementById('transferRecordsContainer');
+            const rowId = 'tfRow_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+
+            const row = document.createElement('div');
+            row.id = rowId;
+            row.className = 'bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 transfer-record-card';
+            
+            const rowIndex = container.children.length + 1;
+
+            row.innerHTML = `
+                <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                    <span class="text-xs font-bold text-amber-400">รายการโอนครั้งที่ <span class="tf-index">${rowIndex}</span></span>
+                    <button type="button" onclick="removeTransferRecordRow('${rowId}')" class="text-slate-500 hover:text-rose-400 text-xs font-semibold transition">
+                        🗑️ ลบรายการ
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 text-xs">
+                    <div class="sm:col-span-4">
+                        <label class="block text-[11px] text-slate-400 mb-1">วันที่โอนตามสลิป <span class="text-rose-500">*</span></label>
+                        <input type="date" class="tf-date w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" onchange="calcTransferTotals(); autoSaveForm();" required value="${data?.transferDate || ''}">
+                    </div>
+                    <div class="sm:col-span-4">
+                        <label class="block text-[11px] text-slate-400 mb-1">เวลาที่โอน (ตามสลิป) <span class="text-rose-500">*</span></label>
+                        <input type="time" class="tf-time w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" onchange="autoSaveForm();" required value="${data?.transferTime || ''}">
+                    </div>
+                    <div class="sm:col-span-4">
+                        <label class="block text-[11px] text-slate-400 mb-1">ยอดเงินโอน (บาท) <span class="text-rose-500">*</span></label>
+                        <input type="number" step="0.01" min="0" class="tf-amount w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-rose-400 focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="calcTransferTotals(); autoSaveForm();" placeholder="0.00" required value="${data?.amount || ''}">
+                    </div>
+                    <div class="sm:col-span-6">
+                        <label class="block text-[11px] text-slate-400 mb-1">ธนาคารต้นทาง (ของผู้เสียหาย) <span class="text-rose-500">*</span></label>
+                        <input type="text" class="tf-fromBank w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="เช่น กสิกรไทย" required value="${data?.fromBank || ''}">
+                    </div>
+                    <div class="sm:col-span-6">
+                        <label class="block text-[11px] text-slate-400 mb-1">ธนาคารคนร้าย / Wallet <span class="text-rose-500">*</span></label>
+                        <input type="text" class="tf-toBank w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="เช่น ธ.ก.ส., พร้อมเพย์" required value="${data?.toBank || ''}">
+                    </div>
+                    <div class="sm:col-span-6">
+                        <label class="block text-[11px] text-slate-400 mb-1">เลขบัญชีม้า / พร้อมเพย์คนร้าย <span class="text-rose-500">*</span></label>
+                        <input type="text" class="tf-toAccNo w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="เลขที่บัญชีรับโอน" required value="${data?.toAccountNo || ''}">
+                    </div>
+                    <div class="sm:col-span-6">
+                        <label class="block text-[11px] text-slate-400 mb-1">ชื่อบัญชีม้า / คนร้าย <span class="text-rose-500">*</span></label>
+                        <input type="text" class="tf-toAccName w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="ชื่อ-นามสกุล ที่ปรากฏในสลิป" required value="${data?.toAccountName || ''}">
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(row);
+            transferRows.push(rowId);
+            calcTransferTotals();
+            reindexTransferRows();
+        }
+
+        function removeTransferRecordRow(rowId) {
+            const container = document.getElementById('transferRecordsContainer');
+            if (container.children.length <= 1) {
+                alert('ต้องมีรายการโอนเงินอย่างน้อย 1 รายการ');
+                return;
+            }
+            const el = document.getElementById(rowId);
+            if (el) el.remove();
+            transferRows = transferRows.filter(id => id !== rowId);
+            calcTransferTotals();
+            reindexTransferRows();
+            autoSaveForm();
+        }
+
+        function reindexTransferRows() {
+            const container = document.getElementById('transferRecordsContainer');
+            Array.from(container.children).forEach((child, idx) => {
+                const label = child.querySelector('.tf-index');
+                if (label) label.textContent = idx + 1;
+            });
+        }
+
+        function calcTransferTotals() {
+            const container = document.getElementById('transferRecordsContainer');
+            const amounts = Array.from(container.querySelectorAll('.tf-amount')).map(i => parseFloat(i.value) || 0);
+            const total = amounts.reduce((a, b) => a + b, 0);
+
+            document.getElementById('sumCalculatedAmount').textContent = `${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} ฿`;
+
+            const expected = Number(activeCase?.damageAmount) || 0;
+            const badge = document.getElementById('amountMatchStatusBadge');
+
+            if (Math.abs(total - expected) < 0.01 && total > 0) {
+                badge.className = 'w-full sm:w-auto text-[11px] px-2.5 py-1 rounded-xl font-bold text-center bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                badge.textContent = '✓ ยอดเงินตรงกับที่แจ้งความ';
+            } else if (total === 0) {
+                badge.className = 'w-full sm:w-auto text-[11px] px-2.5 py-1 rounded-xl font-bold text-center bg-slate-800 text-slate-400';
+                badge.textContent = 'ระบุยอดเงินตามสลิป';
+            } else {
+                const diff = total - expected;
+                badge.className = 'w-full sm:w-auto text-[11px] px-2.5 py-1 rounded-xl font-bold text-center bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                badge.textContent = `ยอดต่างกัน ${Math.abs(diff).toLocaleString()} ฿ (ตรวจสอบสลิป)`;
+            }
+        }
+
+        function toggleFreezeFields(isYes) {
+            const box = document.getElementById('freezeDetailsBox');
+            if (isYes) {
+                box.classList.remove('hidden');
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
+        function calc72HoursFreeze() {
+            const dtVal = document.getElementById('fiReportDateTime').value;
+            const cdText = document.getElementById('freezeCountdownText');
+            if (!dtVal) {
+                cdText.textContent = '';
+                return;
+            }
+            const reportDate = new Date(dtVal);
+            const freezeExpire = new Date(reportDate.getTime() + (72 * 60 * 60 * 1000));
+            const now = new Date();
+            const remainMs = freezeExpire - now;
+
+            if (remainMs > 0) {
+                const remainHours = Math.floor(remainMs / (1000 * 60 * 60));
+                const remainMinutes = Math.floor((remainMs % (1000 * 60 * 60)) / (1000 * 60));
+                cdText.textContent = `คงเหลือเวลาในกรอบ 72 ชม. ประมาณ: ${remainHours} ชม. ${remainMinutes} นาที (สิ้นสุด ${freezeExpire.toLocaleString('th-TH')})`;
+                cdText.className = 'font-bold text-xs text-amber-400 pt-0.5';
+            } else {
+                cdText.textContent = `⚠️ พ้นกรอบเวลาอายัดชั่วคราว 72 ชม. แล้ว (เมื่อ ${freezeExpire.toLocaleString('th-TH')})`;
+                cdText.className = 'font-bold text-xs text-rose-400 pt-0.5';
+            }
+        }
+
+        function formatIdCardInput(input) {
+            let val = input.value.replace(/\D/g, '');
+            if (val.length > 13) val = val.slice(0, 13);
+            let formatted = '';
+            if (val.length > 0) formatted += val.substring(0, 1);
+            if (val.length > 1) formatted += '-' + val.substring(1, 5);
+            if (val.length > 5) formatted += '-' + val.substring(5, 10);
+            if (val.length > 10) formatted += '-' + val.substring(10, 12);
+            if (val.length > 12) formatted += '-' + val.substring(12, 13);
+            input.value = formatted;
+        }
+
+        // ---------------------------------------------------------------------
+        // AUTO-SAVE SYSTEM (sessionStorage / localStorage)
+        // ---------------------------------------------------------------------
+        function autoSaveForm() {
+            if (!activeCase || !activeCase.caseNo) return;
+            const indicator = document.getElementById('autoSaveIndicator');
+
+            const payload = collectFormData();
+            try {
+                sessionStorage.setItem('victim_draft_' + activeCase.caseNo, JSON.stringify(payload));
+                if (indicator) {
+                    indicator.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span> บันทึกแบบร่างแล้ว';
+                }
+            } catch (e) {}
+        }
+
+        function collectFormData() {
+            // Section 1: victimProfile
+            const victimProfile = {
+                prefix: document.getElementById('vpPrefix')?.value || 'นาย',
+                firstName: document.getElementById('vpFirstName')?.value.trim() || '',
+                lastName: document.getElementById('vpLastName')?.value.trim() || '',
+                idCard: document.getElementById('vpIdCard')?.value.trim() || '',
+                age: parseInt(document.getElementById('vpAge')?.value, 10) || null,
+                occupation: document.getElementById('vpOccupation')?.value.trim() || '',
+                address: document.getElementById('vpAddress')?.value.trim() || '',
+                phone: document.getElementById('vpPhone')?.value.trim() || '',
+                victimBank: document.getElementById('vpBank')?.value.trim() || '',
+                victimAccountNo: document.getElementById('vpAccountNo')?.value.trim() || '',
+                victimAccountName: document.getElementById('vpAccountName')?.value.trim() || ''
+            };
+
+            // Section 2: freezeInfo
+            const isReported = document.querySelector('input[name="fiReported"]:checked')?.value === 'yes';
+            const freezeInfo = {
+                isReported1441: isReported,
+                reportDateTime: isReported ? (document.getElementById('fiReportDateTime')?.value || '') : '',
+                bankCaseId: isReported ? (document.getElementById('fiBankCaseId')?.value.trim() || '') : ''
+            };
+
+            // Section 3: transferRecords
+            const transferCards = document.querySelectorAll('.transfer-record-card');
+            const transferRecords = Array.from(transferCards).map(card => ({
+                transferDate: card.querySelector('.tf-date')?.value || '',
+                transferTime: card.querySelector('.tf-time')?.value || '',
+                fromBank: card.querySelector('.tf-fromBank')?.value.trim() || '',
+                toBank: card.querySelector('.tf-toBank')?.value.trim() || '',
+                toAccountNo: card.querySelector('.tf-toAccNo')?.value.trim() || '',
+                toAccountName: card.querySelector('.tf-toAccName')?.value.trim() || '',
+                amount: parseFloat(card.querySelector('.tf-amount')?.value) || 0
+            }));
+
+            // Section 4: inquiryAnswers
+            const inquiryAnswers = activeInquiryPoints.map((point, idx) => ({
+                question: point,
+                answer: document.getElementById('inqAnswer_' + idx)?.value.trim() || ''
+            }));
+
+            return { victimProfile, freezeInfo, transferRecords, inquiryAnswers };
+        }
+
+        function restoreDraftData(caseData) {
+            let draft = null;
+            try {
+                const local = sessionStorage.getItem('victim_draft_' + caseData.caseNo);
+                if (local) draft = JSON.parse(local);
+            } catch (e) {}
+
+            if (!draft && caseData.draft) {
+                draft = caseData.draft;
+            }
+
+            if (!draft) return;
+
+            // Section 1
+            if (draft.victimProfile) {
+                const vp = draft.victimProfile;
+                if (vp.prefix) document.getElementById('vpPrefix').value = vp.prefix;
+                if (vp.firstName) document.getElementById('vpFirstName').value = vp.firstName;
+                if (vp.lastName) document.getElementById('vpLastName').value = vp.lastName;
+                if (vp.idCard) document.getElementById('vpIdCard').value = vp.idCard;
+                if (vp.age) document.getElementById('vpAge').value = vp.age;
+                if (vp.occupation) document.getElementById('vpOccupation').value = vp.occupation;
+                if (vp.address) document.getElementById('vpAddress').value = vp.address;
+                if (vp.phone) document.getElementById('vpPhone').value = vp.phone;
+                if (vp.victimBank) document.getElementById('vpBank').value = vp.victimBank;
+                if (vp.victimAccountNo) document.getElementById('vpAccountNo').value = vp.victimAccountNo;
+                if (vp.victimAccountName) document.getElementById('vpAccountName').value = vp.victimAccountName;
+            }
+
+            // Section 2
+            if (draft.freezeInfo) {
+                const fi = draft.freezeInfo;
+                if (fi.isReported1441) {
+                    const r = document.querySelector('input[name="fiReported"][value="yes"]');
+                    if (r) r.checked = true;
+                    toggleFreezeFields(true);
+                    if (fi.reportDateTime) document.getElementById('fiReportDateTime').value = fi.reportDateTime;
+                    if (fi.bankCaseId) document.getElementById('fiBankCaseId').value = fi.bankCaseId;
+                    calc72HoursFreeze();
+                }
+            }
+
+            // Section 3
+            if (draft.transferRecords && draft.transferRecords.length > 0) {
+                const container = document.getElementById('transferRecordsContainer');
+                container.innerHTML = '';
+                transferRows = [];
+                draft.transferRecords.forEach(tr => addTransferRecordRow(tr));
+            }
+
+            // Section 4
+            if (draft.inquiryAnswers && draft.inquiryAnswers.length > 0) {
+                draft.inquiryAnswers.forEach((ansObj, idx) => {
+                    const el = document.getElementById('inqAnswer_' + idx);
+                    if (el && ansObj.answer) el.value = ansObj.answer;
+                });
+            }
+
+            calcTransferTotals();
+        }
+
+        // ---------------------------------------------------------------------
+        // SUBMIT FORM TO BACKEND
+        // ---------------------------------------------------------------------
+        async function handleVictimFormSubmit() {
+            if (!activeCase || !activeCase.caseNo) return;
+
+            const btn = document.getElementById('btnSubmitForm');
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> <span>กำลังเข้ารหัสและส่งข้อมูล...</span>';
+
+            const payload = collectFormData();
+            const submitData = {
+                caseNo: activeCase.caseNo,
+                phone: document.getElementById('inputPhone').value.trim().replace(/[-\s]/g, ''),
+                victimProfile: payload.victimProfile,
+                freezeInfo: payload.freezeInfo,
+                transferRecords: payload.transferRecords,
+                inquiryAnswers: payload.inquiryAnswers
+            };
+
+            try {
+                const resp = await fetch('/api/victim/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(submitData)
+                });
+
+                const resJson = await resp.json();
+
+                if (!resp.ok || !resJson.success) {
+                    // Local fallback sync
+                    syncToLocalStorage(submitData);
+                } else {
+                    syncToLocalStorage(submitData);
+                }
+
+                // Clear temporary session draft
+                sessionStorage.removeItem('victim_draft_' + activeCase.caseNo);
+
+                // Show Success Receipt Ticket
+                showSubmissionTicket({
+                    caseNo: activeCase.caseNo,
+                    maskedName: `${payload.victimProfile.firstName} ${payload.victimProfile.lastName}`,
+                    investigatorName: activeCase.investigatorName,
+                    victimSubmittedAt: new Date().toISOString()
+                });
+
+            } catch (err) {
+                console.warn('Submit API fallback to local:', err);
+                syncToLocalStorage(submitData);
+                sessionStorage.removeItem('victim_draft_' + activeCase.caseNo);
+                showSubmissionTicket({
+                    caseNo: activeCase.caseNo,
+                    maskedName: `${payload.victimProfile.firstName} ${payload.victimProfile.lastName}`,
+                    investigatorName: activeCase.investigatorName,
+                    victimSubmittedAt: new Date().toISOString()
+                });
+            }
+        }
+
+        function syncToLocalStorage(data) {
+            try {
+                const raw = localStorage.getItem('cyber_cases');
+                if (!raw) return;
+                const cases = JSON.parse(raw);
+                const target = cases.find(c => (c.caseNo || '').toUpperCase() === data.caseNo.toUpperCase());
+                if (target) {
+                    target.victimProfile = data.victimProfile;
+                    target.freezeInfo = data.freezeInfo;
+                    target.transferRecords = data.transferRecords;
+                    target.inquiryAnswers = data.inquiryAnswers;
+                    target.status = 'ผู้เสียหายกรอกข้อมูลแล้ว';
+                    target.victimSubmittedAt = new Date().toISOString();
+                    localStorage.setItem('cyber_cases', JSON.stringify(cases));
+                }
+            } catch (e) {}
+        }
+
+        function showSubmissionTicket(ticket) {
+            document.getElementById('verificationSection').classList.add('hidden');
+            document.getElementById('formSection').classList.add('hidden');
+            const tkSection = document.getElementById('ticketSection');
+            tkSection.classList.remove('hidden');
+
+            document.getElementById('tkCaseNo').textContent = ticket.caseNo || '-';
+            document.getElementById('tkVictim').textContent = ticket.maskedName || 'ผู้เสียหาย';
+            document.getElementById('tkOfficer').textContent = ticket.investigatorName || '-';
+            
+            const dt = ticket.victimSubmittedAt ? new Date(ticket.victimSubmittedAt) : new Date();
+            document.getElementById('tkTimestamp').textContent = dt.toLocaleString('th-TH');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

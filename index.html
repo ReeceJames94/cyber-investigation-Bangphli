@@ -957,7 +957,10 @@
 
                     <!-- Quick Summary & Filter Pills for Urgency & Warroom -->
                     <div class="flex flex-wrap items-center gap-2 text-xs">
-                        <button type="button" onclick="setCaseFilterQuick('all')" id="qfCase-all" class="qf-case-btn px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-amber-500 text-slate-950 shadow-sm">
+                        <button type="button" onclick="setCaseFilterQuick('my_cases')" id="qfCase-my" class="qf-case-btn px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm">
+                            <span>👮</span> <span>คดีของฉัน</span> <span id="qfCount-my" class="px-1.5 py-0.2 rounded-full bg-slate-950/20 text-[10px]">0</span>
+                        </button>
+                        <button type="button" onclick="setCaseFilterQuick('all')" id="qfCase-all" class="qf-case-btn px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700">
                             <span>📁 ทั้งหมด</span> <span id="qfCount-all" class="px-1.5 py-0.2 rounded-full bg-slate-950/20 text-[10px]">0</span>
                         </button>
                         <button type="button" onclick="setCaseFilterQuick('warroom')" id="qfCase-warroom" class="qf-case-btn px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30">
@@ -3054,6 +3057,93 @@
                 </div>
 
                 <!-- ========================================================================= -->
+                <!-- MODAL: SHARE VICTIM LINK & QR CODE (สำหรับส่งให้ผู้เสียหายกรอกข้อมูลล่วงหน้า) -->
+                <!-- ========================================================================= -->
+                <div id="shareVictimLinkModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[90] hidden items-center justify-center p-3 sm:p-5 overflow-y-auto">
+                    <div class="bg-slate-900 border border-emerald-500/40 rounded-3xl p-5 sm:p-7 max-w-2xl w-full text-white space-y-4 shadow-2xl relative my-auto">
+                        <!-- Header -->
+                        <div class="flex justify-between items-start border-b border-slate-800 pb-4">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-2xl">🔗</span>
+                                    <h3 class="text-lg font-bold text-white">แชร์ลิงก์ / QR Code ให้ผู้เสียหายกรอกข้อมูลล่วงหน้า</h3>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">PDPA 2.5 Mobile</span>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-1">ส่งให้ผู้เสียหายสแกนหรือกดเข้ากรอกข้อมูลส่วนบุคคล รายการโอนเงิน และตอบประเด็นกลโกงล่วงหน้า</p>
+                            </div>
+                            <button type="button" onclick="closeModal('shareVictimLinkModal')" class="p-1.5 text-slate-400 hover:text-white text-lg">✕</button>
+                        </div>
+
+                        <!-- Case Summary Box -->
+                        <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-slate-400">เลข Case ID:</span>
+                                    <span id="shareModalCaseNo" class="font-mono font-bold text-amber-400 text-sm">T6911087326</span>
+                                </div>
+                                <div id="shareModalStatusBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40">
+                                    รอดำเนินการ
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-900">
+                                <div><span class="text-slate-400">ผู้เสียหาย:</span> <span id="shareModalVictim" class="font-medium text-slate-200">-</span></div>
+                                <div><span class="text-slate-400">พนักงานสอบสวน:</span> <span id="shareModalOfficer" class="font-medium text-blue-400">-</span></div>
+                                <div><span class="text-slate-400">ประเภทกลโกง:</span> <span id="shareModalType" class="font-medium text-slate-300">-</span></div>
+                                <div><span class="text-slate-400">ความเสียหาย:</span> <span id="shareModalAmount" class="font-bold text-rose-400">-</span></div>
+                            </div>
+                        </div>
+
+                        <!-- QR Code Box -->
+                        <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-center space-y-3">
+                            <div class="text-xs font-bold text-slate-300 flex items-center justify-center gap-1.5">
+                                <span>📱</span> <span>QR Code สำหรับสแกนด้วยโทรศัพท์มือถือ / LINE</span>
+                            </div>
+                            <div class="flex justify-center py-2">
+                                <div class="p-2.5 bg-white rounded-2xl shadow-xl inline-block border border-slate-700">
+                                    <img id="shareModalQrImage" src="" alt="QR Code" class="w-44 h-44 mx-auto block object-contain" />
+                                </div>
+                            </div>
+                            <div class="text-[11px] text-slate-400">
+                                ผู้เสียหายสามารถเปิดกล้องโทรศัพท์ หรือกดสแกนผ่านแอป LINE เพื่อเปิดแบบฟอร์มได้ทันที
+                            </div>
+                        </div>
+
+                        <!-- Direct Link Box -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 mb-1.5">ลิงก์ตรงสำหรับส่งให้ผู้เสียหาย (Direct URL):</label>
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="shareModalDirectUrl" readonly class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-emerald-400 focus:outline-none select-all" />
+                                <button type="button" onclick="copyShareVictimDirectUrl()" class="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center gap-1 shrink-0 shadow-sm">
+                                    <span>📋</span> <span>คัดลอกลิงก์</span>
+                                </button>
+                                <button type="button" onclick="openShareVictimDirectUrl()" class="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition shrink-0" title="เปิดดูในแท็บใหม่">
+                                    ↗
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- SMS / LINE Template Message Box -->
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="block text-xs font-bold text-slate-300">ข้อความตัวอย่างสำหรับส่ง SMS / LINE:</label>
+                                <button type="button" onclick="copyShareVictimSmsTemplate()" class="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+                                    <span>📋</span> <span>คัดลอกข้อความ</span>
+                                </button>
+                            </div>
+                            <textarea id="shareModalSmsTemplate" rows="3" readonly class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs font-sans text-slate-200 focus:outline-none select-all leading-relaxed"></textarea>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-xs">
+                            <span class="text-slate-400 text-[11px]">🛡️ ข้อมูลจะเชื่อมโยงเข้าสู่ Case ID นี้โดยอัตโนมัติเมื่อผู้เสียหายกดยืนยัน</span>
+                            <button type="button" onclick="closeModal('shareVictimLinkModal')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+                                ปิด
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========================================================================= -->
                 <!-- MODAL: EXPORT INQUIRY CASES JSON (สำหรับระบบทำสำนวนในเครื่องของ พงส. เจ้าของเรื่อง) -->
                 <!-- ========================================================================= -->
                 <div id="inquiryExportModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[90] hidden items-center justify-center p-3 sm:p-5 overflow-y-auto">
@@ -3916,8 +4006,19 @@
             }
         }
 
-        // ตัวแปรควบคุมการกรองด่วนและการเรียงลำดับความเร่งด่วน
-        let currentCaseQuickFilter = 'all';
+        // ฟังก์ชันตัดคำนำหน้ายศตำรวจและคำนำหน้านาม เพื่อการเปรียบเทียบชื่อที่แม่นยำ
+        function cleanPoliceRankName(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/^ว่าที่\s*/i, '')
+                .replace(/^(พล\.ต\.[ตโทอ]|พ\.ต\.[ตโทอ]|ร\.ต\.[ตโทอ]|จ\.ส\.ต|ส\.ต\.[ตโทอ]|ด\.ต|นายดาบ|นาย|นาง|นางสาว)\.?\s*/i, '')
+                .replace(/^[พรรดจสดาหมวด]\.?[ตโทอ]?\.?[ตโทอ]?\.?\s*/i, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        // ตัวแปรควบคุมการกรองด่วนและการเรียงลำดับความเร่งด่วน (Default: คดีของฉัน)
+        let currentCaseQuickFilter = 'my_cases';
         let caseSortByUrgency = true;
 
         function setCaseFilterQuick(filterKey) {
@@ -3926,6 +4027,7 @@
                 btn.className = 'qf-case-btn px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700';
             });
             const activeMap = {
+                'my_cases': { id: 'qfCase-my', cls: 'bg-emerald-600 text-white shadow-sm' },
                 'all': { id: 'qfCase-all', cls: 'bg-amber-500 text-slate-950 shadow-sm' },
                 'warroom': { id: 'qfCase-warroom', cls: 'bg-rose-600 text-white shadow-sm shadow-rose-500/50' },
                 'ภจว.ติดตาม': { id: 'qfCase-ภจว', cls: 'bg-purple-600 text-white shadow-sm' },
@@ -4044,8 +4146,8 @@
                 // กรองตาม พงส. ที่รับผิดชอบ
                 if (inv) {
                     const caseInv = (c.investigator || c.officerInquiry || '').trim();
-                    const cleanInv = inv.replace(/^ว่าที่\s*/, '').replace(/^[พรรดจส]\.?[ตโทอ]\.?[ตโทอ]?\.?\s*/, '').trim();
-                    const cleanCaseInv = caseInv.replace(/^ว่าที่\s*/, '').replace(/^[พรรดจส]\.?[ตโทอ]\.?[ตโทอ]?\.?\s*/, '').trim();
+                    const cleanInv = cleanPoliceRankName(inv);
+                    const cleanCaseInv = cleanPoliceRankName(caseInv);
                     if (caseInv !== inv && !cleanCaseInv.includes(cleanInv) && !caseInv.includes(inv)) {
                         return false;
                     }
@@ -4056,8 +4158,22 @@
                 if (u && u !== 'any_urgent' && !urgList.includes(u)) return false;
 
                 // กรองตาม Quick Filter Pill
-                if (currentCaseQuickFilter === 'warroom' && c.status !== 'warroom') return false;
-                if (currentCaseQuickFilter !== 'all' && currentCaseQuickFilter !== 'warroom' && !urgList.includes(currentCaseQuickFilter)) return false;
+                if (currentCaseQuickFilter === 'my_cases') {
+                    if (typeof currentAuthUser !== 'undefined' && currentAuthUser) {
+                        const myCleanName = cleanPoliceRankName(currentAuthUser.rank_name || currentAuthUser.full_name || currentAuthUser.name || '');
+                        if (myCleanName) {
+                            const invClean = cleanPoliceRankName(c.investigator || c.officerInquiry || '');
+                            const detClean = cleanPoliceRankName(c.detective || c.officerInvestigate || '');
+                            const matchInv = invClean && (invClean.includes(myCleanName) || myCleanName.includes(invClean));
+                            const matchDet = detClean && (detClean.includes(myCleanName) || myCleanName.includes(detClean));
+                            if (!matchInv && !matchDet) return false;
+                        }
+                    }
+                } else if (currentCaseQuickFilter === 'warroom') {
+                    if (c.status !== 'warroom') return false;
+                } else if (currentCaseQuickFilter !== 'all') {
+                    if (!urgList.includes(currentCaseQuickFilter)) return false;
+                }
 
                 // ค้นหาข้อความ
                 const accStr = (c.accounts || []).map(a => typeof a === 'string' ? a : `${a.bank || ''} ${a.no || a.accNo || ''} ${a.name || ''}`).join(' ');
@@ -4084,12 +4200,27 @@
             if (!tbody) return;
 
             // อัปเดตตัวเลขเคาน์เตอร์ Quick Filter Pills
+            const elMy = document.getElementById('qfCount-my');
             const elAll = document.getElementById('qfCount-all');
             const elWarroom = document.getElementById('qfCount-warroom');
             const elPhaJorWor = document.getElementById('qfCount-ภจว');
             const elPha1 = document.getElementById('qfCount-ภ1');
             const elTorRor = document.getElementById('qfCount-ตร');
 
+            if (elMy) {
+                if (typeof currentAuthUser !== 'undefined' && currentAuthUser) {
+                    const myCleanName = cleanPoliceRankName(currentAuthUser.rank_name || currentAuthUser.full_name || currentAuthUser.name || '');
+                    const myCount = mockCases.filter(c => {
+                        const invClean = cleanPoliceRankName(c.investigator || c.officerInquiry || '');
+                        const detClean = cleanPoliceRankName(c.detective || c.officerInvestigate || '');
+                        return (myCleanName && invClean && (invClean.includes(myCleanName) || myCleanName.includes(invClean))) ||
+                               (myCleanName && detClean && (detClean.includes(myCleanName) || myCleanName.includes(detClean)));
+                    }).length;
+                    elMy.textContent = myCount;
+                } else {
+                    elMy.textContent = '0';
+                }
+            }
             if (elAll) elAll.textContent = mockCases.length;
             if (elWarroom) elWarroom.textContent = mockCases.filter(c => c.status === 'warroom').length;
             if (elPhaJorWor) elPhaJorWor.textContent = mockCases.filter(c => (Array.isArray(c.urgency) ? c.urgency : [c.urgency]).includes('ภจว.ติดตาม')).length;
@@ -4126,10 +4257,14 @@
                 const dStart = document.getElementById('caseFilterDateStart')?.value?.trim();
                 const dEnd = document.getElementById('caseFilterDateEnd')?.value?.trim();
 
+                if (currentCaseQuickFilter === 'my_cases') {
+                    activeFilters.push(`คดีของฉัน (${currentAuthUser?.rank_name || 'พงส.'})`);
+                } else if (currentCaseQuickFilter !== 'all') {
+                    activeFilters.push(`หมวด: ${currentCaseQuickFilter}`);
+                }
                 if (invVal) activeFilters.push(`พงส.: ${invVal}`);
                 if (statusVal) activeFilters.push(`สถานะ: ${statusVal}`);
                 if (urgVal) activeFilters.push(`เร่งด่วน: ${urgVal === 'any_urgent' ? 'ทุกระดับ' : urgVal}`);
-                if (currentCaseQuickFilter !== 'all') activeFilters.push(`หมวด: ${currentCaseQuickFilter}`);
                 if (dStart || dEnd) activeFilters.push(`วันที่: ${dStart || '...'} ถึง ${dEnd || '...'}`);
                 if (qVal) activeFilters.push(`ค้นหา: "${qVal}"`);
 
@@ -4172,6 +4307,7 @@
                 const isPha1 = urgList.includes('คดีเร่งด่วน ภ.1ติดตาม');
                 const isTorRor = urgList.includes('ตร.ติดตาม');
                 const isWarroom = c.status === 'warroom';
+                const isSubmitted = c.status === 'ผู้เสียหายกรอกข้อมูลแล้ว' || !!c.victim_submitted_at;
 
                 const accountsHtml = (c.accounts || []).map(acc => `
                     <div class="text-[11px] bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 mb-1 text-slate-700 dark:text-slate-300 font-sans">
@@ -4205,13 +4341,17 @@
                         <td class="p-4 align-top">
                             <div class="font-bold text-rose-500 dark:text-rose-400 mb-1">${c.amount.toLocaleString()} ฿</div>
                             <div class="flex flex-col gap-1 items-start">
-                                ${isWarroom ? `
+                                ${isSubmitted ? `
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm" title="ผู้เสียหายส่งมอบข้อมูลและหลักฐานล่วงหน้าแล้ว">
+                                        <span>✓</span> <span>ผู้เสียหายกรอกแล้ว</span>
+                                    </span>
+                                ` : (isWarroom ? `
                                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-600 text-white shadow-sm shadow-rose-500/50 animate-pulse border border-rose-400">
                                         <span>🚨</span> <span>WARROOM</span>
                                     </span>
                                 ` : `
                                     <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-300/40">${c.status || 'พบพงส.'}</span>
-                                `}
+                                `)}
                                 <button type="button" onclick="toggleCaseWarroomDirect('${c.id}')" class="text-[9px] font-semibold px-2 py-0.5 rounded-lg border transition ${isWarroom ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 hover:bg-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:text-rose-400'}" title="คลิกสลับสถานะ Warroom">
                                     ${isWarroom ? '✓ ถอดจาก Warroom' : '+ เข้า Warroom'}
                                 </button>
@@ -4279,6 +4419,9 @@
                         </td>
                         <td class="p-4 align-top text-center">
                             <div class="inline-flex items-center gap-1.5">
+                                <button type="button" onclick="openShareVictimLinkModal('${c.caseNo || c.id}')" class="text-emerald-400 hover:text-emerald-300 p-1.5 rounded-lg hover:bg-emerald-500/10 transition" title="แชร์ลิงก์ / QR Code ให้ผู้เสียหายกรอกข้อมูลล่วงหน้า">
+                                    🔗
+                                </button>
                                 <button type="button" onclick="exportSingleCaseInquiryJson('${c.id}')" class="text-indigo-400 hover:text-indigo-300 p-1.5 rounded-lg hover:bg-indigo-500/10 transition" title="Export JSON สำนวนคดีนี้">
                                     📥
                                 </button>
@@ -4397,10 +4540,12 @@
                 status: c.status || 'พบพงส.',
                 urgency_levels: Array.isArray(c.urgency) ? c.urgency : (c.urgency ? [c.urgency] : []),
                 victim: {
-                    full_name: victimName || 'ผู้เสียหาย',
-                    phone: victimPhone || '065-549-2824',
-                    id_card: victimIdCard,
-                    address: victimAddress,
+                    full_name: (c.victim_profile?.firstName && c.victim_profile?.lastName)
+                        ? `${c.victim_profile.prefix || ''}${c.victim_profile.firstName} ${c.victim_profile.lastName}`.trim()
+                        : (victimName || 'ผู้เสียหาย'),
+                    phone: c.victim_profile?.phone || victimPhone || '065-549-2824',
+                    id_card: c.victim_profile?.idCard || victimIdCard,
+                    address: c.victim_profile?.address || victimAddress,
                     damage_amount: damage,
                     statement_summary: `ผู้เสียหายถูกหลอกลวงประเภท ${c.type || 'กลโกงออนไลน์'} มูลค่าความเสียหาย ${damage.toLocaleString()} บาท`
                 },
@@ -4420,10 +4565,23 @@
                     summons_2: { issued: !!c.summons2, date: c.summons2Date || '', file: c.summons2Pdf || '' },
                     warrant: { issued: !!c.warrant, file: c.warrantPdf || '' }
                 },
+                // ฟิลด์ข้อมูล 4 ส่วนจากระบบผู้เสียหายกรอกข้อมูลล่วงหน้า (/victim-form) (Lightweight PDPA)
+                victim_profile: c.victim_profile || c.victimProfile || null,
+                freeze_info: c.freeze_info || c.freezeInfo || null,
+                transfer_records: (c.transfer_records || c.transferRecords || []).map(tr => {
+                    const { fileData, fileBase64, ...cleanTr } = tr;
+                    return cleanTr;
+                }),
+                inquiry_answers: (c.inquiry_answers || c.inquiryAnswers || []).map(ia => {
+                    const { fileData, fileBase64, ...cleanIa } = ia;
+                    return cleanIa;
+                }),
+                victim_submitted_at: c.victim_submitted_at || c.victimSubmittedAt || null,
                 metadata: {
                     source_system: 'Cyber Investigation Bangphli Portal',
                     station_code: 'POLICE-STN-BANGPHLI-001',
-                    export_format: 'TH-POLICE-INQUIRY-V1',
+                    export_format: 'TH-POLICE-INQUIRY-V1-LIGHTWEIGHT',
+                    is_lightweight: true,
                     exported_at: new Date().toISOString()
                 }
             };
@@ -4443,11 +4601,12 @@
                 return mockCases;
             }
 
-            const cleanTarget = targetOfficer.replace(/^ว่าที่\s*/, '').replace(/^[พรรดจส]\.?[ตโทอ]\.?[ตโทอ]?\.?\s*/, '').trim();
+            const cleanTarget = cleanPoliceRankName(targetOfficer);
 
             return mockCases.filter(c => {
-                const inv = c.investigator || '';
-                return inv.includes(cleanTarget) || inv === targetOfficer;
+                const inv = cleanPoliceRankName(c.investigator || c.officerInquiry || '');
+                const det = cleanPoliceRankName(c.detective || c.officerInvestigate || '');
+                return inv.includes(cleanTarget) || cleanTarget.includes(inv) || det.includes(cleanTarget) || cleanTarget.includes(det);
             });
         }
 
@@ -4601,10 +4760,12 @@
             // ตรวจสอบสิทธิ์ถ้าเป็น พงส. ทั่วไป
             const user = (typeof currentAuthUser !== 'undefined' && currentAuthUser) ? currentAuthUser : null;
             const isAdmin = user && (user.role === 'admin' || (user.position && user.position.includes('ผกก')));
-            if (!isAdmin && user && c.investigator) {
-                const cleanUser = user.rank_name.replace(/^ว่าที่\s*/, '').replace(/^[พรรดจส]\.?[ตโทอ]\.?[ตโทอ]?\.?\s*/, '').trim();
-                if (!c.investigator.includes(cleanUser)) {
-                    toast('⚠️ คุณสามารถ Export ได้เฉพาะคดีที่คุณเป็นพนักงานสอบสวนเจ้าของเรื่องเท่านั้น');
+            if (!isAdmin && user) {
+                const cleanUser = cleanPoliceRankName(user.rank_name || user.full_name || '');
+                const cleanInv = cleanPoliceRankName(c.investigator || c.officerInquiry || '');
+                const cleanDet = cleanPoliceRankName(c.detective || c.officerInvestigate || '');
+                if (cleanUser && !cleanInv.includes(cleanUser) && !cleanUser.includes(cleanInv) && !cleanDet.includes(cleanUser) && !cleanUser.includes(cleanDet)) {
+                    toast('⚠️ คุณสามารถ Export ได้เฉพาะคดีที่คุณเป็นพนักงานสอบสวนหรือฝ่ายสืบสวนเจ้าของเรื่องเท่านั้น');
                     return;
                 }
             }
@@ -4632,6 +4793,127 @@
             URL.revokeObjectURL(link.href);
 
             toast(`📥 ส่งออก JSON สำนวนคดี ${c.caseNo} เรียบร้อยแล้ว (${fileName})`);
+        }
+
+        // =========================================================================
+        // ฟังก์ชันระบบแชร์ลิงก์ / QR CODE แบบฟอร์มผู้เสียหายล่วงหน้า (/victim-form)
+        // =========================================================================
+        let currentShareCaseNo = '';
+
+        function openShareVictimLinkModal(caseNoOrId) {
+            const item = mockCases.find(c => (c.caseNo && c.caseNo === caseNoOrId) || c.id === caseNoOrId);
+            if (!item) {
+                toast('⚠️ ไม่พบข้อมูลคดี');
+                return;
+            }
+            const caseNo = item.caseNo || item.caseId || caseNoOrId;
+            currentShareCaseNo = caseNo;
+
+            const caseNoEl = document.getElementById('shareModalCaseNo');
+            const victimEl = document.getElementById('shareModalVictim');
+            const officerEl = document.getElementById('shareModalOfficer');
+            const typeEl = document.getElementById('shareModalType');
+            const amountEl = document.getElementById('shareModalAmount');
+            const statusEl = document.getElementById('shareModalStatusBadge');
+            const urlInput = document.getElementById('shareModalDirectUrl');
+            const smsArea = document.getElementById('shareModalSmsTemplate');
+            const qrImg = document.getElementById('shareModalQrImage');
+
+            const victimName = item.victim || 'ผู้เสียหาย';
+            const invName = item.investigator || 'พนักงานสอบสวน สภ.บางพลี';
+            const amountStr = (Number(item.amount || item.damage || 0)).toLocaleString() + ' ฿';
+            const typeStr = item.type || 'หลอกลวงออนไลน์';
+
+            if (caseNoEl) caseNoEl.textContent = caseNo;
+            if (victimEl) victimEl.textContent = victimName;
+            if (officerEl) officerEl.textContent = invName;
+            if (typeEl) typeEl.textContent = typeStr;
+            if (amountEl) amountEl.textContent = amountStr;
+
+            const isSubmitted = item.status === 'ผู้เสียหายกรอกข้อมูลแล้ว' || !!item.victim_submitted_at;
+            if (statusEl) {
+                if (isSubmitted) {
+                    statusEl.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+                    statusEl.textContent = '✓ ผู้เสียหายกรอกข้อมูลแล้ว';
+                } else {
+                    statusEl.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40';
+                    statusEl.textContent = item.status === 'warroom' ? '🚨 WARROOM' : (item.status || 'รอดำเนินการ');
+                }
+            }
+
+            const origin = window.location.origin && window.location.origin !== 'null' ? window.location.origin : 'http://localhost:8000';
+            const directUrl = `${origin}/victim-form?caseNo=${encodeURIComponent(caseNo)}`;
+            if (urlInput) urlInput.value = directUrl;
+
+            const cleanVictim = victimName.replace(/\d{9,10}/g, '').trim();
+            const smsText = `เรียน คุณ${cleanVictim || 'ผู้เสียหาย'} สถานีตำรวจภูธรบางพลี ขอความร่วมมือท่านกรอกข้อมูลและส่งมอบหลักฐานในคดีออนไลน์หมายเลข ${caseNo} ล่วงหน้าผ่านระบบความปลอดภัย PDPA เพื่อความรวดเร็วในการสืบสวนสอบสวน ที่ลิงก์: ${directUrl}`;
+            if (smsArea) smsArea.value = smsText;
+
+            if (qrImg) {
+                qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(directUrl)}`;
+            }
+
+            openModal('shareVictimLinkModal');
+        }
+
+        function copyShareVictimDirectUrl() {
+            const input = document.getElementById('shareModalDirectUrl');
+            if (!input || !input.value) return;
+            navigator.clipboard.writeText(input.value).then(() => {
+                toast('📋 คัดลอกลิงก์แบบฟอร์มผู้เสียหายเรียบร้อยแล้ว');
+            }).catch(() => {
+                input.select();
+                document.execCommand('copy');
+                toast('📋 คัดลอกลิงก์สำเร็จ');
+            });
+        }
+
+        function copyShareVictimSmsTemplate() {
+            const area = document.getElementById('shareModalSmsTemplate');
+            if (!area || !area.value) return;
+            navigator.clipboard.writeText(area.value).then(() => {
+                toast('📋 คัดลอกข้อความ SMS/LINE เรียบร้อยแล้ว');
+            }).catch(() => {
+                area.select();
+                document.execCommand('copy');
+                toast('📋 คัดลอกข้อความสำเร็จ');
+            });
+        }
+
+        function openShareVictimDirectUrl() {
+            const input = document.getElementById('shareModalDirectUrl');
+            if (input && input.value) {
+                window.open(input.value, '_blank');
+            }
+        }
+
+        // ฟังก์ชันดึงและซิงก์ข้อมูล Cyber Cases ล่าสุดจาก Backend (รวมข้อมูลที่ผู้เสียหายส่งมา)
+        async function syncCyberCasesFromBackend() {
+            try {
+                const res = await safeApiFetch('/api/external/newpolice/cases');
+                if (res && res.data && Array.isArray(res.data.cases) && res.data.cases.length > 0) {
+                    res.data.cases.forEach(remoteCase => {
+                        const existing = mockCases.find(c => 
+                            (c.caseNo && remoteCase.caseNo && c.caseNo.toUpperCase() === remoteCase.caseNo.toUpperCase()) || 
+                            (c.id && remoteCase.id && String(c.id) === String(remoteCase.id))
+                        );
+                        if (existing) {
+                            if (remoteCase.status) existing.status = remoteCase.status;
+                            if (remoteCase.victim_submitted_at) existing.victim_submitted_at = remoteCase.victim_submitted_at;
+                            if (remoteCase.victim_profile) existing.victim_profile = remoteCase.victim_profile;
+                            if (remoteCase.freeze_info) existing.freeze_info = remoteCase.freeze_info;
+                            if (remoteCase.transfer_records) existing.transfer_records = remoteCase.transfer_records;
+                            if (remoteCase.inquiry_answers) existing.inquiry_answers = remoteCase.inquiry_answers;
+                        } else {
+                            mockCases.push(remoteCase);
+                        }
+                    });
+                    try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(_) {}
+                    renderCases();
+                }
+            } catch(e) {
+                console.warn('[SYNC CYBER CASES]', e);
+            }
         }
 
         async function testInquiryApiEndpointDirect() {
@@ -5286,6 +5568,7 @@
                 // Urgency & Status
                 const urgList = Array.isArray(c.urgency) ? c.urgency : (c.urgency ? [c.urgency] : []);
                 const isWarroom = c.status === 'warroom';
+                const isSubmitted = c.status === 'ผู้เสียหายกรอกข้อมูลแล้ว' || !!c.victim_submitted_at;
                 const statusBadge = isWarroom
                     ? `<span style="background: #dc2626; color: #fff; font-weight: bold; padding: 2px 6px; border-radius: 4px; display: inline-block;">🚨 WARROOM</span>`
                     : `<span style="background: #e2e8f0; color: #1e293b; padding: 2px 6px; border-radius: 4px; display: inline-block;">${statusStr}</span>`;
@@ -10277,10 +10560,18 @@ ${currentDocPrintHtml}
             const vm = prepareArrestDocViewModel(rec);
             const { toTh, toAr } = vm;
 
-            const FONT = 'TH Sarabun New';
-            const SZ = 30;      // 15pt
-            const SZ_SM = 26;   // 13pt (ตาราง ปท.๑ และกล่องทะเบียน)
-            const SZ_TITLE = 36;// 18pt
+            const FONT_NAME = 'TH SarabunIT๙';
+            const FONT_SPEC = {
+                name: FONT_NAME,
+                ascii: FONT_NAME,
+                hAnsi: FONT_NAME,
+                cs: FONT_NAME,
+                eastAsia: FONT_NAME
+            };
+            const FONT = FONT_SPEC;
+            const SZ = 32;      // 16pt (ขนาดมาตรฐานระเบียบงานสารบรรณ)
+            const SZ_SM = 32;   // 16pt (ขนาดมาตรฐานระเบียบงานสารบรรณ)
+            const SZ_TITLE = 36;// 18pt ตัวหนา (เฉพาะหัวเรื่องหลัก)
             const SZ_HDR = 32;  // 16pt
 
             const tRun = (text, opts = {}) => new TextRun({
@@ -10983,6 +11274,16 @@ ${currentDocPrintHtml}
             children.push(buildPt23SignaturesTable());
 
             const doc = new Document({
+                styles: {
+                    default: {
+                        document: {
+                            run: {
+                                font: FONT_SPEC,
+                                size: 32
+                            }
+                        }
+                    }
+                },
                 sections: [{
                     properties: {
                         page: {
@@ -11426,6 +11727,10 @@ ${currentDocPrintHtml}
             if (cmdInput && !cmdInput.value) {
                 cmdInput.value = 'พ.ต.อ.ไพโรจน์ เพ็ชรพลอย';
             }
+
+            // ตั้งค่ามุมมองเริ่มต้นเป็น "คดีของฉัน" ทันทีที่เข้าสู่ระบบ
+            setCaseFilterQuick('my_cases');
+            syncCyberCasesFromBackend();
         }
 
         async function checkBackendStatus() {
@@ -13367,6 +13672,7 @@ ${currentDocPrintHtml}
         initAuthAndSecurity();
         initSupabaseZkConfig();
         initNewPoliceIntegration();
+        syncCyberCasesFromBackend();
     </script>
 </body>
 </html>
