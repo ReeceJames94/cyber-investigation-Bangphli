@@ -856,11 +856,16 @@
         <main class="flex-1 flex flex-col min-w-0 bg-slate-100 dark:bg-slate-950">
             <!-- Top Status Bar -->
             <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3 flex justify-between items-center text-xs gap-3 flex-wrap">
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 flex-wrap">
                     <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                         <span id="backendStatusPill" class="font-bold text-emerald-400 text-[11px]">🔒 ฐานข้อมูลเข้ารหัส AES-256 (สภ.บางพลี On-Premise) • ได้มาตรฐาน PDPA</span>
                     </div>
+                    <!-- Indicator & Shortcut: การเชื่อมต่อโครงการ newpolice (ต้องให้แอดมินอนุมัติ) -->
+                    <button type="button" onclick="openNewPoliceModal()" id="newpoliceHeaderBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition shadow-sm bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/30 cursor-pointer" title="การเชื่อมต่อข้อมูลโครงการ newpolice (ต้องให้แอดมินอนุมัติก่อนจึงจะเข้าถึงได้)">
+                        <span id="newpoliceHeaderDot" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                        <span id="newpoliceHeaderText">โครงการ newpolice: รอแอดมินอนุมัติ ⏳</span>
+                    </button>
                 </div>
                 <div class="flex items-center gap-2">
                     <button type="button" onclick="openAuditLogModal()" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 text-[11px] font-bold transition flex items-center gap-1.5 shadow-sm" title="ดูบันทึกประวัติการเข้าถึงข้อมูลตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)">
@@ -1226,6 +1231,9 @@
                             <p class="text-xs text-slate-300 mt-1">บริหารจัดการสิทธิ์ผู้ใช้งาน บัญชีเจ้าหน้าที่ตำรวจฝ่ายสืบสวน พนักงานสอบสวน และงานสารบรรณ</p>
                         </div>
                         <div class="flex flex-wrap gap-2.5">
+                            <button type="button" onclick="openNewPoliceModal()" class="px-3.5 py-2.5 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 font-bold text-xs transition flex items-center gap-1.5 shadow-md" title="การเชื่อมต่อข้อมูลโครงการ newpolice (ต้องให้แอดมินอนุมัติก่อนจึงจะเข้าถึงได้)">
+                                <span>⚡</span> <span>โครงการ newpolice</span>
+                            </button>
                             <button type="button" onclick="openZkCloudModal()" class="px-3.5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition flex items-center gap-1.5 shadow-md" title="ตั้งค่าเชื่อมต่อ Cloud เอกชนแบบ Zero-Knowledge">
                                 <span>☁️</span> <span>Zero-Knowledge Cloud</span>
                             </button>
@@ -1298,6 +1306,83 @@
                                 <tr><td colspan="7" class="p-6 text-center text-slate-400">⏳ กำลังเรียกข้อมูลเจ้าหน้าที่จากฐานข้อมูล...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- ========================================================================= -->
+                    <!-- NEWPOLICE PROJECT APPROVAL GATE CARD (เกตเวย์อนุมัติข้อมูลโครงการ newpolice) -->
+                    <!-- ========================================================================= -->
+                    <div class="bg-gradient-to-br from-slate-900 via-amber-950/40 to-slate-900 border border-amber-500/50 p-5 sm:p-6 rounded-3xl text-slate-200 shadow-xl space-y-4">
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center font-bold text-lg">
+                                    ⚡
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h3 class="text-sm font-bold text-white">เกตเวย์การเชื่อมต่อข้อมูล: โครงการ newpolice</h3>
+                                        <span id="npTabStatusBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">⏳ รอแอดมินอนุมัติ (Pending Approval)</span>
+                                    </div>
+                                    <p class="text-[11px] text-amber-300/80 mt-0.5">ระบบเชื่อมต่อข้อมูลสำนวนคดีและเครือข่ายบัญชีม้าจากส่วนกลาง (บช.สอท. / ตร.)</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="simulateNewPoliceRequest()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-bold transition flex items-center gap-1" title="จำลองคำขอเชื่อมต่อใหม่เพื่อทดสอบ">
+                                    <span>🔄</span> <span>จำลองคำขอใหม่</span>
+                                </button>
+                                <button type="button" onclick="openNewPoliceModal()" class="px-3.5 py-1.5 rounded-xl bg-amber-600/30 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/40 text-xs font-bold transition flex items-center gap-1">
+                                    <span>🔍</span> <span>ตรวจสอบสิทธิ์ & อนุมัติ</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Rule Notice Callout -->
+                        <div class="bg-slate-950/70 p-3.5 rounded-2xl border border-amber-500/30 text-[11px] space-y-1.5">
+                            <div class="font-bold text-amber-400 flex items-center gap-1.5">
+                                <span>🔒</span> <span>ข้อกำหนดความปลอดภัย: ต้องได้รับการอนุมัติจากแอดมินก่อนจึงจะเข้าถึงข้อมูลได้</span>
+                            </div>
+                            <p class="text-slate-300">
+                                ตามระเบียบความมั่นคงปลอดภัยสารสนเทศของสถานี ข้อมูลที่เชื่อมต่อและซิ้งค์มาจากโครงการ newpolice จะต้องให้ทาง <strong>ผู้ดูแลระบบ (Admin)</strong> ตรวจสอบและกดอนุมัติก่อน ข้อมูลคดีและรายชื่อผู้ต้องหาจึงจะปลดล็อคและนำเข้าสู่ระบบสืบสวน สภ.บางพลี
+                            </p>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 font-mono text-[10px] text-slate-400">
+                                <div>เกตเวย์: <span class="text-slate-200" id="npTabGatewayNode">NP-GW-BANGPHLI-SYNC</span></div>
+                                <div>โหนดต้นทาง: <span class="text-slate-200" id="npTabOriginIp">10.220.14.88 (NewPolice Hub)</span></div>
+                                <div>ข้อมูลที่ส่งมา: <span class="text-amber-300 font-sans" id="npTabDataScope">คำร้องทุกข์คดีไซเบอร์ 2 คดี + บัญชีม้า 3 บัญชี</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Admin Controls and Data State Box -->
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-1">
+                            <div id="npTabReviewerInfo" class="text-xs text-slate-400">
+                                สถานะปัจจุบัน: <span class="text-amber-400 font-bold" id="npTabReviewerStatusText">รอแอดมินอนุมัติ</span>
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap" id="npTabActionButtons">
+                                <button type="button" onclick="adminRejectNewPoliceSync()" id="btnTabNpReject" class="px-3.5 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold transition flex items-center gap-1">
+                                    <span>⛔</span> <span>ปฏิเสธ / ระงับ</span>
+                                </button>
+                                <button type="button" onclick="adminApproveNewPoliceSync()" id="btnTabNpApprove" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/30">
+                                    <span>✅</span> <span>อนุมัติการเชื่อมต่อข้อมูล (Admin)</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Data Table or Lock Overlay -->
+                        <div id="npTabDataContainer">
+                            <div id="npTabLockedAlert" class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-center space-y-1.5">
+                                <div class="text-2xl">🔒</div>
+                                <div class="font-bold text-amber-400 text-xs">ข้อมูลจากโครงการ newpolice ถูกระงับการเข้าถึง (Access Locked)</div>
+                                <div class="text-[11px] text-slate-400">เมื่อแอดมินกด "อนุมัติการเชื่อมต่อข้อมูล" ข้อมูลคดีและบัญชีม้าจะถูกดึงเข้าสู่ตารางคดีออนไลน์ทันที</div>
+                            </div>
+                            <div id="npTabUnlockedAlert" class="hidden p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/40 text-emerald-300 text-xs space-y-2">
+                                <div class="flex justify-between items-center font-bold">
+                                    <span class="flex items-center gap-1.5"><span>🟢</span> <span>การเชื่อมต่อได้รับอนุมัติแล้ว: ข้อมูลพร้อมเข้าถึงในระบบ</span></span>
+                                    <button type="button" onclick="switchTab('cases')" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 text-emerald-200 hover:text-slate-950 border border-emerald-500/30 text-[10px] font-bold transition">
+                                        เปิดดูในคดีออนไลน์ 📁
+                                    </button>
+                                </div>
+                                <div id="npTabCasesSummaryList" class="text-[11px] text-slate-300">
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Zero-Knowledge Cloud Architecture Explainer Card -->
@@ -2491,6 +2576,119 @@
                     </div>
                 </div>
 
+                <!-- ========================================================================= -->
+                <!-- MODAL: NEWPOLICE SYNC APPROVAL GATE (อนุมัติการเชื่อมต่อข้อมูลโครงการ newpolice) -->
+                <!-- ========================================================================= -->
+                <div id="newPoliceModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[90] hidden items-center justify-center p-4 overflow-y-auto">
+                    <div class="bg-slate-900 border border-amber-500/40 rounded-3xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl space-y-4 text-xs text-slate-200 my-auto">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <span class="text-2xl">⚡🛡️</span>
+                                <div>
+                                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                        <span>การเชื่อมต่อซิ้งค์ข้อมูล: โครงการ newpolice</span>
+                                        <span id="newPoliceModalStatusBadge" class="px-2.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">⏳ รอแอดมินอนุมัติ</span>
+                                    </h3>
+                                    <p class="text-[11px] text-amber-300/80">ระบบควบคุมการเข้าถึงข้อมูลตามนโยบายความมั่นคงปลอดภัยไซเบอร์ ตร.</p>
+                                </div>
+                            </div>
+                            <button type="button" onclick="closeModal('newPoliceModal')" class="p-1.5 text-slate-400 hover:text-white text-lg">✕</button>
+                        </div>
+
+                        <!-- Security Rule Notice -->
+                        <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-[11px] space-y-1">
+                            <div class="font-bold flex items-center gap-1.5 text-amber-400">
+                                <span>⚠️</span> <span>กฎเกณฑ์ความปลอดภัย: ต้องให้แอดมินอนุมัติการเชื่อมต่อข้อมูลก่อนจึงจะเข้าถึงได้</span>
+                            </div>
+                            <p class="text-slate-300">
+                                เมื่อโครงการ newpolice เชื่อมต่อและซิ้งค์ข้อมูลสำนวนคดี/ผู้ต้องหามา ข้อมูลทั้งหมดจะถูกระงับการเข้าถึงไว้ในสถานะ <strong>รอการอนุมัติ (Pending)</strong> จนกว่า <strong>ผู้ดูแลระบบ (Admin สภ.บางพลี)</strong> จะกดปุ่มอนุมัติการเชื่อมต่อ ข้อมูลจึงจะปลดล็อคเข้าสู่สารบบคดี
+                            </p>
+                        </div>
+
+                        <!-- Connection Details Card -->
+                        <div class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                <div>
+                                    <span class="text-slate-400 text-[11px] block">โครงการต้นทาง:</span>
+                                    <span class="font-bold text-white" id="npModalProjectName">โครงการ newpolice (ระบบงานสอบสวนและสืบสวนคดีไซเบอร์ ตร.)</span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 text-[11px] block">เกตเวย์ / โหนดต้นทาง:</span>
+                                    <span class="font-mono text-amber-400" id="npModalGatewayNode">NP-GW-BANGPHLI-SYNC (IP: 10.220.14.88)</span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 text-[11px] block">ขอบเขตข้อมูลที่ส่งมา:</span>
+                                    <span class="text-slate-200 font-semibold" id="npModalDataScope">คำร้องทุกข์คดีไซเบอร์ (2 คดี) + บัญชีม้าเฝ้าระวัง (3 บัญชี)</span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 text-[11px] block">เวลาที่ส่งคำขอเชื่อมต่อ:</span>
+                                    <span class="font-mono text-slate-300" id="npModalRequestedAt">17/11/2569 10:30 น.</span>
+                                </div>
+                                <div class="sm:col-span-2 border-t border-slate-800/80 pt-2" id="npModalReviewerBox">
+                                    <span class="text-slate-400 text-[11px] block">สถานะการอนุมัติ:</span>
+                                    <span id="npModalReviewerText" class="text-amber-400 font-medium">ยังไม่ได้รับการอนุมัติ (รอแอดมินยืนยัน)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Synced Data Preview (Locked or Unlocked) -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-bold text-white flex items-center gap-1.5 text-xs">
+                                    <span>📦</span> <span>รายการข้อมูลที่เชื่อมต่อจาก newpolice</span>
+                                </h4>
+                                <span id="npModalItemCountBadge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300">2 รายการ</span>
+                            </div>
+                            
+                            <!-- Locked Message (shown when pending/rejected) -->
+                            <div id="npModalLockedBox" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-2">
+                                <div class="text-3xl">🔒</div>
+                                <div class="font-bold text-amber-400">ข้อมูลถูกระงับการเข้าถึงชั่วคราว</div>
+                                <p class="text-[11px] text-slate-400 max-w-md mx-auto">
+                                    ตามคำสั่งการรักษาความปลอดภัย ข้อมูลคดีและรายชื่อผู้ต้องหาจากโครงการ newpolice จะไม่ถูกแสดงผล จนกว่าแอดมินจะกดปุ่ม "อนุมัติการเชื่อมต่อข้อมูล"
+                                </p>
+                            </div>
+
+                            <!-- Unlocked Table (shown when approved) -->
+                            <div id="npModalUnlockedBox" class="hidden overflow-x-auto rounded-2xl border border-slate-800 max-h-56">
+                                <table class="w-full text-left text-xs">
+                                    <thead class="bg-slate-950 text-slate-400 font-bold text-[10px]">
+                                        <tr>
+                                            <th class="p-2.5">เลขคดี</th>
+                                            <th class="p-2.5">ผู้เสียหาย</th>
+                                            <th class="p-2.5">ข้อหา / กลโกง</th>
+                                            <th class="p-2.5">ความเสียหาย</th>
+                                            <th class="p-2.5">บัญชีม้าเป้าหมาย</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="npModalCasesTableBody" class="divide-y divide-slate-800 text-[11px]">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex justify-between items-center pt-3 border-t border-slate-800 flex-wrap gap-2">
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="simulateNewPoliceRequest()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs transition flex items-center gap-1" title="จำลองคำขอเชื่อมต่อใหม่เพื่อทดสอบ">
+                                    <span>🔄</span> <span>จำลองคำขอซิ้งค์ใหม่</span>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="closeModal('newPoliceModal')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition">
+                                    ปิด
+                                </button>
+                                <button type="button" id="btnNpModalReject" onclick="adminRejectNewPoliceSync()" class="px-3.5 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 font-bold text-xs transition flex items-center gap-1">
+                                    <span>⛔</span> <span>ปฏิเสธ / ระงับ</span>
+                                </button>
+                                <button type="button" id="btnNpModalApprove" onclick="adminApproveNewPoliceSync()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/30">
+                                    <span>✅</span> <span>อนุมัติการเชื่อมต่อข้อมูล (Admin)</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -3241,6 +3439,7 @@
                         <td class="p-4 align-top">
                             <a href="javascript:void(0)" onclick="openEditPreviewModal('${c.id}')" class="font-bold text-slate-900 dark:text-white hover:text-amber-500 text-xs transition">${c.caseNo}</a>
                             <div class="text-[11px] text-slate-400 mt-0.5">${c.date}</div>
+                            ${c.source === 'โครงการ newpolice' ? '<div class="mt-1"><span class="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">⚡ โครงการ newpolice</span></div>' : ''}
                         </td>
                         <td class="p-4 align-top font-medium text-slate-800 dark:text-slate-200">${c.victim}</td>
                         <td class="p-4 align-top text-slate-600 dark:text-slate-300">${c.type}</td>
@@ -9696,6 +9895,404 @@ ${currentDocPrintHtml}
             } catch (_) {}
         }
 
+        // =========================================================================
+        // SECTION: โครงการ NEWPOLICE INTEGRATION & APPROVAL GATE
+        // กฎความปลอดภัย: ข้อมูลที่ซิ้งค์มาจากโครงการ newpolice ต้องให้แอดมินอนุมัติก่อนจึงจะเข้าถึงได้
+        // =========================================================================
+        const DEFAULT_NEWPOLICE_CONNECTION = {
+            id: 'CONN-NP-2569-001',
+            project_code: 'newpolice',
+            project_name: 'โครงการ newpolice (ระบบงานสอบสวนและสืบสวนคดีไซเบอร์ ตร.)',
+            gateway_node: 'NP-GW-BANGPHLI-SYNC-NODE-01',
+            origin_ip: '10.220.14.88',
+            status: 'pending', // pending, approved, rejected
+            data_scope: 'คำร้องทุกข์คดีไซเบอร์ (2 คดี) + บัญชีม้าเฝ้าระวัง (3 บัญชี)',
+            item_count: 2,
+            requested_at: new Date().toISOString(),
+            reviewed_by_name: null,
+            reviewed_at: null,
+            notes: 'คำขอเชื่อมต่อซิ้งค์ข้อมูลสำนวนคดีไซเบอร์จากส่วนกลาง ตร. ส่งต่อพื้นที่รับผิดชอบ สภ.บางพลี',
+            cases: [
+                {
+                    id: 'NP-69-001',
+                    caseNo: 'NP691117-0042',
+                    date: '17/11/2569',
+                    victim: 'น.ส.กัญญารัตน์ ศิริสุข 0891234567',
+                    type: 'หลอกติดตั้งแอปดูดเงิน (ควบคุมเครื่องระยะไกล)',
+                    amount: 320000,
+                    status: 'รอสืบสวน',
+                    source: 'โครงการ newpolice',
+                    accounts: [
+                        'กสิกรไทย: 1428930211 (นายธีรภัทร ชาญชัย - ม้าแถว 1)',
+                        'ไทยพาณิชย์: 4098712390 (น.ส.สุภาพร จันทร์ดี - ม้าแถว 2)'
+                    ],
+                    investigator: 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล',
+                    detective: 'พ.ต.ท.ชิดชนก นพเจริญพงษ์',
+                    summons1: false,
+                    summons1Date: '',
+                    summons1Pdf: '',
+                    summons2: false,
+                    summons2Date: '',
+                    summons2Pdf: '',
+                    warrant: true,
+                    warrantPdf: 'หมายจับ_newpolice_ศาลสมุทรปราการ_ธีรภัทร.pdf'
+                },
+                {
+                    id: 'NP-69-002',
+                    caseNo: 'NP691117-0055',
+                    date: '17/11/2569',
+                    victim: 'นายสมบัติ วัฒนากูล 0829876543',
+                    type: 'หลอกลงทุนเทรดเหรียญคริปโต (Cryptocurrency Scam)',
+                    amount: 130000,
+                    status: 'รอสืบสวน',
+                    source: 'โครงการ newpolice',
+                    accounts: [
+                        'กรุงเทพ: 9283741920 (นายอรรถพล มั่นคง - บัญชีม้า)'
+                    ],
+                    investigator: 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล',
+                    detective: 'ร.ต.อ.วิโรจน์ แสงสว่าง',
+                    summons1: true,
+                    summons1Date: '17/11/2569',
+                    summons1Pdf: 'หมายเรียก1_อรรถพล.pdf',
+                    summons2: false,
+                    summons2Date: '',
+                    summons2Pdf: '',
+                    warrant: false,
+                    warrantPdf: ''
+                }
+            ]
+        };
+
+        let currentNewPoliceConnection = null;
+
+        function getNewPoliceLocalStore() {
+            try {
+                const raw = localStorage.getItem('cyber_newpolice_gate');
+                if (raw) return JSON.parse(raw);
+            } catch (_) {}
+            return JSON.parse(JSON.stringify(DEFAULT_NEWPOLICE_CONNECTION));
+        }
+
+        function saveNewPoliceLocalStore(conn) {
+            try {
+                localStorage.setItem('cyber_newpolice_gate', JSON.stringify(conn));
+            } catch (_) {}
+        }
+
+        async function initNewPoliceIntegration() {
+            const token = getAuthToken();
+            let loaded = null;
+
+            if (token) {
+                const res = await safeApiFetch('/api/newpolice/connection', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!res._staticCloudMode && res.data && res.data.success && res.data.connection) {
+                    loaded = res.data.connection;
+                    loaded.cases = res.data.cases || [];
+                    loaded.isApproved = res.data.isApproved;
+                }
+            }
+
+            if (!loaded) {
+                loaded = getNewPoliceLocalStore();
+                loaded.isApproved = loaded.status === 'approved';
+            }
+
+            currentNewPoliceConnection = loaded;
+
+            // Sync with mockCases depending on approval status
+            if (currentNewPoliceConnection.status === 'approved') {
+                const existingIds = new Set(mockCases.map(c => c.id));
+                (currentNewPoliceConnection.cases || []).forEach(nc => {
+                    if (!existingIds.has(nc.id)) {
+                        mockCases.unshift({ ...nc, source: 'โครงการ newpolice' });
+                    }
+                });
+            } else {
+                // Ensure unapproved cases are NOT exposed
+                mockCases = mockCases.filter(c => c.source !== 'โครงการ newpolice');
+            }
+
+            renderCases();
+            renderNewPoliceGateUI();
+        }
+
+        function renderNewPoliceGateUI() {
+            if (!currentNewPoliceConnection) return;
+            const conn = currentNewPoliceConnection;
+            const isApproved = conn.status === 'approved';
+            const isRejected = conn.status === 'rejected';
+
+            // 1. Header Button Pill
+            const headerBtn = document.getElementById('newpoliceHeaderBtn');
+            const headerDot = document.getElementById('newpoliceHeaderDot');
+            const headerText = document.getElementById('newpoliceHeaderText');
+
+            if (headerBtn && headerDot && headerText) {
+                if (isApproved) {
+                    headerBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition shadow-sm bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30 cursor-pointer';
+                    headerDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+                    headerText.textContent = 'โครงการ newpolice: อนุมัติแล้ว 🟢';
+                } else if (isRejected) {
+                    headerBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition shadow-sm bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/30 cursor-pointer';
+                    headerDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+                    headerText.textContent = 'โครงการ newpolice: ระงับการเข้าถึง 🔴';
+                } else {
+                    headerBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition shadow-sm bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/30 cursor-pointer';
+                    headerDot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
+                    headerText.textContent = 'โครงการ newpolice: รอแอดมินอนุมัติ ⏳';
+                }
+            }
+
+            // 2. Tab Users Card Elements
+            const tabBadge = document.getElementById('npTabStatusBadge');
+            const tabGate = document.getElementById('npTabGatewayNode');
+            const tabIp = document.getElementById('npTabOriginIp');
+            const tabScope = document.getElementById('npTabDataScope');
+            const tabReviewer = document.getElementById('npTabReviewerStatusText');
+            const tabLockedAlert = document.getElementById('npTabLockedAlert');
+            const tabUnlockedAlert = document.getElementById('npTabUnlockedAlert');
+            const tabCasesList = document.getElementById('npTabCasesSummaryList');
+
+            if (tabGate) tabGate.textContent = conn.gateway_node || 'NP-GW-BANGPHLI-SYNC';
+            if (tabIp) tabIp.textContent = (conn.origin_ip || '10.220.14.88') + ' (NewPolice Hub)';
+            if (tabScope) tabScope.textContent = conn.data_scope || 'คำร้องทุกข์คดีไซเบอร์ 2 คดี + บัญชีม้า 3 บัญชี';
+
+            if (tabBadge) {
+                if (isApproved) {
+                    tabBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+                    tabBadge.textContent = '🟢 อนุมัติแล้ว (Approved & Active)';
+                } else if (isRejected) {
+                    tabBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/40';
+                    tabBadge.textContent = '🔴 ระงับการเชื่อมต่อ (Rejected)';
+                } else {
+                    tabBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+                    tabBadge.textContent = '⏳ รอแอดมินอนุมัติ (Pending Approval)';
+                }
+            }
+
+            if (tabReviewer) {
+                if (isApproved) {
+                    tabReviewer.innerHTML = `<span class="text-emerald-400 font-bold">อนุมัติแล้วโดย ${conn.reviewed_by_name || 'Admin'}</span> (${conn.reviewed_at ? new Date(conn.reviewed_at).toLocaleDateString('th-TH') : 'วันนี้'})`;
+                } else if (isRejected) {
+                    tabReviewer.innerHTML = `<span class="text-rose-400 font-bold">ระงับสิทธิ์โดย ${conn.reviewed_by_name || 'Admin'}</span>`;
+                } else {
+                    tabReviewer.innerHTML = `<span class="text-amber-400 font-bold">ยังไม่ได้รับการอนุมัติ (ต้องให้แอดมินอนุมัติก่อน)</span>`;
+                }
+            }
+
+            if (tabLockedAlert && tabUnlockedAlert) {
+                if (isApproved) {
+                    tabLockedAlert.classList.add('hidden');
+                    tabUnlockedAlert.classList.remove('hidden');
+                    if (tabCasesList) {
+                        const cases = conn.cases || [];
+                        tabCasesList.innerHTML = cases.map(c => `
+                            <div class="flex items-center justify-between py-1 border-b border-emerald-900/30">
+                                <div><strong class="text-white">${c.caseNo}</strong>: ${c.type} (${c.victim || '-'})</div>
+                                <div class="font-mono text-emerald-400 font-bold">${(c.amount || 0).toLocaleString()} ฿</div>
+                            </div>
+                        `).join('');
+                    }
+                } else {
+                    tabLockedAlert.classList.remove('hidden');
+                    tabUnlockedAlert.classList.add('hidden');
+                }
+            }
+
+            // 3. Modal Elements
+            const modalBadge = document.getElementById('newPoliceModalStatusBadge');
+            const modalScope = document.getElementById('npModalDataScope');
+            const modalTime = document.getElementById('npModalRequestedAt');
+            const modalReviewer = document.getElementById('npModalReviewerText');
+            const modalLocked = document.getElementById('npModalLockedBox');
+            const modalUnlocked = document.getElementById('npModalUnlockedBox');
+            const modalTbody = document.getElementById('npModalCasesTableBody');
+
+            if (modalScope) modalScope.textContent = conn.data_scope || '-';
+            if (modalTime && conn.requested_at) {
+                const d = new Date(conn.requested_at);
+                modalTime.textContent = `${d.toLocaleDateString('th-TH')} ${d.toLocaleTimeString('th-TH')}`;
+            }
+
+            if (modalBadge) {
+                if (isApproved) {
+                    modalBadge.className = 'px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+                    modalBadge.textContent = '🟢 อนุมัติแล้ว (Approved)';
+                } else if (isRejected) {
+                    modalBadge.className = 'px-2.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/40';
+                    modalBadge.textContent = '🔴 ระงับการเข้าถึง (Rejected)';
+                } else {
+                    modalBadge.className = 'px-2.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+                    modalBadge.textContent = '⏳ รอแอดมินอนุมัติ';
+                }
+            }
+
+            if (modalReviewer) {
+                if (isApproved) {
+                    modalReviewer.className = 'text-emerald-400 font-bold';
+                    modalReviewer.textContent = `อนุมัติแล้วโดย: ${conn.reviewed_by_name || 'Admin'} (${new Date(conn.reviewed_at || Date.now()).toLocaleTimeString('th-TH')})`;
+                } else if (isRejected) {
+                    modalReviewer.className = 'text-rose-400 font-bold';
+                    modalReviewer.textContent = `ถูกระงับสิทธิ์การเชื่อมต่อโดย: ${conn.reviewed_by_name || 'Admin'}`;
+                } else {
+                    modalReviewer.className = 'text-amber-400 font-medium';
+                    modalReviewer.textContent = 'ยังไม่ได้รับการอนุมัติ (ต้องให้แอดมินอนุมัติก่อนจึงจะเข้าถึงได้)';
+                }
+            }
+
+            if (modalLocked && modalUnlocked) {
+                if (isApproved) {
+                    modalLocked.classList.add('hidden');
+                    modalUnlocked.classList.remove('hidden');
+                    if (modalTbody) {
+                        modalTbody.innerHTML = (conn.cases || []).map(c => `
+                            <tr class="hover:bg-slate-800/50">
+                                <td class="p-2.5 font-bold text-amber-400">${c.caseNo}</td>
+                                <td class="p-2.5 text-slate-200">${c.victim || '-'}</td>
+                                <td class="p-2.5 text-slate-300">${c.type}</td>
+                                <td class="p-2.5 text-rose-400 font-bold font-mono">${(c.amount || 0).toLocaleString()} ฿</td>
+                                <td class="p-2.5 text-slate-400 text-[10px]">${(c.accounts || []).join('<br>')}</td>
+                            </tr>
+                        `).join('');
+                    }
+                } else {
+                    modalLocked.classList.remove('hidden');
+                    modalUnlocked.classList.add('hidden');
+                }
+            }
+        }
+
+        function openNewPoliceModal() {
+            renderNewPoliceGateUI();
+            openModal('newPoliceModal');
+        }
+
+        function closeNewPoliceModal() {
+            closeModal('newPoliceModal');
+        }
+
+        async function adminApproveNewPoliceSync() {
+            const isAdmin = (currentAuthUser && (currentAuthUser.role === 'admin' || (currentAuthUser.position && currentAuthUser.position.includes('ผกก')))) || isCurrentUserAdmin();
+            if (!isAdmin) {
+                toast('⚠️ เฉพาะผู้บังคับบัญชาหรือผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถอนุมัติการเชื่อมต่อข้อมูลได้');
+                return;
+            }
+
+            const token = getAuthToken();
+            const reviewerName = currentAuthUser?.rank_name || 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล (Admin)';
+            const now = new Date().toISOString();
+
+            if (token) {
+                const res = await safeApiFetch('/api/admin/newpolice/approve', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                if (!res._staticCloudMode && res.data && res.data.success) {
+                    if (currentNewPoliceConnection) {
+                        currentNewPoliceConnection.status = 'approved';
+                        currentNewPoliceConnection.reviewed_by_name = reviewerName;
+                        currentNewPoliceConnection.reviewed_at = now;
+                        currentNewPoliceConnection.cases = res.data.cases || currentNewPoliceConnection.cases || [];
+                    }
+                } else {
+                    if (currentNewPoliceConnection) {
+                        currentNewPoliceConnection.status = 'approved';
+                        currentNewPoliceConnection.reviewed_by_name = reviewerName;
+                        currentNewPoliceConnection.reviewed_at = now;
+                    }
+                }
+            } else {
+                if (currentNewPoliceConnection) {
+                    currentNewPoliceConnection.status = 'approved';
+                    currentNewPoliceConnection.reviewed_by_name = reviewerName;
+                    currentNewPoliceConnection.reviewed_at = now;
+                }
+            }
+
+            saveNewPoliceLocalStore(currentNewPoliceConnection);
+
+            // Ingest cases into mockCases with newpolice tag
+            const existingIds = new Set(mockCases.map(c => c.id));
+            (currentNewPoliceConnection.cases || []).forEach(nc => {
+                if (!existingIds.has(nc.id)) {
+                    mockCases.unshift({ ...nc, source: 'โครงการ newpolice' });
+                }
+            });
+
+            recordClientAuditLog('APPROVE_NEWPOLICE_SYNC', 'NEWPOLICE', currentNewPoliceConnection.id, `แอดมิน (${reviewerName}) อนุมัติการเชื่อมต่อและซิ้งค์ข้อมูลโครงการ newpolice เข้าสู่สารบบ`);
+            syncAuditLogToSupabaseZeroKnowledge('APPROVE_NEWPOLICE_SYNC', 'NEWPOLICE', currentNewPoliceConnection.id, 'Admin approved newpolice connection & sync gate');
+
+            renderCases();
+            renderNewPoliceGateUI();
+            toast('✅ อนุมัติการเชื่อมต่อข้อมูลโครงการ newpolice สำเร็จ! ข้อมูล 2 คดีถูกปลดล็อคเข้าสู่สารบบเรียบร้อยแล้ว');
+        }
+
+        async function adminRejectNewPoliceSync() {
+            const isAdmin = (currentAuthUser && (currentAuthUser.role === 'admin' || (currentAuthUser.position && currentAuthUser.position.includes('ผกก')))) || isCurrentUserAdmin();
+            if (!isAdmin) {
+                toast('⚠️ เฉพาะผู้บังคับบัญชาหรือผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถระงับการเชื่อมต่อข้อมูลได้');
+                return;
+            }
+
+            const token = getAuthToken();
+            const reviewerName = currentAuthUser?.rank_name || 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล (Admin)';
+            const now = new Date().toISOString();
+
+            if (token) {
+                await safeApiFetch('/api/admin/newpolice/reject', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+            }
+
+            if (currentNewPoliceConnection) {
+                currentNewPoliceConnection.status = 'rejected';
+                currentNewPoliceConnection.reviewed_by_name = reviewerName;
+                currentNewPoliceConnection.reviewed_at = now;
+            }
+            saveNewPoliceLocalStore(currentNewPoliceConnection);
+
+            // Lock & remove unapproved newpolice cases from active table
+            mockCases = mockCases.filter(c => c.source !== 'โครงการ newpolice');
+
+            recordClientAuditLog('REJECT_NEWPOLICE_SYNC', 'NEWPOLICE', currentNewPoliceConnection.id, `แอดมิน (${reviewerName}) ปฏิเสธ / ระงับการเชื่อมต่อข้อมูลโครงการ newpolice`);
+            syncAuditLogToSupabaseZeroKnowledge('REJECT_NEWPOLICE_SYNC', 'NEWPOLICE', currentNewPoliceConnection.id, 'Admin rejected newpolice connection & sync gate');
+
+            renderCases();
+            renderNewPoliceGateUI();
+            toast('⛔ ระงับการเชื่อมต่อโครงการ newpolice แล้ว (ข้อมูลถูกระงับการเข้าถึง)');
+        }
+
+        async function simulateNewPoliceRequest() {
+            const token = getAuthToken();
+            if (token) {
+                await safeApiFetch('/api/admin/newpolice/reset-simulation', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+            }
+
+            const fresh = JSON.parse(JSON.stringify(DEFAULT_NEWPOLICE_CONNECTION));
+            fresh.requested_at = new Date().toISOString();
+            currentNewPoliceConnection = fresh;
+            saveNewPoliceLocalStore(fresh);
+
+            // Filter out old cases
+            mockCases = mockCases.filter(c => c.source !== 'โครงการ newpolice');
+
+            renderCases();
+            renderNewPoliceGateUI();
+            toast('🔄 จำลองคำขอเชื่อมต่อใหม่จากโครงการ newpolice เรียบร้อยแล้ว (สถานะ: รอแอดมินอนุมัติ)');
+        }
+
         // Initialize Live Preview
         renderCases();
         renderWarrants();
@@ -9707,6 +10304,7 @@ ${currentDocPrintHtml}
         switchRegistrySubTab('dispatch');
         initAuthAndSecurity();
         initSupabaseZkConfig();
+        initNewPoliceIntegration();
     </script>
 </body>
 </html>

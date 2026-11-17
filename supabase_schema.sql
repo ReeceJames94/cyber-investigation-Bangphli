@@ -237,3 +237,46 @@ WITH CHECK (
     AND length(trim(actor_badge)) > 0
     AND length(trim(action)) > 0
 );
+
+-- =========================================================================================
+-- 5. ตาราง newpolice_connections: เกตเวย์ควบคุมการเชื่อมต่อซิ้งค์ข้อมูลโครงการ newpolice
+-- กำหนดให้สถานะเริ่มต้นเป็น 'pending' (รอแอดมินอนุมัติ) และต้องให้แอดมินอนุมัติก่อนจึงเข้าถึงข้อมูลได้
+-- =========================================================================================
+CREATE TABLE IF NOT EXISTS public.newpolice_connections (
+    id TEXT PRIMARY KEY,
+    station_code TEXT NOT NULL DEFAULT 'POLICE-STN-BANGPHLI-001',
+    project_code TEXT NOT NULL DEFAULT 'newpolice',
+    project_name TEXT NOT NULL DEFAULT 'โครงการ newpolice (ระบบงานสืบสวนสอบสวนคดีอาญาและคดีไซเบอร์ ตร.)',
+    gateway_node TEXT NOT NULL DEFAULT 'NP-GW-BANGPHLI-SYNC',
+    origin_ip TEXT NOT NULL DEFAULT '10.220.14.88',
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    data_scope TEXT NOT NULL,
+    item_count INTEGER DEFAULT 0,
+    payload_encrypted TEXT,
+    auth_handshake_key TEXT,
+    requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    reviewed_by TEXT,
+    reviewed_by_name TEXT,
+    reviewed_at TIMESTAMPTZ,
+    notes TEXT,
+    CONSTRAINT chk_newpolice_station CHECK (station_code = 'POLICE-STN-BANGPHLI-001')
+);
+
+ALTER TABLE public.newpolice_connections ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "newpolice_select_bangphli"
+ON public.newpolice_connections FOR SELECT
+TO anon, authenticated
+USING (station_code = 'POLICE-STN-BANGPHLI-001');
+
+CREATE POLICY "newpolice_insert_bangphli"
+ON public.newpolice_connections FOR INSERT
+TO anon, authenticated
+WITH CHECK (station_code = 'POLICE-STN-BANGPHLI-001');
+
+CREATE POLICY "newpolice_update_bangphli"
+ON public.newpolice_connections FOR UPDATE
+TO anon, authenticated
+USING (station_code = 'POLICE-STN-BANGPHLI-001')
+WITH CHECK (station_code = 'POLICE-STN-BANGPHLI-001');
+

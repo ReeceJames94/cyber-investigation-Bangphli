@@ -142,6 +142,24 @@ CREATE TABLE IF NOT EXISTS sessions (
     expires_at TEXT NOT NULL,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS newpolice_connections (
+    id TEXT PRIMARY KEY,
+    project_code TEXT NOT NULL DEFAULT 'newpolice',
+    project_name TEXT NOT NULL DEFAULT 'โครงการ newpolice (ระบบงานสอบสวนและสืบสวนคดีไซเบอร์ ตร.)',
+    gateway_node TEXT NOT NULL DEFAULT 'NP-GW-BANGPHLI-SYNC',
+    origin_ip TEXT NOT NULL DEFAULT '10.220.14.88',
+    status TEXT NOT NULL DEFAULT 'pending', -- pending, approved, rejected
+    data_scope TEXT NOT NULL,
+    item_count INTEGER DEFAULT 0,
+    payload_json TEXT NOT NULL,
+    auth_token TEXT,
+    requested_at TEXT NOT NULL,
+    reviewed_by TEXT,
+    reviewed_by_name TEXT,
+    reviewed_at TEXT,
+    notes TEXT
+);
 `);
 
 // Pre-seed police users if empty
@@ -281,6 +299,79 @@ if (countArrests === 0) {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
     `);
     insertLog.run(now, 'SYSTEM', 'ระบบรักษาความปลอดภัย', 'system', 'SYSTEM_INIT', 'DATABASE', 'INIT', 'สร้างฐานข้อมูลเข้ารหัส AES-256 และตั้งค่าเริ่มต้นสำเร็จ', '127.0.0.1');
+}
+
+// Pre-seed pending connection request from โครงการ newpolice if empty
+const countNewPolice = db.prepare('SELECT COUNT(*) as count FROM newpolice_connections;').get().count;
+if (countNewPolice === 0) {
+    console.log('[SECURITY] Initializing pending connection gate for โครงการ newpolice...');
+    const sampleCases = [
+        {
+            id: 'NP-69-001',
+            caseNo: 'NP691117-0042',
+            date: '17/11/2569',
+            victim: 'น.ส.กัญญารัตน์ ศิริสุข 0891234567',
+            type: 'หลอกติดตั้งแอปดูดเงิน (ควบคุมเครื่องระยะไกล)',
+            amount: 320000,
+            status: 'รอสืบสวน',
+            source: 'โครงการ newpolice',
+            accounts: [
+                'กสิกรไทย: 1428930211 (นายธีรภัทร ชาญชัย - ม้าแถว 1)',
+                'ไทยพาณิชย์: 4098712390 (น.ส.สุภาพร จันทร์ดี - ม้าแถว 2)'
+            ],
+            investigator: 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล',
+            detective: 'พ.ต.ท.ชิดชนก นพเจริญพงษ์',
+            summons1: false,
+            summons1Date: '',
+            summons1Pdf: '',
+            summons2: false,
+            summons2Date: '',
+            summons2Pdf: '',
+            warrant: true,
+            warrantPdf: 'หมายจับ_newpolice_ศาลสมุทรปราการ_ธีรภัทร.pdf'
+        },
+        {
+            id: 'NP-69-002',
+            caseNo: 'NP691117-0055',
+            date: '17/11/2569',
+            victim: 'นายสมบัติ วัฒนากูล 0829876543',
+            type: 'หลอกลงทุนเทรดเหรียญคริปโต (Cryptocurrency Scam)',
+            amount: 130000,
+            status: 'รอสืบสวน',
+            source: 'โครงการ newpolice',
+            accounts: [
+                'กรุงเทพ: 9283741920 (นายอรรถพล มั่นคง - บัญชีม้า)'
+            ],
+            investigator: 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล',
+            detective: 'ร.ต.อ.วิโรจน์ แสงสว่าง',
+            summons1: true,
+            summons1Date: '17/11/2569',
+            summons1Pdf: 'หมายเรียก1_อรรถพล.pdf',
+            summons2: false,
+            summons2Date: '',
+            summons2Pdf: '',
+            warrant: false,
+            warrantPdf: ''
+        }
+    ];
+
+    const stmt = db.prepare(`
+        INSERT INTO newpolice_connections (id, project_code, project_name, gateway_node, origin_ip, status, data_scope, item_count, payload_json, requested_at, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    `);
+    stmt.run(
+        'CONN-NP-2569-001',
+        'newpolice',
+        'โครงการ newpolice (ระบบงานสอบสวนและสืบสวนคดีไซเบอร์ ตร.)',
+        'NP-GW-BANGPHLI-SYNC-NODE-01',
+        '10.220.14.88',
+        'pending',
+        'คำร้องทุกข์คดีไซเบอร์ (2 คดี) + บัญชีม้าเฝ้าระวัง (3 บัญชี)',
+        2,
+        JSON.stringify(sampleCases),
+        new Date().toISOString(),
+        'คำขอเชื่อมต่อซิ้งค์ข้อมูลสำนวนคดีไซเบอร์จากส่วนกลาง ตร. ส่งต่อพื้นที่รับผิดชอบ สภ.บางพลี (รอแอดมินอนุมัติ)'
+    );
 }
 
 // Audit Log Helper
@@ -528,6 +619,45 @@ const server = http.createServer(async (req, res) => {
                 });
             }
 
+            // 4c. NEWPOLICE EXTERNAL STATUS CHECK (PUBLIC INTEGRATION CHECK)
+            if (pathname === '/api/external/newpolice/status' && req.method === 'GET') {
+                const conn = db.prepare("SELECT id, project_code, project_name, gateway_node, status, data_scope, item_count, requested_at, reviewed_by_name, reviewed_at FROM newpolice_connections ORDER BY requested_at DESC LIMIT 1;").get();
+                if (!conn) {
+                    return sendJson(res, 404, { success: false, error: 'ไม่พบประวัติการเชื่อมต่อโครงการ newpolice' });
+                }
+                return sendJson(res, 200, {
+                    success: true,
+                    connection: conn,
+                    isApproved: conn.status === 'approved',
+                    message: conn.status === 'approved' 
+                        ? 'การเชื่อมต่อได้รับการอนุมัติแล้ว อนุญาตให้ส่งและเข้าถึงข้อมูลได้' 
+                        : 'การเชื่อมต่ออยู่ระหว่างรอผู้ดูแลระบบ (Admin สภ.บางพลี) อนุมัติสิทธิ์การเข้าถึงข้อมูล'
+                });
+            }
+
+            // 4d. NEWPOLICE EXTERNAL SYNC WEBHOOK / INGESTION
+            if (pathname === '/api/external/newpolice/sync' && req.method === 'POST') {
+                const conn = db.prepare("SELECT * FROM newpolice_connections ORDER BY requested_at DESC LIMIT 1;").get();
+                if (!conn || conn.status !== 'approved') {
+                    recordAuditLog(null, 'NEWPOLICE_SYNC_BLOCKED', 'EXTERNAL_API', 'newpolice', 'การเชื่อมต่อจากโครงการ newpolice ถูกปฏิเสธ: ต้องได้รับการอนุมัติจากแอดมินก่อน', req);
+                    return sendJson(res, 403, {
+                        success: false,
+                        error: 'การเชื่อมต่อจากโครงการ newpolice ต้องให้ทางแอดมินอนุมัติการเชื่อมต่อข้อมูลก่อนจึงจะเข้าถึงได้',
+                        status: 'pending_approval'
+                    });
+                }
+                const body = await readBody(req);
+                const items = Array.isArray(body.cases) ? body.cases : [];
+                db.prepare(`
+                    UPDATE newpolice_connections
+                    SET payload_json = ?, item_count = ?, requested_at = ?
+                    WHERE id = ?;
+                `).run(JSON.stringify(items), items.length, new Date().toISOString(), conn.id);
+
+                recordAuditLog(null, 'NEWPOLICE_SYNC_RECEIVED', 'EXTERNAL_API', conn.id, `รับข้อมูลซิ้งค์จากโครงการ newpolice (${items.length} รายการ)`, req);
+                return sendJson(res, 200, { success: true, message: 'รับข้อมูลซิ้งค์จากโครงการ newpolice เรียบร้อยแล้ว', count: items.length });
+            }
+
             // PROTECTED ROUTES REQUIRE VALID AUTHENTICATION
             const session = authenticateReq(req);
             if (!session) {
@@ -722,6 +852,224 @@ const server = http.createServer(async (req, res) => {
                 recordAuditLog(session, 'DELETE_USER', 'USER', targetUser.username, `ลบบัญชีผู้ใช้งาน: ${targetUser.rank_name} (รหัส ${targetUser.badge_no})`, req);
 
                 return sendJson(res, 200, { success: true, message: `ลบบัญชีผู้ใช้งาน ${targetUser.rank_name} เรียบร้อยแล้ว` });
+            }
+
+            // 14. NEWPOLICE INTEGRATION: GET CURRENT STATUS & DATA
+            if (pathname === '/api/newpolice/connection' && req.method === 'GET') {
+                const conn = db.prepare("SELECT * FROM newpolice_connections ORDER BY requested_at DESC LIMIT 1;").get();
+                if (!conn) {
+                    return sendJson(res, 404, { success: false, error: 'ไม่พบข้อมูลการเชื่อมต่อโครงการ newpolice' });
+                }
+
+                // If not approved, DO NOT return payload_json
+                if (conn.status !== 'approved') {
+                    return sendJson(res, 200, {
+                        success: true,
+                        connection: {
+                            id: conn.id,
+                            project_code: conn.project_code,
+                            project_name: conn.project_name,
+                            gateway_node: conn.gateway_node,
+                            origin_ip: conn.origin_ip,
+                            status: conn.status,
+                            data_scope: conn.data_scope,
+                            item_count: conn.item_count,
+                            requested_at: conn.requested_at,
+                            reviewed_by: conn.reviewed_by,
+                            reviewed_by_name: conn.reviewed_by_name,
+                            reviewed_at: conn.reviewed_at,
+                            notes: conn.notes
+                        },
+                        isApproved: false,
+                        message: 'การเชื่อมต่อจากโครงการ newpolice ต้องให้ทางแอดมินอนุมัติการเชื่อมต่อข้อมูลก่อนจึงจะเข้าถึงได้',
+                        cases: []
+                    });
+                }
+
+                // If approved, parse and return the cases
+                let parsedCases = [];
+                try {
+                    parsedCases = JSON.parse(conn.payload_json || '[]');
+                } catch (_) {}
+
+                return sendJson(res, 200, {
+                    success: true,
+                    connection: {
+                        id: conn.id,
+                        project_code: conn.project_code,
+                        project_name: conn.project_name,
+                        gateway_node: conn.gateway_node,
+                        origin_ip: conn.origin_ip,
+                        status: conn.status,
+                        data_scope: conn.data_scope,
+                        item_count: conn.item_count,
+                        auth_token: conn.auth_token,
+                        requested_at: conn.requested_at,
+                        reviewed_by: conn.reviewed_by,
+                        reviewed_by_name: conn.reviewed_by_name,
+                        reviewed_at: conn.reviewed_at,
+                        notes: conn.notes
+                    },
+                    isApproved: true,
+                    message: 'การเชื่อมต่อโครงการ newpolice ได้รับอนุมัติแล้ว ข้อมูลพร้อมใช้งาน',
+                    cases: parsedCases
+                });
+            }
+
+            // 15. NEWPOLICE INTEGRATION: ADMIN APPROVE
+            if (pathname === '/api/admin/newpolice/approve' && req.method === 'POST') {
+                if (session.role !== 'admin' && !session.position.includes('ผกก') && !session.position.includes('รอง ผกก')) {
+                    recordAuditLog(session, 'UNAUTHORIZED_NEWPOLICE_APPROVE', 'NEWPOLICE', '-', 'พยายามอนุมัติการเชื่อมต่อ newpolice โดยไม่มีสิทธิ์แอดมิน', req);
+                    return sendJson(res, 403, { success: false, error: 'เฉพาะผู้บังคับบัญชาหรือผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถอนุมัติการเชื่อมต่อข้อมูลได้' });
+                }
+
+                const conn = db.prepare("SELECT * FROM newpolice_connections ORDER BY requested_at DESC LIMIT 1;").get();
+                if (!conn) {
+                    return sendJson(res, 404, { success: false, error: 'ไม่พบคำขอเชื่อมต่อ' });
+                }
+
+                const authToken = 'NP-AUTH-' + crypto.randomBytes(16).toString('hex').toUpperCase();
+                const now = new Date().toISOString();
+
+                db.prepare(`
+                    UPDATE newpolice_connections
+                    SET status = 'approved',
+                        auth_token = ?,
+                        reviewed_by = ?,
+                        reviewed_by_name = ?,
+                        reviewed_at = ?
+                    WHERE id = ?;
+                `).run(authToken, session.badge_no, session.rank_name, now, conn.id);
+
+                recordAuditLog(session, 'APPROVE_NEWPOLICE_SYNC', 'NEWPOLICE', conn.id, `แอดมิน (${session.rank_name}) อนุมัติการเชื่อมต่อและซิ้งค์ข้อมูลโครงการ newpolice (${conn.item_count} คดี)`, req);
+
+                let parsedCases = [];
+                try {
+                    parsedCases = JSON.parse(conn.payload_json || '[]');
+                } catch (_) {}
+
+                return sendJson(res, 200, {
+                    success: true,
+                    message: 'อนุมัติการเชื่อมต่อข้อมูลโครงการ newpolice เรียบร้อยแล้ว ระบบเปิดสิทธิ์การเข้าถึงข้อมูลสำเร็จ',
+                    authToken,
+                    reviewedByName: session.rank_name,
+                    reviewedAt: now,
+                    cases: parsedCases
+                });
+            }
+
+            // 16. NEWPOLICE INTEGRATION: ADMIN REJECT / REVOKE
+            if (pathname === '/api/admin/newpolice/reject' && req.method === 'POST') {
+                if (session.role !== 'admin' && !session.position.includes('ผกก') && !session.position.includes('รอง ผกก')) {
+                    return sendJson(res, 403, { success: false, error: 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถระงับการเชื่อมต่อได้' });
+                }
+
+                const conn = db.prepare("SELECT * FROM newpolice_connections ORDER BY requested_at DESC LIMIT 1;").get();
+                if (!conn) {
+                    return sendJson(res, 404, { success: false, error: 'ไม่พบคำขอเชื่อมต่อ' });
+                }
+
+                const now = new Date().toISOString();
+                db.prepare(`
+                    UPDATE newpolice_connections
+                    SET status = 'rejected',
+                        auth_token = NULL,
+                        reviewed_by = ?,
+                        reviewed_by_name = ?,
+                        reviewed_at = ?
+                    WHERE id = ?;
+                `).run(session.badge_no, session.rank_name, now, conn.id);
+
+                recordAuditLog(session, 'REJECT_NEWPOLICE_SYNC', 'NEWPOLICE', conn.id, `แอดมิน (${session.rank_name}) ปฏิเสธ / เพิกถอนการเชื่อมต่อข้อมูลโครงการ newpolice`, req);
+
+                return sendJson(res, 200, {
+                    success: true,
+                    message: 'ปฏิเสธ / เพิกถอนการเชื่อมต่อข้อมูลโครงการ newpolice แล้ว ข้อมูลถูกระงับการเข้าถึง'
+                });
+            }
+
+            // 17. NEWPOLICE INTEGRATION: RESET SIMULATION (FOR TESTING WORKFLOW)
+            if (pathname === '/api/admin/newpolice/reset-simulation' && req.method === 'POST') {
+                if (session.role !== 'admin' && !session.position.includes('ผกก')) {
+                    return sendJson(res, 403, { success: false, error: 'เฉพาะแอดมินเท่านั้น' });
+                }
+
+                const sampleCases = [
+                    {
+                        id: 'NP-69-001',
+                        caseNo: 'NP691117-0042',
+                        date: '17/11/2569',
+                        victim: 'น.ส.กัญญารัตน์ ศิริสุข 0891234567',
+                        type: 'หลอกติดตั้งแอปดูดเงิน (ควบคุมเครื่องระยะไกล)',
+                        amount: 320000,
+                        status: 'รอสืบสวน',
+                        source: 'โครงการ newpolice',
+                        accounts: [
+                            'กสิกรไทย: 1428930211 (นายธีรภัทร ชาญชัย - ม้าแถว 1)',
+                            'ไทยพาณิชย์: 4098712390 (น.ส.สุภาพร จันทร์ดี - ม้าแถว 2)'
+                        ],
+                        investigator: 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล',
+                        detective: 'พ.ต.ท.ชิดชนก นพเจริญพงษ์',
+                        summons1: false,
+                        summons1Date: '',
+                        summons1Pdf: '',
+                        summons2: false,
+                        summons2Date: '',
+                        summons2Pdf: '',
+                        warrant: true,
+                        warrantPdf: 'หมายจับ_newpolice_ศาลสมุทรปราการ_ธีรภัทร.pdf'
+                    },
+                    {
+                        id: 'NP-69-002',
+                        caseNo: 'NP691117-0055',
+                        date: '17/11/2569',
+                        victim: 'นายสมบัติ วัฒนากูล 0829876543',
+                        type: 'หลอกลงทุนเทรดเหรียญคริปโต (Cryptocurrency Scam)',
+                        amount: 130000,
+                        status: 'รอสืบสวน',
+                        source: 'โครงการ newpolice',
+                        accounts: [
+                            'กรุงเทพ: 9283741920 (นายอรรถพล มั่นคง - บัญชีม้า)'
+                        ],
+                        investigator: 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล',
+                        detective: 'ร.ต.อ.วิโรจน์ แสงสว่าง',
+                        summons1: true,
+                        summons1Date: '17/11/2569',
+                        summons1Pdf: 'หมายเรียก1_อรรถพล.pdf',
+                        summons2: false,
+                        summons2Date: '',
+                        summons2Pdf: '',
+                        warrant: false,
+                        warrantPdf: ''
+                    }
+                ];
+
+                const now = new Date().toISOString();
+                const newId = 'CONN-NP-' + Date.now();
+                db.prepare(`
+                    INSERT INTO newpolice_connections (id, project_code, project_name, gateway_node, origin_ip, status, data_scope, item_count, payload_json, requested_at, notes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                `).run(
+                    newId,
+                    'newpolice',
+                    'โครงการ newpolice (ระบบงานสอบสวนและสืบสวนคดีไซเบอร์ ตร.)',
+                    'NP-GW-BANGPHLI-SYNC-NODE-01',
+                    '10.220.14.88',
+                    'pending',
+                    'คำร้องทุกข์คดีไซเบอร์ (2 คดี) + บัญชีม้าเฝ้าระวัง (3 บัญชี)',
+                    2,
+                    JSON.stringify(sampleCases),
+                    now,
+                    'จำลองคำขอเชื่อมต่อซิ้งค์ข้อมูลใหม่จากโครงการ newpolice รอการอนุมัติ'
+                );
+
+                recordAuditLog(session, 'RESET_NEWPOLICE_SIMULATION', 'NEWPOLICE', newId, 'จำลองคำขอเชื่อมต่อใหม่จากโครงการ newpolice เพื่อทดสอบกระบวนการอนุมัติ', req);
+
+                return sendJson(res, 200, {
+                    success: true,
+                    message: 'จำลองคำขอเชื่อมต่อข้อมูลจากโครงการ newpolice เรียบร้อยแล้ว (สถานะ: รอแอดมินอนุมัติ)',
+                    connectionId: newId
+                });
             }
 
             return sendJson(res, 404, { success: false, error: 'API endpoint not found' });
