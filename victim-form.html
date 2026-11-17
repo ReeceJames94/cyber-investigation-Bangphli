@@ -454,8 +454,16 @@
 
                 <!-- Action Button -->
                 <div class="pt-2 flex flex-col sm:flex-row gap-3">
-                    <button type="button" onclick="window.print()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-2xl text-xs transition flex items-center justify-center gap-2">
-                        <span>🖨️</span> <span>พิมพ์ / บันทึกใบรับข้อมูลนี้ (PDF)</span>
+                    <button type="button" onclick="showFormSection(activeCase)" class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-bold rounded-2xl text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20">
+                        <span>✏️</span> <span>เข้าสู่แบบฟอร์ม (ดูข้อมูลที่กรอกไว้ / แก้ไขเพิ่มเติม)</span>
+                    </button>
+                    <button type="button" onclick="window.print()" class="w-full sm:w-auto px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-2xl text-xs transition flex items-center justify-center gap-2 shrink-0">
+                        <span>🖨️</span> <span>พิมพ์ / บันทึกใบรับนี้ (PDF)</span>
+                    </button>
+                </div>
+                <div class="pt-2 text-center">
+                    <button type="button" onclick="resetCaseDataForReFill()" class="text-xs text-slate-400 hover:text-rose-400 transition inline-flex items-center gap-1.5 underline">
+                        <span>🔄</span> <span>ล้างข้อมูลที่เคยส่ง และเริ่มต้นกรอกใหม่ตั้งแต่ต้น</span>
                     </button>
                 </div>
             </div>
@@ -624,12 +632,25 @@
 
             document.getElementById('verificationSection').classList.add('hidden');
 
-            if (caseData.alreadySubmitted) {
-                // If already submitted, jump directly to Success Ticket and lock form
+            const urlParams = new URLSearchParams(window.location.search);
+            const forceForm = urlParams.get('mode') === 'form' || urlParams.get('edit') === '1' || urlParams.get('refill') === '1';
+
+            if (caseData.alreadySubmitted && !forceForm) {
+                // If already submitted, jump directly to Success Ticket and provide buttons to view/edit
                 showSubmissionTicket(caseData);
                 return;
             }
 
+            showFormSection(caseData);
+        }
+
+        function showFormSection(caseData) {
+            if (!caseData) caseData = activeCase;
+            if (!caseData) return;
+            activeCase = caseData;
+
+            document.getElementById('verificationSection').classList.add('hidden');
+            document.getElementById('ticketSection').classList.add('hidden');
             document.getElementById('formSection').classList.remove('hidden');
 
             // Render Header Overview
@@ -670,11 +691,73 @@
                 addTransferRecordRow();
             }
 
+            // Show notice banner if already submitted
+            let banner = document.getElementById('alreadySubmittedBanner');
+            if (caseData.alreadySubmitted) {
+                if (!banner) {
+                    banner = document.createElement('div');
+                    banner.id = 'alreadySubmittedBanner';
+                    banner.className = 'p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-xs text-emerald-300 flex items-center justify-between gap-2 mb-4';
+                    const formEl = document.getElementById('victimForm');
+                    if (formEl) formEl.insertBefore(banner, formEl.firstChild);
+                }
+                banner.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span>ℹ️</span>
+                        <span>คดีนี้เคยบันทึกส่งข้อมูลแล้วเมื่อ <strong>${caseData.victimSubmittedAt ? new Date(caseData.victimSubmittedAt).toLocaleString('th-TH') : ''}</strong> (ท่านสามารถตรวจสอบ แก้ไขข้อมูล และกดส่งบันทึกใหม่ได้)</span>
+                    </div>
+                    <button type="button" onclick="showSubmissionTicket(activeCase)" class="text-[11px] underline font-bold text-emerald-400 hover:text-emerald-300 shrink-0">
+                        ดูใบรับข้อมูล (Receipt)
+                    </button>
+                `;
+                banner.classList.remove('hidden');
+            } else if (banner) {
+                banner.classList.add('hidden');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
             // Focus on first input
             setTimeout(() => {
                 const el = document.getElementById('vpFirstName');
                 if (el) el.focus();
             }, 200);
+        }
+
+        async function resetCaseDataForReFill() {
+            if (!activeCase || !activeCase.caseNo) return;
+            if (!confirm('ยืนยันล้างข้อมูลที่เคยบันทึกไว้ของคดีนี้ เพื่อเริ่มต้นกรอกใหม่ตั้งแต่ต้นใช่หรือไม่?')) return;
+
+            try {
+                await fetch('/api/victim/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ caseNo: activeCase.caseNo })
+                });
+            } catch (e) {}
+
+            try {
+                sessionStorage.removeItem('victim_draft_' + activeCase.caseNo);
+                const raw = localStorage.getItem('cyber_cases');
+                if (raw) {
+                    const cases = JSON.parse(raw);
+                    const target = cases.find(c => (c.caseNo || '').toUpperCase() === activeCase.caseNo.toUpperCase());
+                    if (target) {
+                        target.status = 'พบพงส.';
+                        target.victimSubmittedAt = null;
+                        target.victimProfile = null;
+                        target.freezeInfo = null;
+                        target.transferRecords = [];
+                        target.inquiryAnswers = [];
+                        localStorage.setItem('cyber_cases', JSON.stringify(cases));
+                    }
+                }
+            } catch (e) {}
+
+            activeCase.alreadySubmitted = false;
+            activeCase.victimSubmittedAt = null;
+            activeCase.draft = null;
+            showFormSection(activeCase);
         }
 
         // ---------------------------------------------------------------------

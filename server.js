@@ -1499,6 +1499,41 @@ const server = http.createServer(async (req, res) => {
                 });
             }
 
+            // 4j. VICTIM PRE-INVESTIGATION: RESET CASE STATUS FOR RE-FILLING
+            if (pathname === '/api/victim/reset' && req.method === 'POST') {
+                const body = await readBody(req);
+                const rawCaseNo = (body.caseNo || '').trim();
+                const cleanCaseNo = rawCaseNo.toUpperCase();
+
+                if (cleanCaseNo) {
+                    db.prepare(`
+                        UPDATE cyber_details
+                        SET victim_profile = NULL,
+                            freeze_info = NULL,
+                            transfer_records = NULL,
+                            inquiry_answers = NULL,
+                            status = 'พบพงส.',
+                            victim_submitted_at = NULL,
+                            updated_at = ?
+                        WHERE UPPER(case_no) = ?;
+                    `).run(new Date().toISOString(), cleanCaseNo);
+
+                    recordAuditLog(
+                        { user_name: `ผู้เสียหาย/เจ้าหน้าที่ (${cleanCaseNo})`, user_badge: 'SYSTEM', user_role: 'victim' },
+                        'VICTIM_FORM_RESET',
+                        'CASE',
+                        cleanCaseNo,
+                        `รีเซ็ตสถานะเคส ${cleanCaseNo} เพื่อเริ่มกรอกข้อมูลใหม่`,
+                        req
+                    );
+                }
+
+                return sendJson(res, 200, {
+                    success: true,
+                    message: `รีเซ็ตสถานะเคส ${cleanCaseNo} เรียบร้อยแล้ว`
+                });
+            }
+
             // PROTECTED ROUTES REQUIRE VALID AUTHENTICATION
             const session = authenticateReq(req);
             if (!session) {
