@@ -1688,11 +1688,27 @@
                                 </div>
                             </div>
 
-                            <div>
+                            <div class="flex flex-wrap items-center gap-4">
                                 <label class="inline-flex items-center gap-2 cursor-pointer text-zinc-200 font-medium select-none">
                                     <input type="checkbox" id="arrByCitizenCheck" onchange="handleCitizenArrestCheck()" class="w-4 h-4 rounded bg-zinc-800 border-zinc-600 text-amber-500">
                                     <span>🧑 จับโดยราษฎร (ประชาชนจับ)</span>
                                 </label>
+                                <label class="inline-flex items-center gap-2 cursor-pointer text-zinc-200 font-medium select-none">
+                                    <input type="checkbox" id="arrIncludeCmdsInSign" class="w-4 h-4 rounded bg-zinc-800 border-zinc-600 text-emerald-500">
+                                    <span>✍️ รวมรายชื่อ "ภายใต้อำนวยการของ" ร่วมลงลายมือชื่อใน "รายนามผู้จับกุม" ด้วย</span>
+                                </label>
+                            </div>
+
+                            <!-- Quick Multi-Select Officers Checkboxes -->
+                            <div class="p-3 rounded-xl bg-[#202026] border border-zinc-700/70 space-y-2">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <span class="font-bold text-emerald-400">👮 เลือกรายชื่อเจ้าหน้าที่ผู้ร่วมจับกุมให้ครบทุกคน (คลิกเลือก/ยกเลิกได้ทันที):</span>
+                                    <div class="flex gap-1.5">
+                                        <button type="button" onclick="selectAllDetectivesAsArresting()" class="px-2 py-0.5 rounded bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold transition">✓ เลือกฝ่ายสืบสวนทุกคน</button>
+                                        <button type="button" onclick="clearAllArrestingOfficers()" class="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-400 border border-zinc-700 text-[10px] transition">ล้าง</button>
+                                    </div>
+                                </div>
+                                <div id="arrQuickPickOfficersGrid" class="flex flex-wrap gap-1.5"></div>
                             </div>
 
                             <div class="text-amber-400 font-bold flex items-center gap-1.5">
@@ -1787,6 +1803,39 @@
                                     <span>🎯</span> <span>จำแนก ICCS</span>
                                 </button>
                                 <span id="arrIccsResultBadge" class="hidden px-2.5 py-0.5 rounded-md bg-purple-950 text-purple-300 border border-purple-700/60 text-[11px] font-bold"></span>
+                            </div>
+
+                            <!-- Inner box: ติ๊กถูกรายละเอียดเกี่ยวกับเหตุแห่งการจับ และสิทธิของผู้ถูกจับฯ (แสดงแบบขาวดำในเอกสาร) -->
+                            <div class="border border-zinc-700/70 rounded-xl p-3.5 space-y-2.5 bg-[#1e1e24]">
+                                <div class="text-[11px] text-zinc-200 font-bold">รายละเอียดเกี่ยวกับเหตุแห่งการจับ และสิทธิของผู้ถูกจับดังกล่าวข้างต้นแล้ว (กำหนดการติ๊กถูกในเอกสาร — พิมพ์เป็นสีขาวดำ)</div>
+                                <div class="flex flex-wrap items-center gap-4 text-xs text-zinc-100">
+                                    <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                                        <input type="checkbox" id="arrChkPleaRefuse" onchange="syncPleaTextFromCheckboxes()" class="w-4 h-4 rounded border-zinc-500">
+                                        <span>ไม่ยอมให้การ</span>
+                                    </label>
+                                    <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                                        <input type="checkbox" id="arrChkPleaGive" checked onchange="syncPleaTextFromCheckboxes()" class="w-4 h-4 rounded border-zinc-500">
+                                        <span>ให้การ</span>
+                                    </label>
+                                    <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                                        <input type="checkbox" id="arrChkPleaConfess" checked onchange="syncPleaTextFromCheckboxes()" class="w-4 h-4 rounded border-zinc-500">
+                                        <span>รับสารภาพตลอดข้อกล่าวหา</span>
+                                    </label>
+                                    <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                                        <input type="checkbox" id="arrChkPleaDeny" onchange="syncPleaTextFromCheckboxes()" class="w-4 h-4 rounded border-zinc-500">
+                                        <span>ปฏิเสธ</span>
+                                    </label>
+                                    <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                                        <input type="checkbox" id="arrChkPleaUnable" onchange="syncPleaTextFromCheckboxes()" class="w-4 h-4 rounded border-zinc-500">
+                                        <span>ไม่สามารถให้การใดๆ ได้</span>
+                                    </label>
+                                </div>
+                                <div class="pt-1 border-t border-zinc-700/50">
+                                    <label class="inline-flex items-center gap-2 cursor-pointer text-xs text-zinc-100 select-none">
+                                        <input type="checkbox" id="arrChkHasWarrantRead" class="w-4 h-4 rounded border-zinc-500">
+                                        <span>เป็นกรณีมีหมายจับ เจ้าพนักงานตำรวจผู้จับได้แจ้งให้ผู้ถูกจับทราบ และอ่านข้อความในหมายจับให้ผู้ถูกจับฟังแล้ว</span>
+                                    </label>
+                                </div>
                             </div>
 
                             <!-- Inner box: ฐานการจับ -->
@@ -6357,7 +6406,10 @@ ${currentDocPrintHtml}
                     ],
                     officers: [
                         { roleType: 'arresting', name: 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล', position: 'รอง สว.สส.สภ.บางพลี' },
+                        { roleType: 'arresting', name: 'ร.ต.อ.วิโรจน์ แสงสว่าง', position: 'รอง สว.สส.สภ.บางพลี' },
+                        { roleType: 'arresting', name: 'ร.ต.ท.สมชาย ใจมั่น', position: 'รอง สว.สส.สภ.บางพลี' },
                         { roleType: 'arresting', name: 'ด.ต.สมศักดิ์ มุ่งมั่น', position: 'ผบ.หมู่ (สส.) สภ.บางพลี' },
+                        { roleType: 'arresting', name: 'จ.ส.ต.ภาคภูมิ พิทักษ์', position: 'ผบ.หมู่ (สส.) สภ.บางพลี' },
                         { roleType: 'arresting', name: 'ส.ต.อ.วิชาญ ชำนาญสืบ', position: 'ผบ.หมู่ (สส.) สภ.บางพลี' }
                     ],
                     evidences: [
@@ -6457,6 +6509,13 @@ ${currentDocPrintHtml}
             document.getElementById('arrWarrantDate').value = '';
             document.getElementById('arrWarrantCourt').value = 'ศาลจังหวัดสมุทรปราการ';
             document.getElementById('arrByCitizenCheck').checked = false;
+            if (document.getElementById('arrIncludeCmdsInSign')) document.getElementById('arrIncludeCmdsInSign').checked = false;
+            if (document.getElementById('arrChkPleaRefuse')) document.getElementById('arrChkPleaRefuse').checked = false;
+            if (document.getElementById('arrChkPleaGive')) document.getElementById('arrChkPleaGive').checked = true;
+            if (document.getElementById('arrChkPleaConfess')) document.getElementById('arrChkPleaConfess').checked = true;
+            if (document.getElementById('arrChkPleaDeny')) document.getElementById('arrChkPleaDeny').checked = false;
+            if (document.getElementById('arrChkPleaUnable')) document.getElementById('arrChkPleaUnable').checked = false;
+            if (document.getElementById('arrChkHasWarrantRead')) document.getElementById('arrChkHasWarrantRead').checked = true;
             document.getElementById('arrNarrativeText').value = '';
             document.getElementById('arrIccsResultBadge').classList.add('hidden');
 
@@ -7416,9 +7475,50 @@ ${currentDocPrintHtml}
             `).join('');
         }
 
+        function syncPleaCheckboxesFromString(pleaText) {
+            const p = (pleaText || '').trim();
+            const isRefuse = /ไม่ยอมให้การ|ไม่ประสงค์ให้การ|ไม่ให้การ/.test(p);
+            const isUnable = /ไม่สามารถให้การ/.test(p);
+            const isConfess = /รับสารภาพ/.test(p);
+            const isDeny = /ปฏิเสธ/.test(p);
+            const isGive = p ? (!isRefuse && !isUnable) : true;
+
+            const setChk = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
+            setChk('arrChkPleaRefuse', isRefuse);
+            setChk('arrChkPleaGive', isGive);
+            setChk('arrChkPleaConfess', isConfess || (!isRefuse && !isDeny && !isUnable));
+            setChk('arrChkPleaDeny', isDeny);
+            setChk('arrChkPleaUnable', isUnable);
+        }
+
+        function syncPleaTextFromCheckboxes() {
+            const cRefuse = document.getElementById('arrChkPleaRefuse')?.checked;
+            const cGive = document.getElementById('arrChkPleaGive')?.checked;
+            const cConfess = document.getElementById('arrChkPleaConfess')?.checked;
+            const cDeny = document.getElementById('arrChkPleaDeny')?.checked;
+            const cUnable = document.getElementById('arrChkPleaUnable')?.checked;
+
+            const parts = [];
+            if (cUnable) parts.push('ไม่สามารถให้การใดๆ ได้');
+            else if (cRefuse) parts.push('ไม่ยอมให้การ');
+            else {
+                if (cGive && !cConfess && !cDeny) parts.push('ให้การ');
+                if (cConfess) parts.push('ให้การรับสารภาพตลอดข้อกล่าวหา');
+                if (cDeny) parts.push('ให้การปฏิเสธตลอดข้อกล่าวหา');
+            }
+            if (parts.length > 0 && arrestFormState.suspects[0]) {
+                arrestFormState.suspects[0].plea = parts.join(' ');
+                const suspInputs = document.querySelectorAll('#arrSuspectsListContainer input[placeholder*="รับสารภาพ"]');
+                if (suspInputs[0]) suspInputs[0].value = arrestFormState.suspects[0].plea;
+            }
+        }
+
         function updateSuspectField(idx, field, val, shouldRender = false) {
             if (!arrestFormState.suspects[idx]) return;
             arrestFormState.suspects[idx][field] = val;
+            if (idx === 0 && field === 'plea') {
+                syncPleaCheckboxesFromString(val);
+            }
             if (shouldRender) renderArrestSuspectsSection();
         }
 
@@ -7609,7 +7709,63 @@ ${currentDocPrintHtml}
         }
 
         // --- Arresting Team & Commanders (ผู้จับกุม / ชุดจับกุม) ---
+        function renderQuickPickOfficersGrid() {
+            const grid = document.getElementById('arrQuickPickOfficersGrid');
+            if (!grid) return;
+            const selectedNames = new Set(arrestFormState.officers.map(o => (o.name || '').trim()));
+            grid.innerHTML = policeOfficersDB.map(o => {
+                const fullName = `${o.rank}${o.fullName}`.trim();
+                const isSelected = selectedNames.has(fullName);
+                return `
+                    <button type="button" onclick="toggleQuickPickOfficer('${o.id}')" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition flex items-center gap-1 ${isSelected ? 'bg-emerald-600/25 border-emerald-500 text-emerald-300 font-bold' : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500'}">
+                        <span>${isSelected ? '✓' : '+'}</span>
+                        <span>${fullName}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function toggleQuickPickOfficer(offId) {
+            const o = policeOfficersDB.find(x => x.id === offId);
+            if (!o) return;
+            const fullName = `${o.rank}${o.fullName}`.trim();
+            const existingIdx = arrestFormState.officers.findIndex(item => (item.name || '').trim() === fullName);
+            if (existingIdx !== -1) {
+                arrestFormState.officers.splice(existingIdx, 1);
+            } else {
+                arrestFormState.officers.push({
+                    roleType: 'arresting',
+                    name: fullName,
+                    position: o.position
+                });
+            }
+            renderArrestTeamSection();
+        }
+
+        function selectAllDetectivesAsArresting() {
+            const detectives = policeOfficersDB.filter(o => o.role === 'detective');
+            const existingNames = new Set(arrestFormState.officers.map(o => (o.name || '').trim()));
+            detectives.forEach(d => {
+                const fullName = `${d.rank}${d.fullName}`.trim();
+                if (!existingNames.has(fullName)) {
+                    arrestFormState.officers.push({
+                        roleType: 'arresting',
+                        name: fullName,
+                        position: d.position
+                    });
+                }
+            });
+            renderArrestTeamSection();
+            toast(`✓ เพิ่มเจ้าหน้าที่ฝ่ายสืบสวนเข้าชุดจับกุมครบ ${arrestFormState.officers.length} นายแล้ว`);
+        }
+
+        function clearAllArrestingOfficers() {
+            arrestFormState.officers = [];
+            renderArrestTeamSection();
+        }
+
         function renderArrestTeamSection() {
+            renderQuickPickOfficersGrid();
             const cmdContainer = document.getElementById('arrCommandersContainer');
             const offContainer = document.getElementById('arrOfficersContainer');
             if (!cmdContainer || !offContainer) return;
@@ -7633,7 +7789,7 @@ ${currentDocPrintHtml}
                         </div>
                         <div>
                             <label class="block text-[11px] text-zinc-400 mb-1">ตำแหน่ง (ต่อท้ายชื่อในเอกสาร)</label>
-                            <input type="text" id="cmdPosInput_${idx}" value="${c.position || ''}" oninput="arrestFormState.commanders[${idx}].position = this.value" placeholder="เช่น ผกก.สภ.บางพลี, รอง ผกก.สส.สภ.บางพลี" class="w-full p-2.5 bg-[#2a2a32] border border-zinc-700 rounded-lg text-white text-xs">
+                            <input type="text" id="cmdPosInput_${idx}" value="${c.position || c.pos || ''}" oninput="arrestFormState.commanders[${idx}].position = this.value" placeholder="เช่น ผกก.สภ.บางพลี, รอง ผกก.สส.สภ.บางพลี" class="w-full p-2.5 bg-[#2a2a32] border border-zinc-700 rounded-lg text-white text-xs">
                         </div>
                     </div>
                 </div>
@@ -7656,17 +7812,17 @@ ${currentDocPrintHtml}
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <div>
-                            <label class="block text-[11px] text-zinc-400 mb-1">${o.roleType === 'arresting' ? 'เลือกจากฐานข้อมูลตำรวจ สภ.บางพลี หรือพิมพ์เอง' : 'ยศ - ชื่อ - นามสกุล'}</label>
-                            ${o.roleType === 'arresting' ? `
+                            <label class="block text-[11px] text-zinc-400 mb-1">${o.roleType === 'arresting' ? 'เลือกจากฐานข้อมูลตำรวจ สภ.บางพลี หรือพิมพ์เอง (รองรับใส่หลายคนคั่นด้วยจุลภาค)' : 'ยศ - ชื่อ - นามสกุล'}</label>
+                            ${(!o.roleType || o.roleType === 'arresting') ? `
                                 <select onchange="handleOfficerDropdownSelect('officer', ${idx}, this)" class="w-full p-2 bg-[#2a2a32] border border-zinc-700 rounded-lg text-white text-xs mb-1.5">
                                     ${officerOptionsHtml}
                                 </select>
                             ` : ''}
-                            <input type="text" id="offNameInput_${idx}" value="${o.name || ''}" oninput="arrestFormState.officers[${idx}].name = this.value" placeholder="พิมพ์ยศ ชื่อ นามสกุล" class="w-full p-2.5 bg-[#2a2a32] border border-zinc-700 rounded-lg text-white text-xs">
+                            <input type="text" id="offNameInput_${idx}" value="${o.name || ''}" oninput="arrestFormState.officers[${idx}].name = this.value; renderQuickPickOfficersGrid();" placeholder="พิมพ์ยศ ชื่อ นามสกุล" class="w-full p-2.5 bg-[#2a2a32] border border-zinc-700 rounded-lg text-white text-xs">
                         </div>
                         <div>
                             <label class="block text-[11px] text-zinc-400 mb-1">ตำแหน่ง / สังกัด (ต่อท้ายชื่อในเอกสาร)</label>
-                            <input type="text" id="offPosInput_${idx}" value="${o.position || ''}" oninput="arrestFormState.officers[${idx}].position = this.value" placeholder="เช่น รอง สว.สส.สภ.บางพลี, ผบ.หมู่ (สส.) สภ.บางพลี" class="w-full p-2.5 bg-[#2a2a32] border border-zinc-700 rounded-lg text-white text-xs">
+                            <input type="text" id="offPosInput_${idx}" value="${o.position || o.pos || ''}" oninput="arrestFormState.officers[${idx}].position = this.value" placeholder="เช่น รอง สว.สส.สภ.บางพลี, ผบ.หมู่ (สส.) สภ.บางพลี" class="w-full p-2.5 bg-[#2a2a32] border border-zinc-700 rounded-lg text-white text-xs">
                         </div>
                     </div>
                 </div>
@@ -7871,12 +8027,15 @@ ${currentDocPrintHtml}
             }
             const noWarrantChk = document.getElementById('arrNoWarrant');
             const warrantBox = document.getElementById('arrWarrantFieldsBox');
+            const chkWarrantRead = document.getElementById('arrChkHasWarrantRead');
             if (basis === 'warrant' || basis === 'surrender' || basis === 'court_order') {
                 if (noWarrantChk) noWarrantChk.checked = false;
                 if (warrantBox) warrantBox.classList.remove('hidden');
+                if (chkWarrantRead) chkWarrantRead.checked = true;
             } else {
                 if (noWarrantChk) noWarrantChk.checked = true;
                 if (warrantBox) warrantBox.classList.add('hidden');
+                if (chkWarrantRead) chkWarrantRead.checked = false;
             }
         }
 
@@ -8005,6 +8164,15 @@ ${currentDocPrintHtml}
                 witnessName: document.getElementById('arrWitnessName')?.value.trim() || '',
                 receiverInfo: document.getElementById('arrReceiverInfo')?.value.trim() || '',
                 m23CommitteeNote: document.getElementById('arrM23CommitteeNote')?.value.trim() || '',
+                includeCmdsInSign: !!document.getElementById('arrIncludeCmdsInSign')?.checked,
+                pleaFlags: {
+                    pleaRefuseTestify: !!document.getElementById('arrChkPleaRefuse')?.checked,
+                    pleaGiveStatement: !!document.getElementById('arrChkPleaGive')?.checked,
+                    pleaConfess: !!document.getElementById('arrChkPleaConfess')?.checked,
+                    pleaDeny: !!document.getElementById('arrChkPleaDeny')?.checked,
+                    pleaUnable: !!document.getElementById('arrChkPleaUnable')?.checked,
+                    warrantReadCheck: !!document.getElementById('arrChkHasWarrantRead')?.checked
+                },
                 type: document.getElementById('arrType').value,
                 date: document.getElementById('arrDate').value,
                 time: document.getElementById('arrTime').value,
@@ -8144,6 +8312,19 @@ ${currentDocPrintHtml}
             if (document.getElementById('arrWitnessName')) document.getElementById('arrWitnessName').value = r.witnessName || '';
             if (document.getElementById('arrReceiverInfo')) document.getElementById('arrReceiverInfo').value = r.receiverInfo || '';
             if (document.getElementById('arrM23CommitteeNote')) document.getElementById('arrM23CommitteeNote').value = r.m23CommitteeNote || '';
+            if (document.getElementById('arrIncludeCmdsInSign')) document.getElementById('arrIncludeCmdsInSign').checked = !!r.includeCmdsInSign;
+            const s0Plea = r.suspects?.[0]?.plea || 'ให้การรับสารภาพตลอดข้อกล่าวหา';
+            if (r.pleaFlags) {
+                if (document.getElementById('arrChkPleaRefuse')) document.getElementById('arrChkPleaRefuse').checked = !!r.pleaFlags.pleaRefuseTestify;
+                if (document.getElementById('arrChkPleaGive')) document.getElementById('arrChkPleaGive').checked = !!r.pleaFlags.pleaGiveStatement;
+                if (document.getElementById('arrChkPleaConfess')) document.getElementById('arrChkPleaConfess').checked = !!r.pleaFlags.pleaConfess;
+                if (document.getElementById('arrChkPleaDeny')) document.getElementById('arrChkPleaDeny').checked = !!r.pleaFlags.pleaDeny;
+                if (document.getElementById('arrChkPleaUnable')) document.getElementById('arrChkPleaUnable').checked = !!r.pleaFlags.pleaUnable;
+                if (document.getElementById('arrChkHasWarrantRead')) document.getElementById('arrChkHasWarrantRead').checked = !!r.pleaFlags.warrantReadCheck;
+            } else {
+                syncPleaCheckboxesFromString(s0Plea);
+                if (document.getElementById('arrChkHasWarrantRead')) document.getElementById('arrChkHasWarrantRead').checked = !r.noWarrant;
+            }
             const basisR = document.querySelector(`input[name="arrBasisRadio"][value="${r.basis || 'warrant'}"]`);
             if (basisR) basisR.checked = true;
             loadThaiDateIntoSelects(r.recordDate || r.date || '', 'arrRecordDate');
@@ -8281,10 +8462,30 @@ ${currentDocPrintHtml}
             const arrestTimeAr = formatArTime(rec.time || '20:15');
             const fullArrestLocAr = toAr(`${rec.locDetail || '-'} ตำบล${rec.locTam || 'บางพลีใหญ่'} อำเภอ${rec.locAmp || 'บางพลี'} จังหวัด${rec.locProv || 'สมุทรปราการ'}`);
 
-            const commanders = (rec.commanders || []).filter(c => c.name);
-            const officers = (rec.officers && rec.officers.filter(o => o.name).length > 0)
+            const commanders = (rec.commanders || []).filter(c => c.name).map(c => ({
+                name: c.name.trim(),
+                position: (c.position || c.pos || '').trim()
+            }));
+
+            // ขยายรายชื่อเจ้าหน้าที่ผู้จับกุมให้ครบทุกคน (รองรับการพิมพ์หลายคนคั่นด้วยจุลภาค/ขึ้นบรรทัดใหม่ + ดึงทุกบทบาทที่ร่วมจับ)
+            const rawOfficers = (rec.officers && rec.officers.filter(o => o.name).length > 0)
                 ? rec.officers.filter(o => o.name)
                 : [{ roleType: 'arresting', name: 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล', position: 'รอง สว.สส.สภ.บางพลี' }];
+
+            const officers = [];
+            const seenOfficerNames = new Set();
+            const pushExpandedOfficer = (oName, oPos) => {
+                String(oName || '').split(/[,\n]+/).forEach(part => {
+                    const cleanName = part.trim();
+                    if (!cleanName || seenOfficerNames.has(cleanName)) return;
+                    seenOfficerNames.add(cleanName);
+                    officers.push({ name: cleanName, position: (oPos || '').trim() });
+                });
+            };
+            rawOfficers.forEach(o => pushExpandedOfficer(o.name, o.position || o.pos || ''));
+            if (rec.includeCmdsInSign) {
+                commanders.forEach(c => pushExpandedOfficer(c.name, c.position));
+            }
 
             const cmdStrAr = commanders.length > 0
                 ? toAr(commanders.map(c => `${c.name}${c.position ? ' ' + c.position : ''}`).join(', '))
@@ -8312,11 +8513,13 @@ ${currentDocPrintHtml}
             const basis = rec.basis || (rec.noWarrant ? 'flagrante' : 'warrant');
 
             const pleaRaw = s0.plea || 'รับสารภาพตลอดข้อกล่าวหา';
-            const pleaRefuseTestify = /ไม่ยอมให้การ|ไม่ประสงค์ให้การ|ไม่ให้การ/.test(pleaRaw);
-            const pleaUnable = /ไม่สามารถให้การ/.test(pleaRaw);
-            const pleaConfess = /รับสารภาพ/.test(pleaRaw);
-            const pleaDeny = /ปฏิเสธ/.test(pleaRaw);
-            const pleaGiveStatement = !pleaRefuseTestify && !pleaUnable;
+            const pf = rec.pleaFlags || null;
+            const pleaRefuseTestify = pf ? !!pf.pleaRefuseTestify : /ไม่ยอมให้การ|ไม่ประสงค์ให้การ|ไม่ให้การ/.test(pleaRaw);
+            const pleaUnable = pf ? !!pf.pleaUnable : /ไม่สามารถให้การ/.test(pleaRaw);
+            const pleaConfess = pf ? !!pf.pleaConfess : /รับสารภาพ/.test(pleaRaw);
+            const pleaDeny = pf ? !!pf.pleaDeny : /ปฏิเสธ/.test(pleaRaw);
+            const pleaGiveStatement = pf ? !!pf.pleaGiveStatement : (!pleaRefuseTestify && !pleaUnable);
+            const warrantReadCheck = pf ? !!pf.warrantReadCheck : !rec.noWarrant;
 
             const fmReason = (rec.m22ForceMajeure || '').trim();
             const hasForceMajeure = fmReason.length > 0 && fmReason !== '-' && fmReason !== 'ไม่มี';
@@ -8383,7 +8586,7 @@ ${currentDocPrintHtml}
                 leadOfficer, leadSplit, recorderOfficer, recorderSplit, officerSignItems,
                 warrantNoAr, warrantCourtAr, warrantDateAr, basis,
                 right4Action: rec.right4Action || 'none',
-                pleaRefuseTestify, pleaGiveStatement, pleaConfess, pleaDeny, pleaUnable,
+                pleaRefuseTestify, pleaGiveStatement, pleaConfess, pleaDeny, pleaUnable, warrantReadCheck,
                 hasForceMajeure, fmReason,
                 narrPage2, narrPage3, photoCaption,
                 dailyLogNo: toAr(rec.dailyLogNo || ''),
@@ -8412,7 +8615,7 @@ ${currentDocPrintHtml}
             const vm = prepareArrestDocViewModel(rec);
             const { toTh } = vm;
             const mk = (b) => b ? '/' : '&nbsp;';
-            const chk = (b) => b ? '☑' : '☐';
+            const chk = (b) => `<svg width="13" height="13" viewBox="0 0 14 14" style="display:inline-block;vertical-align:-2px;margin-right:3px;"><rect x="1" y="1" width="12" height="12" fill="#ffffff" stroke="#000000" stroke-width="1.35"/>${b ? '<polyline points="3,7.2 5.8,10.2 11,3.5" fill="none" stroke="#000000" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>' : ''}</svg>`;
 
             const officerPairsHtml = [];
             for (let i = 0; i < vm.officerSignItems.length; i += 2) {
@@ -8420,14 +8623,14 @@ ${currentDocPrintHtml}
                 const R = vm.officerSignItems[i + 1];
                 officerPairsHtml.push(`
                     <tr>
-                        <td style="width: 50%; padding: 4px 6px 10px 0; vertical-align: top;">
-                            <div>(ลงชื่อ) ${L.rank || ''} ........................................... ${L.roleLabel}</div>
-                            <div style="text-align: center; padding-right: 45px;">( ${L.nameOnly} )</div>
+                        <td style="width: 50%; padding: 4px 8px 12px 0; vertical-align: top; font-size: 15px;">
+                            <div style="white-space: nowrap;">(ลงชื่อ) ${L.rank || ''} ...................... ${L.roleLabel}</div>
+                            <div style="padding-left: 58px;">( ${L.nameOnly} )</div>
                         </td>
-                        <td style="width: 50%; padding: 4px 0 10px 6px; vertical-align: top;">
+                        <td style="width: 50%; padding: 4px 0 12px 8px; vertical-align: top; font-size: 15px;">
                             ${R ? `
-                                <div>(ลงชื่อ) ${R.rank || ''} ........................................... ${R.roleLabel}</div>
-                                <div style="text-align: center; padding-right: 45px;">( ${R.nameOnly} )</div>
+                                <div style="white-space: nowrap;">(ลงชื่อ) ${R.rank || ''} ...................... ${R.roleLabel}</div>
+                                <div style="padding-left: 58px;">( ${R.nameOnly} )</div>
                             ` : ''}
                         </td>
                     </tr>
@@ -8459,6 +8662,7 @@ ${currentDocPrintHtml}
                     .pt23-num { width: 28px; text-align: center; font-weight: bold; }
                     .pt23-hdr { font-weight: bold; }
                     @media print {
+                        .arrest-pkg, .arrest-pkg * { color: #000000 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                         .arrest-pkg .a4-page { margin-bottom: 0; border-bottom: none; padding: 0; }
                     }
                 </style>
@@ -8523,7 +8727,7 @@ ${currentDocPrintHtml}
 
                         <p style="margin-top: 6px;"><strong>ผู้ถูกจับทราบข้อกล่าวหา รายละเอียดเกี่ยวกับเหตุแห่งการจับ และสิทธิของผู้ถูกจับดังกล่าวข้างต้นแล้ว</strong></p>
                         <p>${chk(vm.pleaRefuseTestify)} ไม่ยอมให้การ &nbsp;&nbsp; ${chk(vm.pleaGiveStatement)} ให้การ &nbsp;&nbsp; ${chk(vm.pleaConfess)} รับสารภาพตลอดข้อกล่าวหา &nbsp;&nbsp; ${chk(vm.pleaDeny)} ปฏิเสธ &nbsp;&nbsp; ${chk(vm.pleaUnable)} ไม่สามารถให้การใดๆ ได้</p>
-                        <p>${chk(!rec.noWarrant)} เป็นกรณีมีหมายจับ เจ้าพนักงานตำรวจผู้จับได้แจ้งให้ผู้ถูกจับทราบ และอ่านข้อความในหมายจับให้ผู้ถูกจับฟังแล้ว</p>
+                        <p>${chk(vm.warrantReadCheck)} เป็นกรณีมีหมายจับ เจ้าพนักงานตำรวจผู้จับได้แจ้งให้ผู้ถูกจับทราบ และอ่านข้อความในหมายจับให้ผู้ถูกจับฟังแล้ว</p>
 
                         <div style="text-align: justify; margin-top: 4px;">
                             ${vm.narrPage2.length > 0
@@ -8542,7 +8746,7 @@ ${currentDocPrintHtml}
                         <p><strong>เหตุเกิดที่</strong> &nbsp;${vm.fullArrestLocAr}</p>
                         <p style="padding-left: 44px;">วันที่ ${vm.arrestDateAr} เวลาประมาณ ${vm.arrestTimeAr} น.</p>
 
-                        <p style="text-indent: 36px; text-align: justify; margin-top: 8px;">อนึ่ง ในการจับกุมผู้ถูกจับครั้งนี้ เจ้าหน้าที่ตำรวจผู้จับกุมมิได้ทำให้ทรัพย์สินของผู้ถูกจับ หรือทรัพย์สินของผู้ใดเสียหาย สูญหาย เสื่อมค่า หรือไร้ประโยชน์ ทั้งมิได้เรียกร้องเอาทรัพย์สินของผู้ถูกจับหรือผู้ใดมาเป็นประโยชน์ต่อส่วนตนแต่อย่างใด และมิได้ทำร้ายร่างกายผู้ใดให้ได้รับอันตรายแก่กายหรือจิตใจแต่อย่างใด เจ้าหน้าที่ตำรวจได้อ่านบันทึกจับกุมนี้ให้ผู้ถูกจับฟังและให้อ่านเองจนเป็นที่เข้าใจแล้ว รับรองว่าถูกต้อง จึงให้ลงลายมือชื่อไว้เป็นหลักฐาน</p>
+                        <p style="text-indent: 36px; text-align: left; margin-top: 8px;">อนึ่ง ในการจับกุมผู้ถูกจับครั้งนี้ เจ้าหน้าที่ตำรวจผู้จับกุมมิได้ทำให้ทรัพย์สินของผู้ถูกจับ หรือทรัพย์สินของผู้ใดเสียหาย สูญหาย เสื่อมค่า หรือไร้ประโยชน์ ทั้งมิได้เรียกร้องเอาทรัพย์สินของผู้ถูกจับหรือผู้ใดมาเป็นประโยชน์ต่อส่วนตนแต่อย่างใด และมิได้ทำร้ายร่างกายผู้ใดให้ได้รับอันตรายแก่กายหรือจิตใจแต่อย่างใด เจ้าหน้าที่ตำรวจได้อ่านบันทึกจับกุมนี้ให้ผู้ถูกจับฟังและให้อ่านเองจนเป็นที่เข้าใจแล้ว รับรองว่าถูกต้อง จึงให้ลงลายมือชื่อไว้เป็นหลักฐาน</p>
 
                         <div style="text-align: center; margin: 22px 0 28px;">
                             <div>(ลงชื่อ) ${vm.suspPrefix} ......................................................... ผู้ถูกจับ</div>
@@ -8669,7 +8873,7 @@ ${currentDocPrintHtml}
                                     <div>รูปถ่ายของผู้ถูกควบคุม(ปรากฏตามที่แนบท้ายบันทึก)</div>
                                 </td>
                                 <td colspan="2">
-                                    <div>${!rec.noWarrant && rec.warrantNo ? '☑ <strong>หมายจับศาล</strong>' : '☑ <strong>ความผิดซึ่งหน้า</strong>'}</div>
+                                    <div>${chk(true)} <strong>${!rec.noWarrant && rec.warrantNo ? 'หมายจับศาล' : 'ความผิดซึ่งหน้า'}</strong></div>
                                     <div style="margin-top: 3px;">${toTh(vm.m23OrderReason)}</div>
                                 </td>
                             </tr>
@@ -8950,7 +9154,12 @@ ${currentDocPrintHtml}
             };
 
             const mk = (b) => b ? '/' : ' ';
-            const chk = (b) => b ? '☑' : '☐';
+            const bwChkRun = (b, sz = SZ) => new TextRun({
+                text: b ? '☑' : '☐',
+                font: 'MS Gothic',
+                size: sz,
+                color: '000000'
+            });
 
             const buildPt23SignaturesTable = () => {
                 const sigMargins = { top: 80, bottom: 80, left: 100, right: 100 };
@@ -9102,8 +9311,17 @@ ${currentDocPrintHtml}
             children.push(tP('เจ้าหน้าที่ตำรวจผู้จับได้อ่านบันทึกให้ผู้ถูกจับฟังรับว่าถูกต้อง มีการดำเนินการตาม พ.ร.บ.ป้องกันและปราบปรามการทรมานและการกระทำให้สูญหาย พ.ศ.2565 มาตรา 22 และได้มอบสำเนาบันทึกการจับกุมให้แก่ผู้ถูกจับเรียบร้อย', { indent: { firstLine: 560 }, after: 70 }));
 
             children.push(tP('ผู้ถูกจับทราบข้อกล่าวหา รายละเอียดเกี่ยวกับเหตุแห่งการจับ และสิทธิของผู้ถูกจับดังกล่าวข้างต้นแล้ว', { bold: true, after: 35 }));
-            children.push(tP(`${chk(vm.pleaRefuseTestify)} ไม่ยอมให้การ   ${chk(vm.pleaGiveStatement)} ให้การ   ${chk(vm.pleaConfess)} รับสารภาพตลอดข้อกล่าวหา   ${chk(vm.pleaDeny)} ปฏิเสธ   ${chk(vm.pleaUnable)} ไม่สามารถให้การใดๆ ได้`, { after: 35 }));
-            children.push(tP(`${chk(!rec.noWarrant)} เป็นกรณีมีหมายจับ เจ้าพนักงานตำรวจผู้จับได้แจ้งให้ผู้ถูกจับทราบ และอ่านข้อความในหมายจับให้ผู้ถูกจับฟังแล้ว`, { after: 60 }));
+            children.push(tP([
+                bwChkRun(vm.pleaRefuseTestify), tRun(' ไม่ยอมให้การ   '),
+                bwChkRun(vm.pleaGiveStatement), tRun(' ให้การ   '),
+                bwChkRun(vm.pleaConfess), tRun(' รับสารภาพตลอดข้อกล่าวหา   '),
+                bwChkRun(vm.pleaDeny), tRun(' ปฏิเสธ   '),
+                bwChkRun(vm.pleaUnable), tRun(' ไม่สามารถให้การใดๆ ได้')
+            ], { after: 35 }));
+            children.push(tP([
+                bwChkRun(vm.warrantReadCheck),
+                tRun(' เป็นกรณีมีหมายจับ เจ้าพนักงานตำรวจผู้จับได้แจ้งให้ผู้ถูกจับทราบ และอ่านข้อความในหมายจับให้ผู้ถูกจับฟังแล้ว')
+            ], { after: 60 }));
 
             if (vm.narrPage2.length > 0) {
                 vm.narrPage2.forEach((para, idx) => {
@@ -9131,7 +9349,7 @@ ${currentDocPrintHtml}
 
             children.push(tP(
                 'อนึ่ง ในการจับกุมผู้ถูกจับครั้งนี้ เจ้าหน้าที่ตำรวจผู้จับกุมมิได้ทำให้ทรัพย์สินของผู้ถูกจับ หรือทรัพย์สินของผู้ใดเสียหาย สูญหาย เสื่อมค่า หรือไร้ประโยชน์ ทั้งมิได้เรียกร้องเอาทรัพย์สินของผู้ถูกจับหรือผู้ใดมาเป็นประโยชน์ต่อส่วนตนแต่อย่างใด และมิได้ทำร้ายร่างกายผู้ใดให้ได้รับอันตรายแก่กายหรือจิตใจแต่อย่างใด เจ้าหน้าที่ตำรวจได้อ่านบันทึกจับกุมนี้ให้ผู้ถูกจับฟังและให้อ่านเองจนเป็นที่เข้าใจแล้ว รับรองว่าถูกต้อง จึงให้ลงลายมือชื่อไว้เป็นหลักฐาน',
-                { indent: { firstLine: 680 }, align: AlignmentType.BOTH, after: 220 }
+                { indent: { firstLine: 680 }, align: AlignmentType.LEFT, after: 220 }
             ));
 
             children.push(tP(`(ลงชื่อ) ${vm.suspPrefix} ......................................................... ผู้ถูกจับ`, { align: AlignmentType.CENTER, after: 20 }));
@@ -9148,19 +9366,19 @@ ${currentDocPrintHtml}
                         new TableCell({
                             width: { size: 4800, type: WidthType.DXA },
                             borders: noBorders,
-                            margins: { top: 40, bottom: 90, left: 0, right: 80 },
+                            margins: { top: 40, bottom: 90, left: 0, right: 60 },
                             children: [
-                                tP(`(ลงชื่อ) ${L.rank} ......................................... ${L.roleLabel}`, { after: 15 }),
-                                tP(`( ${L.nameOnly} )`, { align: AlignmentType.CENTER, after: 0 })
+                                tP(`(ลงชื่อ) ${L.rank} ...................... ${L.roleLabel}`, { size: 28, after: 15 }),
+                                tP(`( ${L.nameOnly} )`, { size: 28, align: AlignmentType.CENTER, after: 0 })
                             ]
                         }),
                         new TableCell({
                             width: { size: 4800, type: WidthType.DXA },
                             borders: noBorders,
-                            margins: { top: 40, bottom: 90, left: 80, right: 0 },
+                            margins: { top: 40, bottom: 90, left: 60, right: 0 },
                             children: R ? [
-                                tP(`(ลงชื่อ) ${R.rank} ......................................... ${R.roleLabel}`, { after: 15 }),
-                                tP(`( ${R.nameOnly} )`, { align: AlignmentType.CENTER, after: 0 })
+                                tP(`(ลงชื่อ) ${R.rank} ...................... ${R.roleLabel}`, { size: 28, after: 15 }),
+                                tP(`( ${R.nameOnly} )`, { size: 28, align: AlignmentType.CENTER, after: 0 })
                             ] : [tP('', { after: 0 })]
                         })
                     ]
@@ -9390,7 +9608,7 @@ ${currentDocPrintHtml}
                                 borders: cellBorder,
                                 margins: ptMargins,
                                 children: [
-                                    ptP(!rec.noWarrant && rec.warrantNo ? '☑ หมายจับศาล' : '☑ ความผิดซึ่งหน้า', { bold: true }),
+                                    ptP([bwChkRun(true, SZ_SM), tRun(!rec.noWarrant && rec.warrantNo ? ' หมายจับศาล' : ' ความผิดซึ่งหน้า', { size: SZ_SM, bold: true })]),
                                     ptP(toTh(vm.m23OrderReason), { after: 0 })
                                 ]
                             })

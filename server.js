@@ -234,13 +234,15 @@ if (!hasThanakrit) {
     `).run('thanakrit', '10000', 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล', 'รอง สว.(สส.) สภ.บางพลี (Admin)', 'ฝ่ายสืบสวน', 'admin', hash, salt, new Date().toISOString());
 }
 
-// Pre-seed sample encrypted arrest record if empty
+// Pre-seed or upgrade untouched sample encrypted arrest record
 const countArrests = db.prepare('SELECT COUNT(*) as count FROM arrest_records;').get().count;
-if (countArrests === 0) {
-    console.log('[SECURITY] Seeding sample encrypted arrest record...');
+const untouchedSeedRow = db.prepare("SELECT id, created_at, updated_at FROM arrest_records WHERE id = 'ARR-2569-001';").get();
+const shouldSeedSample = countArrests === 0 || (untouchedSeedRow && untouchedSeedRow.created_at === untouchedSeedRow.updated_at);
+if (shouldSeedSample) {
+    console.log('[SECURITY] Seeding/updating sample encrypted arrest record...');
     const sampleRecord = {
         id: 'ARR-2569-001',
-        recordLocation: 'สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑',
+        recordLocation: 'สถานีตำรวจภูธรบางพลี ตำบลบางพลีใหญ่ อำเภอบางพลี จังหวัดสมุทรปราการ',
         recordDate: '2026-11-17',
         recordTime: '23:45',
         type: 'ผู้ใหญ่',
@@ -275,10 +277,17 @@ if (countArrests === 0) {
             charges: ['ร่วมกันฉ้อโกงประชาชน และนำเข้าสู่ระบบคอมพิวเตอร์ซึ่งข้อมูลอันเป็นเท็จ'],
             plea: 'รับสารภาพตลอดข้อกล่าวหา'
         }],
-        commanders: [{ name: 'พ.ต.อ.ไพโรจน์ เพ็ชรพลอย', pos: 'ผกก.สภ.บางพลี' }],
+        commanders: [
+            { name: 'พ.ต.อ.ไพโรจน์ เพ็ชรพลอย', position: 'ผกก.สภ.บางพลี' },
+            { name: 'พ.ต.ท.ชิดชนก นพเจริญพงษ์', position: 'รอง ผกก.สส.สภ.บางพลี' }
+        ],
         officers: [
-            { name: 'พ.ต.ท.ชิดชนก นพเจริญพงษ์', pos: 'รอง ผกก.สส.สภ.บางพลี' },
-            { name: 'ร.ต.อ.วิโรจน์ แสงสว่าง', pos: 'รอง สว.สส.สภ.บางพลี' }
+            { roleType: 'arresting', name: 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล', position: 'รอง สว.สส.สภ.บางพลี' },
+            { roleType: 'arresting', name: 'ร.ต.อ.วิโรจน์ แสงสว่าง', position: 'รอง สว.สส.สภ.บางพลี' },
+            { roleType: 'arresting', name: 'ร.ต.ท.สมชาย ใจมั่น', position: 'รอง สว.สส.สภ.บางพลี' },
+            { roleType: 'arresting', name: 'ด.ต.สมศักดิ์ มุ่งมั่น', position: 'ผบ.หมู่ (สส.) สภ.บางพลี' },
+            { roleType: 'arresting', name: 'จ.ส.ต.ภาคภูมิ พิทักษ์', position: 'ผบ.หมู่ (สส.) สภ.บางพลี' },
+            { roleType: 'arresting', name: 'ส.ต.อ.วิชาญ ชำนาญสืบ', position: 'ผบ.หมู่ (สส.) สภ.บางพลี' }
         ],
         evidences: [
             { type: 'general', description: 'โทรศัพท์มือถือ iPhone 15 Pro Max สีดำ', foundLocation: 'กระเป๋ากางเกงด้านขวาของผู้ถูกจับ' }
@@ -287,12 +296,19 @@ if (countArrests === 0) {
     };
 
     const enc = encryptAES256(JSON.stringify(sampleRecord));
-    const insertArr = db.prepare(`
-        INSERT INTO arrest_records (id, record_no, ciphertext, iv, tag, status, created_by, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
-    `);
     const now = new Date().toISOString();
-    insertArr.run(sampleRecord.id, 'ARR-2569-001', enc.ciphertext, enc.iv, enc.tag, 'completed', '20001', now, now);
+    if (untouchedSeedRow) {
+        db.prepare(`
+            UPDATE arrest_records SET ciphertext = ?, iv = ?, tag = ? WHERE id = 'ARR-2569-001';
+        `).run(enc.ciphertext, enc.iv, enc.tag);
+    } else {
+        db.prepare(`
+            INSERT INTO arrest_records (id, record_no, ciphertext, iv, tag, status, created_by, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+        `).run(sampleRecord.id, 'ARR-2569-001', enc.ciphertext, enc.iv, enc.tag, 'completed', '20001', now, now);
+    }
+}
+if (countArrests === 0) {
 
     // Initial audit log
     const insertLog = db.prepare(`
@@ -616,7 +632,7 @@ const server = http.createServer(async (req, res) => {
 
             // 4c. NEWPOLICE: LIST CONNECTION REQUESTS (PUBLIC / EXTERNAL CHECK)
             if (pathname === '/api/external/newpolice/requests' && req.method === 'GET') {
-                const requests = db.prepare("SELECT id, request_code, badge_no, rank_name, position, agency, purpose, status, ip_address, requested_at, reviewed_by_name, reviewed_at FROM newpolice_user_requests ORDER BY id DESC;").all();
+                const requests = db.prepare("SELECT id, request_code, badge_no, rank_name, position, agency, purpose, status, access_token, ip_address, requested_at, reviewed_by_name, reviewed_at FROM newpolice_user_requests ORDER BY id DESC;").all();
                 return sendJson(res, 200, {
                     success: true,
                     requests,
