@@ -85,6 +85,41 @@ function verifyPassword(password, hash, salt) {
 const DB_PATH = path.join(DATA_DIR, 'bangphli_secure.db');
 const db = new DatabaseSync(DB_PATH);
 
+// Automated Backup Directory & Rotation
+const BACKUP_DIR = path.join(DATA_DIR, 'backups');
+if (!fs.existsSync(BACKUP_DIR)) {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+}
+
+function createDatabaseBackup() {
+    try {
+        db.exec('PRAGMA wal_checkpoint(TRUNCATE);');
+        const now = new Date();
+        const stamp = now.toISOString().replace(/[:.]/g, '-');
+        const backupFile = path.join(BACKUP_DIR, `bangphli_secure_backup_${stamp}.db`);
+        fs.copyFileSync(DB_PATH, backupFile);
+        console.log(`[BACKUP] Automated SQLite backup created: ${backupFile}`);
+
+        // Rotate backups older than 14 days
+        const files = fs.readdirSync(BACKUP_DIR);
+        const cutoff = Date.now() - (14 * 24 * 60 * 60 * 1000);
+        for (const f of files) {
+            const fPath = path.join(BACKUP_DIR, f);
+            try {
+                const stat = fs.statSync(fPath);
+                if (stat.mtimeMs < cutoff) {
+                    fs.unlinkSync(fPath);
+                    console.log(`[BACKUP] Rotated old backup: ${f}`);
+                }
+            } catch (_) {}
+        }
+        return backupFile;
+    } catch (e) {
+        console.error('[BACKUP ERROR]', e);
+        return null;
+    }
+}
+
 // Enable WAL mode & foreign keys
 db.exec('PRAGMA journal_mode = WAL;');
 db.exec('PRAGMA foreign_keys = ON;');
@@ -769,9 +804,60 @@ const server = http.createServer(async (req, res) => {
                 recordAuditLog(null, 'NEWPOLICE_USER_DATA_ACCESS', 'CYBER_INVEST', user.badge_no, `เจ้าหน้าที่ newpolice (${user.rank_name} สังกัด ${user.agency}) เข้าถึงข้อมูลสืบสวน สภ.บางพลี ผ่าน Token ที่ได้รับอนุมัติ`, req);
                 
                 const sampleCases = [
-                    { caseNo: 'T6911087326', victim: 'ฐิติพร ชุมชอบ 0655492824', type: 'หลอกลวงซื้อขายสินค้าออนไลน์', amount: 8000, accounts: ['Max card: 320001000578130 (เบญจมาภรณ์ บุญทนา)'] },
-                    { caseNo: 'T6911087748', victim: 'ปริญ มหโชคภัทรวิมล 0918955919', type: 'หลอกลวงซื้อขายสินค้าออนไลน์', amount: 9000, accounts: ['ธกส: 020228673257 (ชฎาพร ป่าเกลือ)'] },
-                    { caseNo: 'T6911087788', victim: 'นายเจริญ บุญวานิบาล 0819958712', type: 'หลอกลวงซื้อขายสินค้าออนไลน์', amount: 1599, accounts: ['Qr Code: xxxxxx7621 (ชินกร กันทะวงษ์)'] }
+                    {
+                        id: 'cyber-c_1',
+                        caseNo: 'T6911087326',
+                        date: '2026-11-08',
+                        victim: 'ฐิติพร ชุมชอบ 0655492824',
+                        type: 'หลอกลวงซื้อขายสินค้าออนไลน์',
+                        amount: 8000,
+                        status: 'พบพงส.',
+                        accounts: [{ bank: 'Max card เลขอ้างอิง', no: '320001000578130', name: 'เบญจมาภรณ์ บุญทนา' }],
+                        investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        summons1: true,
+                        summons1Date: '2026-11-09',
+                        summons2: false,
+                        summons2Date: '',
+                        warrant: false
+                    },
+                    {
+                        id: 'cyber-c_2',
+                        caseNo: 'T6911087748',
+                        date: '2026-11-08',
+                        victim: 'ปริญ มหโชคภัทรวิมล 0918955919',
+                        type: 'หลอกลวงซื้อขายสินค้าออนไลน์',
+                        amount: 9000,
+                        status: 'พบพงส.',
+                        accounts: [{ bank: 'ธกส', no: '020228673257', name: 'ชฎาพร ป่าเกลือ' }],
+                        investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        summons1: true,
+                        summons1Date: '2026-11-09',
+                        summons2: true,
+                        summons2Date: '2026-11-15',
+                        warrant: true
+                    },
+                    {
+                        id: 'cyber-c_3',
+                        caseNo: 'T6911087788',
+                        date: '2026-11-08',
+                        victim: 'นายเจริญ บุญวานิบาล 0819958712',
+                        type: 'หลอกลวงซื้อขายสินค้าออนไลน์',
+                        amount: 1599,
+                        status: 'พบพงส.',
+                        accounts: [
+                            { bank: 'Qr Code: เลขอ้างอิง', no: 'xxxxxx7621', name: 'ชินกร กันทะวงษ์' },
+                            { bank: 'Qr Code: เลขอ้างอิง', no: 'xxxxxx7917', name: 'วีศรุต ไชยสุรินทร์' }
+                        ],
+                        investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        summons1: false,
+                        summons1Date: '',
+                        summons2: false,
+                        summons2Date: '',
+                        warrant: false
+                    }
                 ];
 
                 return sendJson(res, 200, {
@@ -786,6 +872,75 @@ const server = http.createServer(async (req, res) => {
                         agency: user.agency
                     },
                     sample_cases: sampleCases
+                });
+            }
+
+            // 4f. NEWPOLICE: LIST CYBER INVEST CASES (OPEN ENDPOINT MATCHING CYBER INVEST PORTAL)
+            if (pathname === '/api/external/newpolice/cases' && (req.method === 'GET' || req.method === 'HEAD')) {
+                const casesList = [
+                    {
+                        id: 'cyber-c_1',
+                        caseNo: 'T6911087326',
+                        date: '2026-11-08',
+                        victim: 'ฐิติพร ชุมชอบ 0655492824',
+                        type: 'หลอกลวงซื้อขายสินค้าออนไลน์',
+                        amount: 8000,
+                        status: 'พบพงส.',
+                        accounts: [{ bank: 'Max card เลขอ้างอิง', no: '320001000578130', name: 'เบญจมาภรณ์ บุญทนา' }],
+                        investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        summons1: true,
+                        summons1Date: '2026-11-09',
+                        summons2: false,
+                        summons2Date: '',
+                        warrant: false
+                    },
+                    {
+                        id: 'cyber-c_2',
+                        caseNo: 'T6911087748',
+                        date: '2026-11-08',
+                        victim: 'ปริญ มหโชคภัทรวิมล 0918955919',
+                        type: 'หลอกลวงซื้อขายสินค้าออนไลน์',
+                        amount: 9000,
+                        status: 'พบพงส.',
+                        accounts: [{ bank: 'ธกส', no: '020228673257', name: 'ชฎาพร ป่าเกลือ' }],
+                        investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        summons1: true,
+                        summons1Date: '2026-11-09',
+                        summons2: true,
+                        summons2Date: '2026-11-15',
+                        warrant: true
+                    },
+                    {
+                        id: 'cyber-c_3',
+                        caseNo: 'T6911087788',
+                        date: '2026-11-08',
+                        victim: 'นายเจริญ บุญวานิบาล 0819958712',
+                        type: 'หลอกลวงซื้อขายสินค้าออนไลน์',
+                        amount: 1599,
+                        status: 'พบพงส.',
+                        accounts: [
+                            { bank: 'Qr Code: เลขอ้างอิง', no: 'xxxxxx7621', name: 'ชินกร กันทะวงษ์' },
+                            { bank: 'Qr Code: เลขอ้างอิง', no: 'xxxxxx7917', name: 'วีศรุต ไชยสุรินทร์' }
+                        ],
+                        investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        summons1: false,
+                        summons1Date: '',
+                        summons2: false,
+                        summons2Date: '',
+                        warrant: false
+                    }
+                ];
+                if (req.method === 'HEAD') {
+                    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                    res.end();
+                    return;
+                }
+                return sendJson(res, 200, {
+                    success: true,
+                    cases: casesList
                 });
             }
 
@@ -1135,6 +1290,52 @@ const server = http.createServer(async (req, res) => {
                 });
             }
 
+            // 18. DATABASE BACKUP: DOWNLOAD SQLITE SNAPSHOT (ADMIN ONLY)
+            if (pathname === '/api/admin/backup-db' && req.method === 'GET') {
+                if (session.role !== 'admin' && !session.position.includes('ผกก')) {
+                    return sendJson(res, 403, { success: false, error: 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถดาวน์โหลดฐานข้อมูลแม่ข่ายได้' });
+                }
+                try {
+                    db.exec('PRAGMA wal_checkpoint(TRUNCATE);');
+                    const stat = fs.statSync(DB_PATH);
+                    const now = new Date();
+                    const stamp = `${now.getFullYear() + 543}_${String(now.getMonth() + 1).padStart(2, '0')}_${String(now.getDate()).padStart(2, '0')}`;
+                    const filename = `bangphli_secure_backup_${stamp}.db`;
+                    res.writeHead(200, {
+                        'Content-Type': 'application/octet-stream',
+                        'Content-Length': stat.size,
+                        'Content-Disposition': `attachment; filename="${filename}"`
+                    });
+                    fs.createReadStream(DB_PATH).pipe(res);
+                    recordAuditLog(session, 'DOWNLOAD_DATABASE_BACKUP', 'DATABASE', 'ALL', 'ดาวน์โหลดไฟล์สำรองฐานข้อมูลแม่ข่าย SQLite (.db)', req);
+                    return;
+                } catch (e) {
+                    return sendJson(res, 500, { success: false, error: 'เกิดข้อผิดพลาดในการสำรองฐานข้อมูล: ' + e.message });
+                }
+            }
+
+            // 19. DATABASE BACKUP: LIST BACKUPS (ADMIN ONLY)
+            if (pathname === '/api/admin/backups' && req.method === 'GET') {
+                if (session.role !== 'admin' && !session.position.includes('ผกก')) {
+                    return sendJson(res, 403, { success: false, error: 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้น' });
+                }
+                try {
+                    const files = fs.readdirSync(BACKUP_DIR).map(f => {
+                        const stat = fs.statSync(path.join(BACKUP_DIR, f));
+                        return {
+                            filename: f,
+                            sizeBytes: stat.size,
+                            sizeKb: Math.round(stat.size / 1024),
+                            createdAt: stat.mtime.toISOString()
+                        };
+                    });
+                    files.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    return sendJson(res, 200, { success: true, backups: files });
+                } catch (e) {
+                    return sendJson(res, 500, { success: false, error: e.message });
+                }
+            }
+
             return sendJson(res, 404, { success: false, error: 'API endpoint not found' });
         }
 
@@ -1189,4 +1390,8 @@ server.listen(PORT, () => {
     console.log(`📋 Audit Logging: Enabled (PDPA & Police Code Compliant)`);
     console.log(`🚀 Running at: http://localhost:${PORT}`);
     console.log('======================================================================');
+
+    // Automated database snapshot on startup and every 24 hours
+    setTimeout(createDatabaseBackup, 3000);
+    setInterval(createDatabaseBackup, 24 * 60 * 60 * 1000);
 });
