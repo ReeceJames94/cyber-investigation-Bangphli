@@ -79,11 +79,45 @@
                     <div>
                         <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">สถานะคดี</label>
                         <select id="mCaseStatus" class="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none">
-                            <option value="นัดหมาย">นัดหมาย</option>
                             <option value="พบพงส.">พบพงส.</option>
+                            <option value="นัดหมาย">นัดหมาย</option>
+                            <option value="warroom">🚨 warroom (เคส Warroom / เฝ้าระวังพิเศษ)</option>
                             <option value="สิ้นสุด">สิ้นสุด</option>
                             <option value="ติดต่อไม่ได้">ติดต่อไม่ได้</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- ระดับความเร่งด่วน / หน่วยงานติดตาม (3 ลำดับความเร่งด่วน) -->
+                <div class="p-3.5 bg-slate-50 dark:bg-slate-950 border border-amber-500/30 rounded-2xl shadow-sm space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="block font-bold text-amber-500 dark:text-amber-400 text-xs flex items-center gap-1.5">
+                            <span>⚡</span> <span>ระดับความสำคัญ / คดีเร่งด่วน (ติ๊กเลือกได้ตามลำดับความเร่งด่วน):</span>
+                        </label>
+                        <span class="text-[10px] text-slate-400 font-medium">เรียงความด่วน: 1 ➔ 2 ➔ 3</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                        <label class="flex items-start gap-2 p-2.5 bg-white dark:bg-slate-900 border border-purple-500/40 hover:border-purple-500 rounded-xl cursor-pointer transition shadow-sm group">
+                            <input type="checkbox" id="mUrgencyPhaJorWor" value="ภจว.ติดตาม" class="mt-0.5 w-4 h-4 rounded text-purple-600 focus:ring-purple-500">
+                            <div>
+                                <span class="font-bold text-purple-600 dark:text-purple-400 group-hover:underline">1. ภจว.ติดตาม</span>
+                                <div class="text-[10px] text-slate-400">ภ.จว.สมุทรปราการ ติดตาม</div>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-2 p-2.5 bg-white dark:bg-slate-900 border border-amber-500/40 hover:border-amber-500 rounded-xl cursor-pointer transition shadow-sm group">
+                            <input type="checkbox" id="mUrgencyPha1" value="คดีเร่งด่วน ภ.1ติดตาม" class="mt-0.5 w-4 h-4 rounded text-amber-500 focus:ring-amber-500">
+                            <div>
+                                <span class="font-bold text-amber-600 dark:text-amber-400 group-hover:underline">2. คดีเร่งด่วน ภ.1ติดตาม</span>
+                                <div class="text-[10px] text-slate-400">ตำรวจภูธรภาค 1 ติดตาม</div>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-2 p-2.5 bg-white dark:bg-slate-900 border border-rose-500/40 hover:border-rose-500 rounded-xl cursor-pointer transition shadow-sm group">
+                            <input type="checkbox" id="mUrgencyTorRor" value="ตร.ติดตาม" class="mt-0.5 w-4 h-4 rounded text-rose-600 focus:ring-rose-500">
+                            <div>
+                                <span class="font-bold text-rose-600 dark:text-rose-400 group-hover:underline">3. ตร.ติดตาม</span>
+                                <div class="text-[10px] text-slate-400">สำนักงานตำรวจแห่งชาติ ติดตาม</div>
+                            </div>
+                        </label>
                     </div>
                 </div>
 
@@ -915,12 +949,37 @@
                         </div>
                     </div>
 
+                    <!-- Quick Summary & Filter Pills for Urgency & Warroom -->
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <button type="button" onclick="setCaseFilterQuick('all')" id="qfCase-all" class="qf-case-btn px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-amber-500 text-slate-950 shadow-sm">
+                            <span>📁 ทั้งหมด</span> <span id="qfCount-all" class="px-1.5 py-0.2 rounded-full bg-slate-950/20 text-[10px]">0</span>
+                        </button>
+                        <button type="button" onclick="setCaseFilterQuick('warroom')" id="qfCase-warroom" class="qf-case-btn px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30">
+                            <span class="animate-pulse">🚨</span> <span>Warroom</span> <span id="qfCount-warroom" class="px-1.5 py-0.2 rounded-full bg-rose-500/20 text-[10px]">0</span>
+                        </button>
+                        <button type="button" onclick="setCaseFilterQuick('ภจว.ติดตาม')" id="qfCase-ภจว" class="qf-case-btn px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-purple-500/15 hover:bg-purple-500/25 text-purple-400 border border-purple-500/30">
+                            <span>⚡</span> <span>1. ภจว.ติดตาม</span> <span id="qfCount-ภจว" class="px-1.5 py-0.2 rounded-full bg-purple-500/20 text-[10px]">0</span>
+                        </button>
+                        <button type="button" onclick="setCaseFilterQuick('คดีเร่งด่วน ภ.1ติดตาม')" id="qfCase-ภ1" class="qf-case-btn px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30">
+                            <span>🔥</span> <span>2. คดีเร่งด่วน ภ.1ติดตาม</span> <span id="qfCount-ภ1" class="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-[10px]">0</span>
+                        </button>
+                        <button type="button" onclick="setCaseFilterQuick('ตร.ติดตาม')" id="qfCase-ตร" class="qf-case-btn px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30">
+                            <span>🛡️</span> <span>3. ตร.ติดตาม</span> <span id="qfCount-ตร" class="px-1.5 py-0.2 rounded-full bg-red-500/20 text-[10px]">0</span>
+                        </button>
+
+                        <div class="ml-auto flex items-center gap-2">
+                            <button type="button" onclick="toggleCaseUrgencySort()" id="btnToggleCaseSort" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-amber-300 border border-amber-500/30 hover:bg-slate-700 transition flex items-center gap-1.5 shadow-sm" title="สลับการเรียงลำดับ">
+                                <span>⚡</span> <span id="sortCaseLabel">เรียง: ลำดับความเร่งด่วน (1➔2➔3)</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Filter Bar -->
                     <div class="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 grid grid-cols-1 md:grid-cols-12 gap-3 items-center shadow-sm">
-                        <div class="md:col-span-4">
+                        <div class="md:col-span-3">
                             <input type="text" id="caseFilterInput" oninput="renderCases()" placeholder="🔍 ค้นหาเลขเคส, ผู้เสียหาย, กลโกง, บัญชี, พงส., สืบสวน..." class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none">
                         </div>
-                        <div class="md:col-span-5 flex items-center gap-1.5">
+                        <div class="md:col-span-4 flex items-center gap-1.5">
                             <div class="relative flex-1 flex items-center">
                                 <input type="text" id="caseFilterDateStart" oninput="renderCases()" placeholder="วว/ดด/ปปปป" class="w-full px-2.5 py-2.5 pr-7 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:outline-none focus:ring-1 focus:ring-amber-500">
                                 <input type="date" id="filterStartPicker" class="absolute right-1 opacity-0 w-6 h-6 cursor-pointer" onchange="syncDate('filterStartPicker', 'caseFilterDateStart'); renderCases();">
@@ -941,14 +1000,22 @@
                                 <option value="">สถานะทั้งหมด</option>
                                 <option value="พบพงส.">พบพงส.</option>
                                 <option value="นัดหมาย">นัดหมาย</option>
+                                <option value="warroom">🚨 warroom</option>
                                 <option value="สิ้นสุด">สิ้นสุด</option>
+                                <option value="ติดต่อไม่ได้">ติดต่อไม่ได้</option>
                             </select>
                         </div>
-                        <div class="md:col-span-2 flex gap-1.5">
-                            <button type="button" onclick="renderCases()" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2.5 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1.5 transition">
-                                <span>🔍</span> ค้นหา
-                            </button>
-                            <button type="button" onclick="resetFilters()" title="ล้างค่า" class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition">
+                        <div class="md:col-span-2">
+                            <select id="caseUrgencyFilter" onchange="renderCases()" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:outline-none">
+                                <option value="">ความเร่งด่วนทั้งหมด</option>
+                                <option value="ภจว.ติดตาม">⚡ 1. ภจว.ติดตาม</option>
+                                <option value="คดีเร่งด่วน ภ.1ติดตาม">🔥 2. คดีเร่งด่วน ภ.1ติดตาม</option>
+                                <option value="ตร.ติดตาม">🛡️ 3. ตร.ติดตาม</option>
+                                <option value="any_urgent">🚨 คดีเร่งด่วนทุกระดับ (1-3)</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-1 flex gap-1.5">
+                            <button type="button" onclick="resetFilters()" title="ล้างตัวกรองทั้งหมด" class="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 py-2.5 rounded-2xl text-xs font-semibold transition flex items-center justify-center">
                                 🔄
                             </button>
                         </div>
@@ -964,6 +1031,7 @@
                                         <th class="p-4">ผู้เสียหาย & เบอร์ติดต่อ</th>
                                         <th class="p-4">ประเภทกลโกง</th>
                                         <th class="p-4">มูลค่า / สถานะคดี</th>
+                                        <th class="p-4">ความเร่งด่วน / ติดตาม</th>
                                         <th class="p-4">บัญชีคนร้าย</th>
                                         <th class="p-4">พงส. / สืบสวนผู้รับผิดชอบ</th>
                                         <th class="p-4">หมายเรียก/หมายจับ</th>
@@ -2968,7 +3036,8 @@
                 victim: 'ฐิติพร ชุมชอบ 0655492824',
                 type: 'หลอกลวงซื้อขายสินค้าออนไลน์',
                 amount: 8000,
-                status: 'พบพงส.',
+                status: 'warroom',
+                urgency: ['ภจว.ติดตาม'],
                 accounts: ['Max card เลขอ้างอิง: 320001000578130 (เบญจมาภรณ์ บุญทนา)'],
                 investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
                 detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
@@ -2989,6 +3058,7 @@
                 type: 'หลอกลวงซื้อขายสินค้าออนไลน์',
                 amount: 9000,
                 status: 'พบพงส.',
+                urgency: ['คดีเร่งด่วน ภ.1ติดตาม'],
                 accounts: ['ธกส: 020228673257 (ชฎาพร ป่าเกลือ)'],
                 investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
                 detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
@@ -3009,6 +3079,7 @@
                 type: 'หลอกลวงซื้อขายสินค้าออนไลน์',
                 amount: 1599,
                 status: 'พบพงส.',
+                urgency: ['ตร.ติดตาม'],
                 accounts: [
                     'Qr Code: เลขอ้างอิง xxxxxx7621 (ชินกร กันทะวงษ์)',
                     'Qr Code: เลขอ้างอิง xxxxxx7917 (วีศรุต ไชยสุรินทร์)'
@@ -3023,8 +3094,40 @@
                 summons2Pdf: '',
                 warrant: false,
                 warrantPdf: ''
+            },
+            {
+                id: '4',
+                caseNo: 'T6911088120',
+                date: '08/11/2569',
+                victim: 'ศศิธร วงศ์เจริญ 0891234567',
+                type: 'หลอกให้โอนเงินเพื่อทำงาน',
+                amount: 35000,
+                status: 'นัดหมาย',
+                urgency: [],
+                accounts: ['กสิกรไทย: 0451239988 (สมรักษ์ คำสิงห์พาณิชย์)'],
+                investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                summons1: false,
+                summons1Date: '',
+                summons1Pdf: '',
+                summons2: false,
+                summons2Date: '',
+                summons2Pdf: '',
+                warrant: false,
+                warrantPdf: ''
             }
         ];
+
+        // คืนค่าข้อมูลคดีจาก LocalStorage (ถ้ามี)
+        try {
+            const savedCyberCases = localStorage.getItem('cyber_cases');
+            if (savedCyberCases) {
+                const parsedCases = JSON.parse(savedCyberCases);
+                if (Array.isArray(parsedCases) && parsedCases.length > 0) {
+                    mockCases = parsedCases;
+                }
+            }
+        } catch(e) {}
 
         // Exact dataset matching user uploaded screenshot for Warrants
         const defaultWarrantsData = [
@@ -3288,6 +3391,9 @@
                 document.getElementById('mCaseVictim').value = '';
                 document.getElementById('mCaseAmount').value = '';
                 document.getElementById('mCaseStatus').value = 'พบพงส.';
+                if (document.getElementById('mUrgencyPhaJorWor')) document.getElementById('mUrgencyPhaJorWor').checked = false;
+                if (document.getElementById('mUrgencyPha1')) document.getElementById('mUrgencyPha1').checked = false;
+                if (document.getElementById('mUrgencyTorRor')) document.getElementById('mUrgencyTorRor').checked = false;
                 document.getElementById('mSummons1Check').checked = false;
                 document.getElementById('mSummons1Date').value = '';
                 document.getElementById('mSummons1File').value = '';
@@ -3540,6 +3646,11 @@
             document.getElementById('mCaseAmount').value = c.amount || 0;
             document.getElementById('mCaseStatus').value = c.status || 'พบพงส.';
 
+            const urgList = Array.isArray(c.urgency) ? c.urgency : (c.urgency ? [c.urgency] : []);
+            if (document.getElementById('mUrgencyPhaJorWor')) document.getElementById('mUrgencyPhaJorWor').checked = urgList.includes('ภจว.ติดตาม');
+            if (document.getElementById('mUrgencyPha1')) document.getElementById('mUrgencyPha1').checked = urgList.includes('คดีเร่งด่วน ภ.1ติดตาม');
+            if (document.getElementById('mUrgencyTorRor')) document.getElementById('mUrgencyTorRor').checked = urgList.includes('ตร.ติดตาม');
+
             populateOfficerSelects(c.investigator || '', c.detective || '');
 
             const box = document.getElementById('mAccountsBox');
@@ -3585,6 +3696,11 @@
             const wCheck = document.getElementById('mWarrantCheck').checked;
             const wFile = document.getElementById('mWarrantFile').files[0];
 
+            const urgList = [];
+            if (document.getElementById('mUrgencyPhaJorWor')?.checked) urgList.push('ภจว.ติดตาม');
+            if (document.getElementById('mUrgencyPha1')?.checked) urgList.push('คดีเร่งด่วน ภ.1ติดตาม');
+            if (document.getElementById('mUrgencyTorRor')?.checked) urgList.push('ตร.ติดตาม');
+
             const caseData = {
                 caseNo: document.getElementById('mCaseNo').value.trim(),
                 date: document.getElementById('mCaseDate').value.trim(),
@@ -3592,6 +3708,7 @@
                 type: document.getElementById('mCaseType').value,
                 amount: Number(document.getElementById('mCaseAmount').value) || 0,
                 status: document.getElementById('mCaseStatus').value,
+                urgency: urgList,
                 accounts: accounts.length ? accounts : ['ไม่มีข้อมูลบัญชี'],
                 investigator: document.getElementById('mCaseInvestigator').value,
                 detective: document.getElementById('mCaseDetective').value,
@@ -3631,6 +3748,7 @@
                 toast(`บันทึกคดีใหม่ (${newCase.caseNo}) เรียบร้อยแล้ว!`);
             }
 
+            try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(err) {}
             closeModal('addCaseModal');
             renderCases();
         }
@@ -3642,22 +3760,130 @@
                 if (field === 'warrant' && checked) {
                     syncCaseToWarrants(item);
                 }
+                try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(err) {}
                 renderCases();
                 toast(`อัปเดตสถานะ ${field} เคส ${item.caseNo}`);
             }
         }
 
+        // ตัวแปรควบคุมการกรองด่วนและการเรียงลำดับความเร่งด่วน
+        let currentCaseQuickFilter = 'all';
+        let caseSortByUrgency = true;
+
+        function setCaseFilterQuick(filterKey) {
+            currentCaseQuickFilter = filterKey;
+            document.querySelectorAll('.qf-case-btn').forEach(btn => {
+                btn.className = 'qf-case-btn px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700';
+            });
+            const activeMap = {
+                'all': { id: 'qfCase-all', cls: 'bg-amber-500 text-slate-950 shadow-sm' },
+                'warroom': { id: 'qfCase-warroom', cls: 'bg-rose-600 text-white shadow-sm shadow-rose-500/50' },
+                'ภจว.ติดตาม': { id: 'qfCase-ภจว', cls: 'bg-purple-600 text-white shadow-sm' },
+                'คดีเร่งด่วน ภ.1ติดตาม': { id: 'qfCase-ภ1', cls: 'bg-amber-500 text-slate-950 shadow-sm' },
+                'ตร.ติดตาม': { id: 'qfCase-ตร', cls: 'bg-red-600 text-white shadow-sm' }
+            };
+            const target = activeMap[filterKey];
+            if (target) {
+                const el = document.getElementById(target.id);
+                if (el) el.className = `qf-case-btn px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 ${target.cls}`;
+            }
+            renderCases();
+        }
+
+        function toggleCaseUrgencySort() {
+            caseSortByUrgency = !caseSortByUrgency;
+            const label = document.getElementById('sortCaseLabel');
+            if (label) {
+                label.textContent = caseSortByUrgency ? 'เรียง: ลำดับความเร่งด่วน (1➔2➔3)' : 'เรียง: วันที่ล่าสุด';
+            }
+            renderCases();
+            toast(caseSortByUrgency ? '⚡ เรียงลำดับตามความเร่งด่วน: 1.ภจว. ➔ 2.ภ.1 ➔ 3.ตร.' : '📅 เรียงลำดับตามวันที่');
+        }
+
+        function toggleCaseUrgencyDirect(caseId, urgencyName) {
+            const item = mockCases.find(c => c.id === caseId);
+            if (!item) return;
+            if (!Array.isArray(item.urgency)) item.urgency = item.urgency ? [item.urgency] : [];
+            const idx = item.urgency.indexOf(urgencyName);
+            if (idx >= 0) {
+                item.urgency.splice(idx, 1);
+                toast(`ยกเลิก ${urgencyName} คดี ${item.caseNo}`);
+            } else {
+                item.urgency.push(urgencyName);
+                toast(`✅ กำหนด ${urgencyName} คดี ${item.caseNo}`);
+            }
+            try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(e) {}
+            renderCases();
+        }
+
+        function toggleCaseWarroomDirect(caseId) {
+            const item = mockCases.find(c => c.id === caseId);
+            if (!item) return;
+            if (item.status === 'warroom') {
+                item.status = 'พบพงส.';
+                toast(`นำคดี ${item.caseNo} ออกจากสถานะ Warroom`);
+            } else {
+                item.status = 'warroom';
+                toast(`🚨 นำคดี ${item.caseNo} เข้าสู่สถานะ Warroom เรียบร้อยแล้ว`);
+            }
+            try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(e) {}
+            renderCases();
+        }
+
+        function getCaseUrgencyScore(c) {
+            const urg = Array.isArray(c.urgency) ? c.urgency : (c.urgency ? [c.urgency] : []);
+            // เรียงลำดับความเร่งด่วนตามข้อกำหนด:
+            // 1. ภจว.ติดตาม
+            // 2. คดีเร่งด่วน ภ.1ติดตาม
+            // 3. ตร.ติดตาม
+            if (urg.includes('ภจว.ติดตาม')) return 1;
+            if (urg.includes('คดีเร่งด่วน ภ.1ติดตาม')) return 2;
+            if (urg.includes('ตร.ติดตาม')) return 3;
+            if (c.status === 'warroom') return 4;
+            return 99;
+        }
+
         function renderCases() {
             const tbody = document.getElementById('casesTbody');
-            const q = (document.getElementById('caseFilterInput').value || '').toLowerCase();
-            const s = document.getElementById('caseStatusFilter').value;
-            const startVal = parseDateToComparable(document.getElementById('caseFilterDateStart').value);
-            const endVal = parseDateToComparable(document.getElementById('caseFilterDateEnd').value);
+            const q = (document.getElementById('caseFilterInput')?.value || '').toLowerCase();
+            const s = document.getElementById('caseStatusFilter')?.value || '';
+            const u = document.getElementById('caseUrgencyFilter')?.value || '';
+            const startVal = parseDateToComparable(document.getElementById('caseFilterDateStart')?.value);
+            const endVal = parseDateToComparable(document.getElementById('caseFilterDateEnd')?.value);
+
+            // อัปเดตตัวเลขเคาน์เตอร์ Quick Filter Pills
+            const elAll = document.getElementById('qfCount-all');
+            const elWarroom = document.getElementById('qfCount-warroom');
+            const elPhaJorWor = document.getElementById('qfCount-ภจว');
+            const elPha1 = document.getElementById('qfCount-ภ1');
+            const elTorRor = document.getElementById('qfCount-ตร');
+
+            if (elAll) elAll.textContent = mockCases.length;
+            if (elWarroom) elWarroom.textContent = mockCases.filter(c => c.status === 'warroom').length;
+            if (elPhaJorWor) elPhaJorWor.textContent = mockCases.filter(c => (Array.isArray(c.urgency) ? c.urgency : [c.urgency]).includes('ภจว.ติดตาม')).length;
+            if (elPha1) elPha1.textContent = mockCases.filter(c => (Array.isArray(c.urgency) ? c.urgency : [c.urgency]).includes('คดีเร่งด่วน ภ.1ติดตาม')).length;
+            if (elTorRor) elTorRor.textContent = mockCases.filter(c => (Array.isArray(c.urgency) ? c.urgency : [c.urgency]).includes('ตร.ติดตาม')).length;
 
             const filtered = mockCases.filter(c => {
+                const urgList = Array.isArray(c.urgency) ? c.urgency : (c.urgency ? [c.urgency] : []);
+                
+                // กรองตามสถานะ
                 if (s && c.status !== s) return false;
+
+                // กรองตามความเร่งด่วนจาก dropdown
+                if (u === 'any_urgent' && urgList.length === 0) return false;
+                if (u && u !== 'any_urgent' && !urgList.includes(u)) return false;
+
+                // กรองตาม Quick Filter Pill
+                if (currentCaseQuickFilter === 'warroom' && c.status !== 'warroom') return false;
+                if (currentCaseQuickFilter !== 'all' && currentCaseQuickFilter !== 'warroom' && !urgList.includes(currentCaseQuickFilter)) return false;
+
+                // ค้นหาข้อความ
                 const accStr = (c.accounts || []).join(' ');
-                if (q && !`${c.caseNo} ${c.victim} ${c.type} ${accStr} ${c.investigator} ${c.detective}`.toLowerCase().includes(q)) return false;
+                const urgStr = urgList.join(' ');
+                if (q && !`${c.caseNo} ${c.victim} ${c.type} ${c.status} ${urgStr} ${accStr} ${c.investigator} ${c.detective}`.toLowerCase().includes(q)) return false;
+
+                // กรองตามช่วงวันที่
                 if (startVal || endVal) {
                     const cDateVal = parseDateToComparable(c.date);
                     if (cDateVal) {
@@ -3668,8 +3894,24 @@
                 return true;
             });
 
+            // จัดเรียงลำดับ: เรียงตามความเร่งด่วน (1.ภจว. ➔ 2.ภ.1 ➔ 3.ตร.) หรือตามวันที่
+            if (caseSortByUrgency) {
+                filtered.sort((a, b) => {
+                    const scoreA = getCaseUrgencyScore(a);
+                    const scoreB = getCaseUrgencyScore(b);
+                    if (scoreA !== scoreB) return scoreA - scoreB;
+                    return (b.id || 0) - (a.id || 0);
+                });
+            }
+
             tbody.innerHTML = '';
             filtered.forEach(c => {
+                const urgList = Array.isArray(c.urgency) ? c.urgency : (c.urgency ? [c.urgency] : []);
+                const isPhaJorWor = urgList.includes('ภจว.ติดตาม');
+                const isPha1 = urgList.includes('คดีเร่งด่วน ภ.1ติดตาม');
+                const isTorRor = urgList.includes('ตร.ติดตาม');
+                const isWarroom = c.status === 'warroom';
+
                 const accountsHtml = (c.accounts || []).map(acc => `
                     <div class="text-[11px] bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 mb-1 text-slate-700 dark:text-slate-300 font-sans">
                         ${acc}
@@ -3701,7 +3943,49 @@
                         <td class="p-4 align-top text-slate-600 dark:text-slate-300">${c.type}</td>
                         <td class="p-4 align-top">
                             <div class="font-bold text-rose-500 dark:text-rose-400 mb-1">${c.amount.toLocaleString()} ฿</div>
-                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-300/40">${c.status}</span>
+                            <div class="flex flex-col gap-1 items-start">
+                                ${isWarroom ? `
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-rose-600 text-white shadow-sm shadow-rose-500/50 animate-pulse border border-rose-400">
+                                        <span>🚨</span> <span>WARROOM</span>
+                                    </span>
+                                ` : `
+                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-300/40">${c.status || 'พบพงส.'}</span>
+                                `}
+                                <button type="button" onclick="toggleCaseWarroomDirect('${c.id}')" class="text-[9px] font-semibold px-2 py-0.5 rounded-lg border transition ${isWarroom ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 hover:bg-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:text-rose-400'}" title="คลิกสลับสถานะ Warroom">
+                                    ${isWarroom ? '✓ ถอดจาก Warroom' : '+ เข้า Warroom'}
+                                </button>
+                            </div>
+                        </td>
+                        <td class="p-4 align-top">
+                            <div class="space-y-1">
+                                ${isPhaJorWor ? `
+                                    <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30">
+                                        <span>⚡</span> <span>1. ภจว.ติดตาม</span>
+                                    </div>
+                                ` : ''}
+                                ${isPha1 ? `
+                                    <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                                        <span>🔥</span> <span>2. คดีเร่งด่วน ภ.1ติดตาม</span>
+                                    </div>
+                                ` : ''}
+                                ${isTorRor ? `
+                                    <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                                        <span>🛡️</span> <span>3. ตร.ติดตาม</span>
+                                    </div>
+                                ` : ''}
+                                ${(!isPhaJorWor && !isPha1 && !isTorRor) ? `<span class="text-[11px] text-slate-400">ปกติ (ไม่มีหน่วยติดตาม)</span>` : ''}
+                            </div>
+                            <div class="pt-1.5 flex flex-wrap gap-1">
+                                <button type="button" onclick="toggleCaseUrgencyDirect('${c.id}', 'ภจว.ติดตาม')" class="px-1.5 py-0.5 rounded text-[9px] font-semibold border transition ${isPhaJorWor ? 'bg-purple-600 text-white border-purple-600 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:text-purple-400'}" title="คลิกติ๊ก 1.ภจว.ติดตาม">
+                                    ${isPhaJorWor ? '☑' : '☐'} 1.ภจว.
+                                </button>
+                                <button type="button" onclick="toggleCaseUrgencyDirect('${c.id}', 'คดีเร่งด่วน ภ.1ติดตาม')" class="px-1.5 py-0.5 rounded text-[9px] font-semibold border transition ${isPha1 ? 'bg-amber-600 text-white border-amber-600 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:text-amber-400'}" title="คลิกติ๊ก 2.คดีเร่งด่วน ภ.1ติดตาม">
+                                    ${isPha1 ? '☑' : '☐'} 2.ภ.1
+                                </button>
+                                <button type="button" onclick="toggleCaseUrgencyDirect('${c.id}', 'ตร.ติดตาม')" class="px-1.5 py-0.5 rounded text-[9px] font-semibold border transition ${isTorRor ? 'bg-rose-600 text-white border-rose-600 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:text-rose-400'}" title="คลิกติ๊ก 3.ตร.ติดตาม">
+                                    ${isTorRor ? '☑' : '☐'} 3.ตร.
+                                </button>
+                            </div>
                         </td>
                         <td class="p-4 align-top max-w-xs">${accountsHtml}</td>
                         <td class="p-4 align-top space-y-1 text-[11px]">
@@ -3750,8 +4034,15 @@
         function resetFilters() {
             document.getElementById('caseFilterInput').value = '';
             document.getElementById('caseStatusFilter').value = '';
+            if (document.getElementById('caseUrgencyFilter')) document.getElementById('caseUrgencyFilter').value = '';
             document.getElementById('caseFilterDateStart').value = '';
             document.getElementById('caseFilterDateEnd').value = '';
+            currentCaseQuickFilter = 'all';
+            document.querySelectorAll('.qf-case-btn').forEach(btn => {
+                btn.className = 'qf-case-btn px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700';
+            });
+            const qfAll = document.getElementById('qfCase-all');
+            if (qfAll) qfAll.className = 'qf-case-btn px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-amber-500 text-slate-950 shadow-sm';
             renderCases();
             toast('ล้างตัวกรองทั้งหมดแล้ว');
         }
@@ -4357,6 +4648,20 @@
                 const sueber = c.detective || c.officerInvestigate || '-';
                 const statusStr = c.status || '-';
 
+                // Urgency & Status
+                const urgList = Array.isArray(c.urgency) ? c.urgency : (c.urgency ? [c.urgency] : []);
+                const isWarroom = c.status === 'warroom';
+                const statusBadge = isWarroom
+                    ? `<span style="background: #dc2626; color: #fff; font-weight: bold; padding: 2px 6px; border-radius: 4px; display: inline-block;">🚨 WARROOM</span>`
+                    : `<span style="background: #e2e8f0; color: #1e293b; padding: 2px 6px; border-radius: 4px; display: inline-block;">${statusStr}</span>`;
+
+                const urgBadges = urgList.map(u => {
+                    if (u.includes('ภจว')) return `<div style="font-size: 10px; color: #7e22ce; font-weight: bold; margin-top: 2px;">⚡ 1. ภจว.ติดตาม</div>`;
+                    if (u.includes('ภ.1')) return `<div style="font-size: 10px; color: #b45309; font-weight: bold; margin-top: 2px;">🔥 2. คดีเร่งด่วน ภ.1</div>`;
+                    if (u.includes('ตร.')) return `<div style="font-size: 10px; color: #b91c1c; font-weight: bold; margin-top: 2px;">🛡️ 3. ตร.ติดตาม</div>`;
+                    return `<div style="font-size: 10px; color: #475569; margin-top: 2px;">${u}</div>`;
+                }).join('');
+
                 return `
                     <tr>
                         <td style="text-align: center;">${idx + 1}</td>
@@ -4366,7 +4671,7 @@
                         <td style="text-align: right; font-weight: bold; color: #b91c1c;">${damageStr}</td>
                         <td style="font-size: 11px;">${accHtml}</td>
                         <td style="font-size: 11px;">พงส.: ${pongs}<br>สืบสวน: ${sueber}</td>
-                        <td style="text-align: center; font-size: 11px;"><span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">${statusStr}</span></td>
+                        <td style="text-align: center; font-size: 11px;">${statusBadge}${urgBadges}</td>
                     </tr>
                 `;
             }).join('');

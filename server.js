@@ -196,6 +196,22 @@ CREATE TABLE IF NOT EXISTS newpolice_user_requests (
     reviewed_at TEXT,
     notes TEXT
 );
+
+CREATE TABLE IF NOT EXISTS victim_inquiries (
+    id TEXT PRIMARY KEY,
+    case_number TEXT,
+    victim_name TEXT,
+    victim_phone TEXT,
+    victim_id_card TEXT,
+    victim_address TEXT,
+    category_id TEXT,
+    category_title TEXT,
+    answers_json TEXT,
+    qa_list_json TEXT,
+    evidence_note TEXT,
+    submitted_at TEXT,
+    status TEXT DEFAULT 'submitted'
+);
 `);
 
 // Pre-seed police users if empty
@@ -941,6 +957,78 @@ const server = http.createServer(async (req, res) => {
                 return sendJson(res, 200, {
                     success: true,
                     cases: casesList
+                });
+            }
+
+            // 4e. VICTIM PRE-FILL INQUIRY SUBMISSIONS (NEWPOLICE INTEGRATION)
+            if (pathname === '/api/external/newpolice/victim-inquiry' && req.method === 'POST') {
+                const body = await readBody(req);
+                const id = body.id || ('sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7));
+                const caseNumber = body.caseNumber || '';
+                const victimName = body.victimName || '';
+                const victimPhone = body.victimPhone || '';
+                const victimIdCard = body.victimIdCard || '';
+                const victimAddress = body.victimAddress || '';
+                const categoryId = body.categoryId || 'cat_1';
+                const categoryTitle = body.categoryTitle || '';
+                const answersJson = JSON.stringify(body.answers || {});
+                const qaListJson = JSON.stringify(body.qaList || []);
+                const evidenceNote = body.evidenceNote || '';
+                const submittedAt = body.submittedAt || new Date().toISOString();
+
+                try {
+                    db.prepare(`
+                        INSERT OR REPLACE INTO victim_inquiries (
+                            id, case_number, victim_name, victim_phone, victim_id_card, victim_address,
+                            category_id, category_title, answers_json, qa_list_json, evidence_note, submitted_at, status
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted');
+                    `).run(
+                        id, caseNumber, victimName, victimPhone, victimIdCard, victimAddress,
+                        categoryId, categoryTitle, answersJson, qaListJson, evidenceNote, submittedAt
+                    );
+
+                    return sendJson(res, 200, {
+                        success: true,
+                        message: 'บันทึกคำตอบผู้เสียหายเข้าสู่ระบบเรียบร้อยแล้ว',
+                        id,
+                        submittedAt
+                    });
+                } catch (dbErr) {
+                    return sendJson(res, 500, { success: false, error: 'Database error: ' + dbErr.message });
+                }
+            }
+
+            if (pathname === '/api/external/newpolice/victim-inquiries' && req.method === 'GET') {
+                const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+                const caseNo = urlObj.searchParams.get('caseNo') || '';
+
+                let rows = [];
+                if (caseNo) {
+                    rows = db.prepare('SELECT * FROM victim_inquiries WHERE LOWER(TRIM(case_number)) = LOWER(TRIM(?)) ORDER BY submitted_at DESC;').all(caseNo);
+                } else {
+                    rows = db.prepare('SELECT * FROM victim_inquiries ORDER BY submitted_at DESC LIMIT 50;').all();
+                }
+
+                const submissions = rows.map(r => ({
+                    id: r.id,
+                    caseNumber: r.case_number,
+                    victimName: r.victim_name,
+                    victimPhone: r.victim_phone,
+                    victimIdCard: r.victim_id_card,
+                    victimAddress: r.victim_address,
+                    categoryId: r.category_id,
+                    categoryTitle: r.category_title,
+                    answers: JSON.parse(r.answers_json || '{}'),
+                    qaList: JSON.parse(r.qa_list_json || '[]'),
+                    evidenceNote: r.evidence_note,
+                    submittedAt: r.submitted_at,
+                    status: r.status
+                }));
+
+                return sendJson(res, 200, {
+                    success: true,
+                    count: submissions.length,
+                    submissions
                 });
             }
 
