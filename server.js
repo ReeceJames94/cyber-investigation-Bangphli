@@ -640,6 +640,25 @@ const server = http.createServer(async (req, res) => {
                 });
             }
 
+            // 4c-2. NEWPOLICE: SIMULATE ADMIN APPROVE (TEST & DEMO)
+            if (pathname === '/api/external/newpolice/simulate-approve' && req.method === 'POST') {
+                const body = await readBody(req);
+                const code = body.requestCode || 'REQ-NP-1794889712288';
+                const accessToken = body.accessToken || ('NP-ACC-' + crypto.randomBytes(8).toString('hex').toUpperCase());
+                const now = new Date().toISOString();
+                db.prepare(`
+                    UPDATE newpolice_user_requests
+                    SET status = 'approved',
+                        access_token = ?,
+                        reviewed_by = 'NP-10001',
+                        reviewed_by_name = 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล',
+                        reviewed_at = ?
+                    WHERE request_code = ?;
+                `).run(accessToken, now, code);
+                const updated = db.prepare("SELECT * FROM newpolice_user_requests WHERE request_code = ?;").get(code);
+                return sendJson(res, 200, { success: true, request: updated, accessToken });
+            }
+
             // 4d. NEWPOLICE: USER SUBMITS ACCESS REQUEST TO CYBER INVEST
             if (pathname === '/api/external/newpolice/request-access' && req.method === 'POST') {
                 const body = await readBody(req);
