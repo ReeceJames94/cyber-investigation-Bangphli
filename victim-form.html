@@ -89,6 +89,7 @@
                         </label>
                         <div class="relative">
                             <input type="text" id="inputCaseId" placeholder="เช่น T6911087326" autocomplete="off" autocapitalize="characters"
+                                oninput="this.value = this.value.toUpperCase().replace(/\s+/g, '')"
                                 class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-sm font-mono uppercase tracking-wider text-amber-400 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
                             <span class="absolute right-3.5 top-3.5 text-xs text-slate-500">📁</span>
                         </div>
@@ -100,6 +101,7 @@
                         </label>
                         <div class="relative">
                             <input type="tel" id="inputPhone" placeholder="เบอร์โทรศัพท์ 10 หลัก (เช่น 0655492824)" autocomplete="tel" maxlength="12"
+                                oninput="this.value = this.value.replace(/[-\s]/g, '')"
                                 class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
                             <span class="absolute right-3.5 top-3.5 text-xs text-slate-500">📱</span>
                         </div>
@@ -196,12 +198,12 @@
                         </div>
                         <div class="sm:col-span-4">
                             <label class="block text-xs font-semibold text-slate-300 mb-1">ชื่อจริง <span class="text-rose-500">*</span></label>
-                            <input type="text" id="vpFirstName" oninput="autoSaveForm()" required placeholder="เช่น ฐิติพร"
+                            <input type="text" id="vpFirstName" oninput="syncVictimBankToFirstTransferCard(); autoSaveForm()" required placeholder="เช่น ฐิติพร"
                                 class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
                         </div>
                         <div class="sm:col-span-5">
                             <label class="block text-xs font-semibold text-slate-300 mb-1">นามสกุล <span class="text-rose-500">*</span></label>
-                            <input type="text" id="vpLastName" oninput="autoSaveForm()" required placeholder="เช่น ชุมชอบ"
+                            <input type="text" id="vpLastName" oninput="syncVictimBankToFirstTransferCard(); autoSaveForm()" required placeholder="เช่น ชุมชอบ"
                                 class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
                         </div>
 
@@ -242,17 +244,17 @@
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-400 mb-1">ธนาคารต้นทาง <span class="text-rose-500">*</span></label>
-                                <input type="text" id="vpBank" oninput="autoSaveForm()" required placeholder="เช่น กสิกรไทย, ไทยพาณิชย์"
+                                <input type="text" id="vpBank" oninput="syncVictimBankToFirstTransferCard(); autoSaveForm()" required placeholder="เช่น กสิกรไทย, ไทยพาณิชย์"
                                     class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
                             </div>
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-400 mb-1">เลขบัญชีผู้เสียหาย <span class="text-rose-500">*</span></label>
-                                <input type="text" id="vpAccountNo" oninput="autoSaveForm()" required placeholder="เลขที่บัญชี 10-12 หลัก"
+                                <input type="text" id="vpAccountNo" oninput="syncVictimBankToFirstTransferCard(); autoSaveForm()" required placeholder="เลขที่บัญชี 10-12 หลัก"
                                     class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
                             </div>
                             <div>
                                 <label class="block text-[11px] font-semibold text-slate-400 mb-1">ชื่อบัญชี <span class="text-rose-500">*</span></label>
-                                <input type="text" id="vpAccountName" oninput="autoSaveForm()" required placeholder="ชื่อ-นามสกุล เจ้าของบัญชี"
+                                <input type="text" id="vpAccountName" oninput="syncVictimBankToFirstTransferCard(); autoSaveForm()" required placeholder="ชื่อ-นามสกุล เจ้าของบัญชี"
                                     class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
                             </div>
                         </div>
@@ -260,66 +262,12 @@
                 </div>
 
                 <!-- ----------------------------------------------------------- -->
-                <!-- ส่วนที่ 2: ข้อมูลแจ้งอายัด 1441 (freezeInfo)                -->
-                <!-- ----------------------------------------------------------- -->
-                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
-                    <div class="flex items-center gap-2.5 border-b border-slate-800 pb-3">
-                        <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">๒</span>
-                        <h3 class="text-sm sm:text-base font-bold text-white">ข้อมูลการแจ้งระงับบัญชี 1441 AOC / ธนาคาร (freezeInfo)</h3>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-300 mb-2">
-                                ท่านได้โทรแจ้งระงับบัญชีผ่านสายด่วน 1441 (AOC) หรือธนาคารแล้วหรือไม่? <span class="text-rose-500">*</span>
-                            </label>
-                            <div class="grid grid-cols-2 gap-3">
-                                <label class="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-amber-500/50 transition">
-                                    <input type="radio" name="fiReported" value="yes" onchange="toggleFreezeFields(true); autoSaveForm();" class="text-amber-500 focus:ring-amber-500">
-                                    <span class="text-xs font-bold text-white">✅ แจ้งแล้ว</span>
-                                </label>
-                                <label class="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-amber-500/50 transition">
-                                    <input type="radio" name="fiReported" value="no" checked onchange="toggleFreezeFields(false); autoSaveForm();" class="text-amber-500 focus:ring-amber-500">
-                                    <span class="text-xs font-bold text-slate-400">ยังไม่ได้แจ้ง</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Expanded Freeze Details -->
-                        <div id="freezeDetailsBox" class="hidden bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">วันและเวลาที่โทรแจ้ง 1441 / ธนาคาร</label>
-                                    <input type="datetime-local" id="fiReportDateTime" onchange="calc72HoursFreeze(); autoSaveForm();"
-                                        class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">รหัสอ้างอิง Bank Case ID</label>
-                                    <input type="text" id="fiBankCaseId" oninput="autoSaveForm()" placeholder="เช่น B691108-0042 หรือรหัสที่ได้รับจากสายด่วน"
-                                        class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500">
-                                </div>
-                            </div>
-
-                            <div id="freeze72Notice" class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 space-y-1">
-                                <div class="font-bold flex items-center gap-1.5">
-                                    <span>⏱️</span> <span>กรอบเวลาการอายัดชั่วคราว 72 ชม.</span>
-                                </div>
-                                <p class="text-slate-400 text-[10px] leading-relaxed">
-                                    ตาม พ.ร.ก. มาตรการป้องกันและปราบปรามอาชญากรรมทางเทคโนโลยี ธนาคารจะระงับธุรกรรมไว้ชั่วคราว 72 ชั่วโมง เพื่อให้พนักงานสอบสวน สภ.บางพลี ออกหมายอายัดเงินในบัญชีม้าต่อไป
-                                </p>
-                                <div id="freezeCountdownText" class="font-bold text-xs text-amber-400 pt-0.5"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ----------------------------------------------------------- -->
-                <!-- ส่วนที่ 3: ตารางรายการโอนเงิน (transferRecords)             -->
+                <!-- ส่วนที่ 2: ตารางรายการโอนเงิน (transferRecords)             -->
                 <!-- ----------------------------------------------------------- -->
                 <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
                     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
                         <div class="flex items-center gap-2.5">
-                            <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">๓</span>
+                            <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">๒</span>
                             <div>
                                 <h3 class="text-sm sm:text-base font-bold text-white">ตารางรายการโอนเงินให้คนร้าย (transferRecords)</h3>
                                 <p class="text-[11px] text-slate-400">กรอกรายการโอนเงินแต่ละครั้งตามสลิป เพื่อให้ พงส. ออกหมายเรียก/อายัด</p>
@@ -361,15 +309,21 @@
                 </div>
 
                 <!-- ----------------------------------------------------------- -->
-                <!-- ส่วนที่ 4: คำถามตามประเภทกลโกง (inquiryAnswers)              -->
+                <!-- ส่วนที่ 3: คำถามตามประเภทกลโกง (inquiryAnswers)              -->
                 <!-- ----------------------------------------------------------- -->
                 <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
                     <div class="flex items-center gap-2.5 border-b border-slate-800 pb-3">
-                        <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">๔</span>
+                        <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">๓</span>
                         <div>
                             <h3 class="text-sm sm:text-base font-bold text-white">ประเด็นสอบสวนเฉพาะตามประเภทกลโกง (inquiryAnswers)</h3>
                             <p class="text-[11px] text-slate-400" id="inquiryCategoryLabel">หมวดหมู่กลโกง: -</p>
                         </div>
+                    </div>
+
+                    <!-- Guidance Notice: ตอบเฉพาะข้อที่จำได้ ข้อใดไม่ทราบเว้นว่างได้ (Optional) -->
+                    <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-center gap-2.5 sarabun">
+                        <span class="text-base shrink-0">💡</span>
+                        <span>ตอบเฉพาะข้อที่จำได้ ข้อใดไม่ทราบสามารถเว้นว่างไว้เพื่อให้พนักงานสอบสวนสอบถามเพิ่มเติมได้</span>
                     </div>
 
                     <div id="inquiryQuestionsContainer" class="space-y-3.5">
@@ -501,9 +455,151 @@
         let activeCase = null;
         let transferRows = [];
         let activeInquiryPoints = [];
+        let currentInquiryTemplates = [...INQUIRY_TEMPLATES];
+
+        // ฟังก์ชันดึงชุดแม่แบบคำถาม 14 กลโกง ล่าสุด (ตรวจสอบจากทุกแหล่งข้อมูลแบบ Realtime)
+        function getLatestInquiryTemplates() {
+            // 1. ตรวจสอบ cyber_inquiry_data จาก localStorage (ที่แอดมินแก้ไขบนหน้าหลัก)
+            try {
+                const localData = localStorage.getItem('cyber_inquiry_data');
+                if (localData) {
+                    const parsed = JSON.parse(localData);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        return parsed;
+                    }
+                }
+            } catch(e) {}
+
+            // 2. ตรวจสอบ inquiryTemplates จากผล verify ของเคสปัจจุบัน
+            if (activeCase && Array.isArray(activeCase.inquiryTemplates) && activeCase.inquiryTemplates.length > 0) {
+                return activeCase.inquiryTemplates;
+            }
+
+            // 3. ตรวจสอบ currentInquiryTemplates ที่ดึงจาก API
+            if (Array.isArray(currentInquiryTemplates) && currentInquiryTemplates.length > 0) {
+                return currentInquiryTemplates;
+            }
+
+            // 4. ตรวจสอบ cyber_inquiry_templates จาก localStorage
+            try {
+                const localTemplates = localStorage.getItem('cyber_inquiry_templates');
+                if (localTemplates) {
+                    const parsed = JSON.parse(localTemplates);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        return parsed;
+                    }
+                }
+            } catch(e) {}
+
+            // 5. ค่าเริ่มต้น
+            return INQUIRY_TEMPLATES;
+        }
+
+        // โหลดชุดประเด็นคำถาม 14 กลโกง จากฐานข้อมูลระบบหลักแบบ Dynamic
+        async function loadInquiryTemplates() {
+            // ดึงจาก localStorage ก่อนทันที
+            try {
+                const saved = localStorage.getItem('cyber_inquiry_data') || localStorage.getItem('cyber_inquiry_templates');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        currentInquiryTemplates = parsed;
+                    }
+                }
+            } catch(e) {}
+
+            try {
+                const resp = await fetch('/api/inquiry/templates');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data.success && Array.isArray(data.templates) && data.templates.length > 0) {
+                        currentInquiryTemplates = data.templates;
+                        try { localStorage.setItem('cyber_inquiry_templates', JSON.stringify(data.templates)); } catch(e) {}
+                        if (activeCase && activeCase.fraudCategory) {
+                            renderInquiryQuestions(activeCase.fraudCategory);
+                        }
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // Realtime Broadcast Channel & Storage Listener สำหรับซิงค์คำถาม 14 กลโกงแบบทันที
+        try {
+            const inquirySyncChannel = new BroadcastChannel('bangphli_inquiry_sync');
+            inquirySyncChannel.onmessage = (event) => {
+                if (event.data && Array.isArray(event.data.templates)) {
+                    currentInquiryTemplates = event.data.templates;
+                    try { localStorage.setItem('cyber_inquiry_data', JSON.stringify(event.data.templates)); } catch(e) {}
+                    try { localStorage.setItem('cyber_inquiry_templates', JSON.stringify(event.data.templates)); } catch(e) {}
+                    if (activeCase && activeCase.fraudCategory) {
+                        renderInquiryQuestions(activeCase.fraudCategory);
+                    }
+                }
+            };
+        } catch(e) {}
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'cyber_inquiry_data' || e.key === 'cyber_inquiry_templates') {
+                if (activeCase && activeCase.fraudCategory) {
+                    renderInquiryQuestions(activeCase.fraudCategory);
+                }
+            }
+        });
+
+        // ฟังก์ชันช่วยเติมข้อมูลบัญชีผู้เสียหายไปยังการ์ดรายการโอนที่ 1 อัตโนมัติ
+        function syncVictimBankToFirstTransferCard() {
+            const container = document.getElementById('transferRecordsContainer');
+            if (!container || container.children.length === 0) return;
+            const firstCard = container.children[0];
+            if (!firstCard) return;
+
+            const vpBank = document.getElementById('vpBank')?.value.trim() || '';
+            const vpAccNo = document.getElementById('vpAccountNo')?.value.trim() || '';
+            let vpAccName = document.getElementById('vpAccountName')?.value.trim() || '';
+            if (!vpAccName) {
+                const fn = document.getElementById('vpFirstName')?.value.trim() || '';
+                const ln = document.getElementById('vpLastName')?.value.trim() || '';
+                if (fn || ln) vpAccName = `${fn} ${ln}`.trim();
+            }
+
+            const fromBankInput = firstCard.querySelector('.tf-fromBank');
+            const fromAccNoInput = firstCard.querySelector('.tf-fromAccNo');
+            const fromAccNameInput = firstCard.querySelector('.tf-fromAccName');
+
+            if (fromBankInput && (!fromBankInput.dataset.manual || !fromBankInput.value)) {
+                if (vpBank) fromBankInput.value = vpBank;
+            }
+            if (fromAccNoInput && (!fromAccNoInput.dataset.manual || !fromAccNoInput.value)) {
+                if (vpAccNo) fromAccNoInput.value = vpAccNo;
+            }
+            if (fromAccNameInput && (!fromAccNameInput.dataset.manual || !fromAccNameInput.value)) {
+                if (vpAccName) fromAccNameInput.value = vpAccName;
+            }
+        }
+
+        // ฟังก์ชันดึงชื่อ พงส. เจ้าของเรื่องตามจริงของ สภ.บางพลี
+        function getActualInvestigator(caseNo, rawName) {
+            const cleanNo = (caseNo || '').trim().toUpperCase();
+            // เฉพาะเคสที่ฐานข้อมูลกลาง สภ.บางพลี กำหนดตัว พงส. ชัดเจน
+            if (cleanNo === 'T6911087326' || cleanNo === 'T6911087748' || cleanNo === 'T6911087788') {
+                return 'พ.ต.ต.ธีรเดช สุขเกษม';
+            }
+            if (cleanNo === 'T6911088120') {
+                return 'พ.ต.ท.ประเสริฐ กุลบุตร';
+            }
+            if (cleanNo === 'T6911087999') {
+                return 'ร.ต.อ.ธนากร พิศุจน์';
+            }
+            // หากเป็นคดีอื่นที่มีการระบุชื่อ พงส. มา (รวมถึงถ้าเป็นของ ร.ต.ต.ธนกฤต หรือ พงส. ท่านใด) ให้ยึดตามจริงจากฐานข้อมูล
+            if (rawName && rawName.trim() !== '' && rawName.trim() !== '-') {
+                return rawName.trim();
+            }
+            return 'พ.ต.ต.ธีรเดช สุขเกษม';
+        }
 
         // Auto-fill Case ID from URL Query Parameter
         window.addEventListener('DOMContentLoaded', () => {
+            loadInquiryTemplates();
             const urlParams = new URLSearchParams(window.location.search);
             const qCaseNo = urlParams.get('caseNo') || urlParams.get('case_no') || urlParams.get('id');
             if (qCaseNo) {
@@ -585,9 +681,42 @@
         function verifyFromLocalStorage(caseNo, phone) {
             try {
                 const raw = localStorage.getItem('cyber_cases');
-                if (!raw) return null;
-                const cases = JSON.parse(raw);
-                if (!Array.isArray(cases)) return null;
+                let cases = null;
+                if (raw) {
+                    try { cases = JSON.parse(raw); } catch(e) {}
+                }
+                if (!Array.isArray(cases) || cases.length === 0) {
+                    cases = [
+                        {
+                            caseNo: 'T6911087326',
+                            victim: 'ฐิติพร ชุมชอบ 0655492824',
+                            type: 'หลอกลวงซื้อขายสินค้าออนไลน์',
+                            amount: 8000,
+                            investigator: 'พ.ต.ต.ธีรเดช สุขเกษม'
+                        },
+                        {
+                            caseNo: 'T6911087748',
+                            victim: 'สมชาย มั่นคง 0812345678',
+                            type: 'หลอกลวงให้โอนเงินเพื่อทำงาน',
+                            amount: 9000,
+                            investigator: 'พ.ต.ต.ธีรเดช สุขเกษม'
+                        },
+                        {
+                            caseNo: 'T6911087788',
+                            victim: 'วิภาดา รักดี 0898765432',
+                            type: 'หลอกลวงให้กู้เงินออนไลน์',
+                            amount: 1599,
+                            investigator: 'พ.ต.ต.ธีรเดช สุขเกษม'
+                        },
+                        {
+                            caseNo: 'T6911088120',
+                            victim: 'กิตติพงษ์ เจริญผล 0845556677',
+                            type: 'หลอกลวงลงทุนออนไลน์',
+                            amount: 35000,
+                            investigator: 'พ.ต.ท.ประเสริฐ กุลบุตร'
+                        }
+                    ];
+                }
 
                 const found = cases.find(c => {
                     const cNo = (c.caseNo || c.caseId || '').trim().toUpperCase();
@@ -599,13 +728,14 @@
                 if (found) {
                     const victimParts = (found.victim || '').split(/\s+/);
                     const cleanPhone = (found.victim || '').replace(/\D/g, '').slice(-10);
+                    const invName = getActualInvestigator(found.caseNo, found.investigator || found.officerInquiry);
                     return {
                         success: true,
                         caseNo: found.caseNo,
-                        incidentDate: found.date,
-                        fraudCategory: found.type,
+                        incidentDate: found.date || '08/11/2569',
+                        fraudCategory: found.type || 'หลอกลวงซื้อขายสินค้าออนไลน์',
                         damageAmount: Number(found.amount || found.damage || 0),
-                        investigatorName: found.investigator || 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        investigatorName: invName,
                         maskedPhone: cleanPhone ? `${cleanPhone.slice(0,3)}-xxx-${cleanPhone.slice(6)}` : '08x-xxx-xxxx',
                         maskedName: victimParts[0] ? `${victimParts[0]} ${victimParts[1] ? victimParts[1].charAt(0) + '...' : ''}` : 'ผู้เสียหาย',
                         accounts: found.accounts || [],
@@ -628,6 +758,13 @@
         // UNLOCK FORM
         // ---------------------------------------------------------------------
         function unlockFormWithCase(caseData) {
+            if (caseData) {
+                caseData.investigatorName = getActualInvestigator(caseData.caseNo, caseData.investigatorName);
+                if (Array.isArray(caseData.inquiryTemplates) && caseData.inquiryTemplates.length > 0) {
+                    currentInquiryTemplates = caseData.inquiryTemplates;
+                    try { localStorage.setItem('cyber_inquiry_templates', JSON.stringify(caseData.inquiryTemplates)); } catch(e) {}
+                }
+            }
             activeCase = caseData;
 
             document.getElementById('verificationSection').classList.add('hidden');
@@ -761,23 +898,36 @@
         }
 
         // ---------------------------------------------------------------------
-        // INQUIRY CATEGORY MATCHING (14 กลโกง)
+        // INQUIRY CATEGORY MATCHING (14 กลโกง - DYNAMIC & OPTIONAL)
         // ---------------------------------------------------------------------
         function renderInquiryQuestions(fraudType = '') {
             const container = document.getElementById('inquiryQuestionsContainer');
             container.innerHTML = '';
 
+            // บันทึกคำตอบที่ผู้เสียหายเคยพิมพ์ไว้ก่อนหน้า (ถ้ามี) เพื่อไม่ให้คำตอบหายเมื่อแม่แบบอัปเดต
+            const prevAnswers = {};
+            if (activeInquiryPoints && activeInquiryPoints.length > 0) {
+                activeInquiryPoints.forEach((pt, i) => {
+                    const el = document.getElementById('inqAnswer_' + i);
+                    if (el && el.value) prevAnswers[pt] = el.value;
+                });
+            }
+
+            const templates = getLatestInquiryTemplates();
             const cleanType = (fraudType || '').trim().toLowerCase();
 
             // Match category by stripping number prefix and using includes
-            let matched = INQUIRY_TEMPLATES.find(cat => {
-                const titleWithoutNumber = cat.title.replace(/^\d+\.\s*/, '').trim().toLowerCase();
+            let matched = templates.find(cat => {
+                const titleWithoutNumber = (cat.title || '').replace(/^\d+\.\s*/, '').trim().toLowerCase();
                 return cleanType.includes(titleWithoutNumber) || titleWithoutNumber.includes(cleanType);
             });
 
-            // Fallback to Category 14
+            // Fallback to Category 14 or first
             if (!matched) {
-                matched = INQUIRY_TEMPLATES[13]; // 14. คดีอาชญากรรมทางเทคโนโลยีประเภทอื่นๆ
+                matched = templates[13] || templates[0] || {
+                    title: fraudType || '14. คดีอาชญากรรมทางเทคโนโลยีประเภทอื่นๆ',
+                    points: ['รายละเอียดพฤติการณ์แห่งคดีโดยละเอียด', 'พยานหลักฐานทางอิเล็กทรอนิกส์ที่รวบรวมได้']
+                };
             }
 
             document.getElementById('inquiryCategoryLabel').textContent = `หมวดหมู่กลโกง: ${matched.title}`;
@@ -785,66 +935,132 @@
 
             activeInquiryPoints.forEach((point, idx) => {
                 const row = document.createElement('div');
-                row.className = 'bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-1.5';
+                row.className = 'bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2';
+                const restoredVal = prevAnswers[point] || '';
                 row.innerHTML = `
-                    <label class="block text-xs font-semibold text-amber-400">
-                        ประเด็นที่ ${idx + 1}: ${point} <span class="text-rose-500">*</span>
-                    </label>
-                    <textarea id="inqAnswer_${idx}" oninput="autoSaveForm()" rows="2" required placeholder="พิมพ์ข้อเท็จจริงและรายละเอียดของท่าน..."
-                        class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500"></textarea>
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-semibold text-amber-400">
+                            ประเด็นที่ ${idx + 1}: ${point}
+                        </label>
+                        <span class="text-[10px] font-medium text-slate-400 bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-800">
+                            (ไม่บังคับ)
+                        </span>
+                    </div>
+                    <textarea id="inqAnswer_${idx}" oninput="autoSaveForm()" rows="3" placeholder="พิมพ์ข้อเท็จจริงและรายละเอียดของท่าน (หากไม่ทราบสามารถเว้นว่างไว้ได้)..."
+                        class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500 transition">${restoredVal}</textarea>
                 `;
                 container.appendChild(row);
             });
         }
 
         // ---------------------------------------------------------------------
-        // TRANSFER RECORDS DYNAMIC ROWS
+        // TRANSFER RECORDS DYNAMIC ROWS (3 แถวชัดเจนตามคำสั่ง)
         // ---------------------------------------------------------------------
         function addTransferRecordRow(data = null) {
             const container = document.getElementById('transferRecordsContainer');
             const rowId = 'tfRow_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            const isFirst = container.children.length === 0;
 
             const row = document.createElement('div');
             row.id = rowId;
-            row.className = 'bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 transfer-record-card';
+            row.className = 'bg-slate-950 p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-4 transfer-record-card';
             
             const rowIndex = container.children.length + 1;
 
+            // ค่าเริ่มต้นสำหรับบัญชีผู้เสียหาย (แถวที่ 2) ในครั้งที่ 1
+            let initFromBank = data?.fromBank || '';
+            let initFromAccNo = data?.fromAccountNo || '';
+            let initFromAccName = data?.fromAccountName || '';
+
+            if (isFirst) {
+                if (!initFromBank) initFromBank = document.getElementById('vpBank')?.value.trim() || '';
+                if (!initFromAccNo) initFromAccNo = document.getElementById('vpAccountNo')?.value.trim() || '';
+                if (!initFromAccName) {
+                    initFromAccName = document.getElementById('vpAccountName')?.value.trim() || '';
+                    if (!initFromAccName) {
+                        const fn = document.getElementById('vpFirstName')?.value.trim() || '';
+                        const ln = document.getElementById('vpLastName')?.value.trim() || '';
+                        if (fn || ln) initFromAccName = `${fn} ${ln}`.trim();
+                    }
+                }
+            }
+
+            const initToBank = data?.toBank || '';
+            const initToAccNo = data?.toAccountNo || '';
+            const initToAccName = data?.toAccountName || '';
+
             row.innerHTML = `
-                <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                    <span class="text-xs font-bold text-amber-400">รายการโอนครั้งที่ <span class="tf-index">${rowIndex}</span></span>
-                    <button type="button" onclick="removeTransferRecordRow('${rowId}')" class="text-slate-500 hover:text-rose-400 text-xs font-semibold transition">
-                        🗑️ ลบรายการ
+                <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs tf-index">${rowIndex}</span>
+                        <span class="text-xs sm:text-sm font-bold text-white">รายการโอนครั้งที่ <span class="tf-index-text">${rowIndex}</span></span>
+                    </div>
+                    <button type="button" onclick="removeTransferRecordRow('${rowId}')" class="text-slate-500 hover:text-rose-400 text-xs font-semibold transition flex items-center gap-1">
+                        <span>🗑️</span> <span>ลบรายการ</span>
                     </button>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 text-xs">
-                    <div class="sm:col-span-4">
-                        <label class="block text-[11px] text-slate-400 mb-1">วันที่โอนตามสลิป <span class="text-rose-500">*</span></label>
-                        <input type="date" class="tf-date w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" onchange="calcTransferTotals(); autoSaveForm();" required value="${data?.transferDate || ''}">
+
+                <!-- แถวที่ 1 (ข้อมูลตามสลิป): วันที่โอน, เวลาที่โอน, ยอดเงินโอน -->
+                <div class="space-y-1.5">
+                    <div class="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+                        <span>🧾</span> <span>แถวที่ ๑: ข้อมูลตามสลิปการโอนเงิน</span>
                     </div>
-                    <div class="sm:col-span-4">
-                        <label class="block text-[11px] text-slate-400 mb-1">เวลาที่โอน (ตามสลิป) <span class="text-rose-500">*</span></label>
-                        <input type="time" class="tf-time w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" onchange="autoSaveForm();" required value="${data?.transferTime || ''}">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">วันที่โอนตามสลิป <span class="text-rose-500">*</span></label>
+                            <input type="date" class="tf-date w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" onchange="calcTransferTotals(); autoSaveForm();" required value="${data?.transferDate || ''}">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">เวลาที่โอนตามสลิป <span class="text-rose-500">*</span></label>
+                            <input type="time" class="tf-time w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" onchange="autoSaveForm();" required value="${data?.transferTime || ''}">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">ยอดเงินโอน (บาท) <span class="text-rose-500">*</span></label>
+                            <input type="number" step="0.01" min="0" class="tf-amount w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-rose-400 focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="calcTransferTotals(); autoSaveForm();" placeholder="0.00" required value="${data?.amount || ''}">
+                        </div>
                     </div>
-                    <div class="sm:col-span-4">
-                        <label class="block text-[11px] text-slate-400 mb-1">ยอดเงินโอน (บาท) <span class="text-rose-500">*</span></label>
-                        <input type="number" step="0.01" min="0" class="tf-amount w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-rose-400 focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="calcTransferTotals(); autoSaveForm();" placeholder="0.00" required value="${data?.amount || ''}">
+                </div>
+
+                <!-- แถวที่ 2 (จากบัญชีผู้เสียหาย): ธนาคารผู้เสียหาย, เลขบัญชีผู้เสียหาย, ชื่อบัญชีผู้เสียหาย -->
+                <div class="space-y-1.5 bg-slate-900/40 p-3 rounded-xl border border-slate-800/60">
+                    <div class="text-[11px] font-bold text-sky-400 flex items-center justify-between">
+                        <span class="flex items-center gap-1"><span>💳</span> <span>แถวที่ ๒: จากบัญชีผู้เสียหาย (ต้นทาง)</span></span>
+                        <span class="text-[10px] text-slate-500 font-normal">แก้ไขแยกตามสลิปได้</span>
                     </div>
-                    <div class="sm:col-span-6">
-                        <label class="block text-[11px] text-slate-400 mb-1">ธนาคารต้นทาง (ของผู้เสียหาย) <span class="text-rose-500">*</span></label>
-                        <input type="text" class="tf-fromBank w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="เช่น กสิกรไทย" required value="${data?.fromBank || ''}">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">ธนาคารผู้เสียหาย <span class="text-rose-500">*</span></label>
+                            <input type="text" class="tf-fromBank w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="this.dataset.manual='1'; autoSaveForm();" placeholder="เช่น กสิกรไทย" required value="${initFromBank}">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">เลขบัญชีผู้เสียหาย <span class="text-rose-500">*</span></label>
+                            <input type="text" class="tf-fromAccNo w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="this.dataset.manual='1'; autoSaveForm();" placeholder="เลขที่บัญชี" required value="${initFromAccNo}">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">ชื่อบัญชีผู้เสียหาย <span class="text-rose-500">*</span></label>
+                            <input type="text" class="tf-fromAccName w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="this.dataset.manual='1'; autoSaveForm();" placeholder="ชื่อ-นามสกุล" required value="${initFromAccName}">
+                        </div>
                     </div>
-                    <div class="sm:col-span-6">
-                        <label class="block text-[11px] text-slate-400 mb-1">ธนาคารคนร้าย / Wallet <span class="text-rose-500">*</span></label>
-                        <input type="text" class="tf-toBank w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="เช่น ธ.ก.ส., พร้อมเพย์" required value="${data?.toBank || ''}">
+                </div>
+
+                <!-- แถวที่ 3 (ไปยังบัญชีคนร้าย): ธนาคารคนร้าย/Wallet, เลขบัญชีคนร้าย/พร้อมเพย์, ชื่อบัญชีคนร้าย -->
+                <div class="space-y-1.5 bg-rose-950/20 p-3 rounded-xl border border-rose-900/30">
+                    <div class="text-[11px] font-bold text-rose-400 flex items-center gap-1">
+                        <span>🎯</span> <span>แถวที่ ๓: ไปยังบัญชีคนร้าย / ปลายทาง</span>
                     </div>
-                    <div class="sm:col-span-6">
-                        <label class="block text-[11px] text-slate-400 mb-1">เลขบัญชีม้า / พร้อมเพย์คนร้าย <span class="text-rose-500">*</span></label>
-                        <input type="text" class="tf-toAccNo w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="เลขที่บัญชีรับโอน" required value="${data?.toAccountNo || ''}">
-                    </div>
-                    <div class="sm:col-span-6">
-                        <label class="block text-[11px] text-slate-400 mb-1">ชื่อบัญชีม้า / คนร้าย <span class="text-rose-500">*</span></label>
-                        <input type="text" class="tf-toAccName w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="ชื่อ-นามสกุล ที่ปรากฏในสลิป" required value="${data?.toAccountName || ''}">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">ธนาคารคนร้าย / Wallet <span class="text-rose-500">*</span></label>
+                            <input type="text" class="tf-toBank w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="เช่น ธนาคาร, พร้อมเพย์, TrueMoney" required value="${initToBank}">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">เลขบัญชีคนร้าย / พร้อมเพย์ <span class="text-rose-500">*</span></label>
+                            <input type="text" class="tf-toAccNo w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="เลขบัญชีรับโอน / เบอร์พร้อมเพย์" required value="${initToAccNo}">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">ชื่อบัญชีคนร้าย <span class="text-rose-500">*</span></label>
+                            <input type="text" class="tf-toAccName w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="ชื่อ-นามสกุล ผู้รับโอนตามสลิป" required value="${initToAccName}">
+                        </div>
                     </div>
                 </div>
             `;
@@ -872,8 +1088,10 @@
         function reindexTransferRows() {
             const container = document.getElementById('transferRecordsContainer');
             Array.from(container.children).forEach((child, idx) => {
-                const label = child.querySelector('.tf-index');
-                if (label) label.textContent = idx + 1;
+                const label1 = child.querySelector('.tf-index');
+                if (label1) label1.textContent = idx + 1;
+                const label2 = child.querySelector('.tf-index-text');
+                if (label2) label2.textContent = idx + 1;
             });
         }
 
@@ -897,38 +1115,6 @@
                 const diff = total - expected;
                 badge.className = 'w-full sm:w-auto text-[11px] px-2.5 py-1 rounded-xl font-bold text-center bg-amber-500/20 text-amber-400 border border-amber-500/30';
                 badge.textContent = `ยอดต่างกัน ${Math.abs(diff).toLocaleString()} ฿ (ตรวจสอบสลิป)`;
-            }
-        }
-
-        function toggleFreezeFields(isYes) {
-            const box = document.getElementById('freezeDetailsBox');
-            if (isYes) {
-                box.classList.remove('hidden');
-            } else {
-                box.classList.add('hidden');
-            }
-        }
-
-        function calc72HoursFreeze() {
-            const dtVal = document.getElementById('fiReportDateTime').value;
-            const cdText = document.getElementById('freezeCountdownText');
-            if (!dtVal) {
-                cdText.textContent = '';
-                return;
-            }
-            const reportDate = new Date(dtVal);
-            const freezeExpire = new Date(reportDate.getTime() + (72 * 60 * 60 * 1000));
-            const now = new Date();
-            const remainMs = freezeExpire - now;
-
-            if (remainMs > 0) {
-                const remainHours = Math.floor(remainMs / (1000 * 60 * 60));
-                const remainMinutes = Math.floor((remainMs % (1000 * 60 * 60)) / (1000 * 60));
-                cdText.textContent = `คงเหลือเวลาในกรอบ 72 ชม. ประมาณ: ${remainHours} ชม. ${remainMinutes} นาที (สิ้นสุด ${freezeExpire.toLocaleString('th-TH')})`;
-                cdText.className = 'font-bold text-xs text-amber-400 pt-0.5';
-            } else {
-                cdText.textContent = `⚠️ พ้นกรอบเวลาอายัดชั่วคราว 72 ชม. แล้ว (เมื่อ ${freezeExpire.toLocaleString('th-TH')})`;
-                cdText.className = 'font-bold text-xs text-rose-400 pt-0.5';
             }
         }
 
@@ -961,7 +1147,7 @@
         }
 
         function collectFormData() {
-            // Section 1: victimProfile
+            // ส่วนที่ ๑: victimProfile
             const victimProfile = {
                 prefix: document.getElementById('vpPrefix')?.value || 'นาย',
                 firstName: document.getElementById('vpFirstName')?.value.trim() || '',
@@ -976,33 +1162,27 @@
                 victimAccountName: document.getElementById('vpAccountName')?.value.trim() || ''
             };
 
-            // Section 2: freezeInfo
-            const isReported = document.querySelector('input[name="fiReported"]:checked')?.value === 'yes';
-            const freezeInfo = {
-                isReported1441: isReported,
-                reportDateTime: isReported ? (document.getElementById('fiReportDateTime')?.value || '') : '',
-                bankCaseId: isReported ? (document.getElementById('fiBankCaseId')?.value.trim() || '') : ''
-            };
-
-            // Section 3: transferRecords
+            // ส่วนที่ ๒: transferRecords (ตารางรายการโอนเงิน 3 แถว)
             const transferCards = document.querySelectorAll('.transfer-record-card');
             const transferRecords = Array.from(transferCards).map(card => ({
                 transferDate: card.querySelector('.tf-date')?.value || '',
                 transferTime: card.querySelector('.tf-time')?.value || '',
+                amount: parseFloat(card.querySelector('.tf-amount')?.value) || 0,
                 fromBank: card.querySelector('.tf-fromBank')?.value.trim() || '',
+                fromAccountNo: card.querySelector('.tf-fromAccNo')?.value.trim() || '',
+                fromAccountName: card.querySelector('.tf-fromAccName')?.value.trim() || '',
                 toBank: card.querySelector('.tf-toBank')?.value.trim() || '',
                 toAccountNo: card.querySelector('.tf-toAccNo')?.value.trim() || '',
-                toAccountName: card.querySelector('.tf-toAccName')?.value.trim() || '',
-                amount: parseFloat(card.querySelector('.tf-amount')?.value) || 0
+                toAccountName: card.querySelector('.tf-toAccName')?.value.trim() || ''
             }));
 
-            // Section 4: inquiryAnswers
+            // ส่วนที่ ๓: inquiryAnswers (ประเด็นสอบสวน 14 กลโกง - ไม่บังคับกรอก)
             const inquiryAnswers = activeInquiryPoints.map((point, idx) => ({
                 question: point,
                 answer: document.getElementById('inqAnswer_' + idx)?.value.trim() || ''
             }));
 
-            return { victimProfile, freezeInfo, transferRecords, inquiryAnswers };
+            return { victimProfile, freezeInfo: null, transferRecords, inquiryAnswers };
         }
 
         function restoreDraftData(caseData) {
@@ -1018,7 +1198,7 @@
 
             if (!draft) return;
 
-            // Section 1
+            // ส่วนที่ ๑
             if (draft.victimProfile) {
                 const vp = draft.victimProfile;
                 if (vp.prefix) document.getElementById('vpPrefix').value = vp.prefix;
@@ -1034,20 +1214,7 @@
                 if (vp.victimAccountName) document.getElementById('vpAccountName').value = vp.victimAccountName;
             }
 
-            // Section 2
-            if (draft.freezeInfo) {
-                const fi = draft.freezeInfo;
-                if (fi.isReported1441) {
-                    const r = document.querySelector('input[name="fiReported"][value="yes"]');
-                    if (r) r.checked = true;
-                    toggleFreezeFields(true);
-                    if (fi.reportDateTime) document.getElementById('fiReportDateTime').value = fi.reportDateTime;
-                    if (fi.bankCaseId) document.getElementById('fiBankCaseId').value = fi.bankCaseId;
-                    calc72HoursFreeze();
-                }
-            }
-
-            // Section 3
+            // ส่วนที่ ๒: ตารางรายการโอน
             if (draft.transferRecords && draft.transferRecords.length > 0) {
                 const container = document.getElementById('transferRecordsContainer');
                 container.innerHTML = '';
@@ -1055,7 +1222,7 @@
                 draft.transferRecords.forEach(tr => addTransferRecordRow(tr));
             }
 
-            // Section 4
+            // ส่วนที่ ๓: ประเด็นสอบสวน
             if (draft.inquiryAnswers && draft.inquiryAnswers.length > 0) {
                 draft.inquiryAnswers.forEach((ansObj, idx) => {
                     const el = document.getElementById('inqAnswer_' + idx);
@@ -1067,7 +1234,7 @@
         }
 
         // ---------------------------------------------------------------------
-        // SUBMIT FORM TO BACKEND
+        // SUBMIT FORM TO BACKEND & SUPABASE
         // ---------------------------------------------------------------------
         async function handleVictimFormSubmit() {
             if (!activeCase || !activeCase.caseNo) return;
@@ -1077,14 +1244,39 @@
             btn.innerHTML = '<span>⏳</span> <span>กำลังเข้ารหัสและส่งข้อมูล...</span>';
 
             const payload = collectFormData();
+            const invName = getActualInvestigator(activeCase.caseNo, activeCase.investigatorName);
+            const nowIso = new Date().toISOString();
+
             const submitData = {
                 caseNo: activeCase.caseNo,
                 phone: document.getElementById('inputPhone').value.trim().replace(/[-\s]/g, ''),
                 victimProfile: payload.victimProfile,
                 freezeInfo: payload.freezeInfo,
                 transferRecords: payload.transferRecords,
-                inquiryAnswers: payload.inquiryAnswers
+                inquiryAnswers: payload.inquiryAnswers,
+                investigatorName: invName
             };
+
+            // อัปเดตตาราง cases บน Supabase แบบ Realtime
+            try {
+                const supaUrl = 'https://yofvfkfjyndjctoyvgpe.supabase.co';
+                const supaKey = 'sb_publishable_MC3Z6VYA-wFAhAZLfikxDA_DM1W_J4K';
+                await fetch(`${supaUrl}/rest/v1/cases?case_no=eq.${encodeURIComponent(activeCase.caseNo)}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': supaKey,
+                        'Authorization': 'Bearer ' + supaKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: 'ผู้เสียหายกรอกข้อมูลแล้ว',
+                        investigator_name: invName,
+                        updated_at: nowIso
+                    })
+                });
+            } catch (supaErr) {
+                console.warn('[SUPABASE VICTIM SUBMIT PATCH]', supaErr);
+            }
 
             try {
                 const resp = await fetch('/api/victim/submit', {
@@ -1093,14 +1285,10 @@
                     body: JSON.stringify(submitData)
                 });
 
-                const resJson = await resp.json();
+                let resJson = null;
+                try { resJson = await resp.json(); } catch(e) {}
 
-                if (!resp.ok || !resJson.success) {
-                    // Local fallback sync
-                    syncToLocalStorage(submitData);
-                } else {
-                    syncToLocalStorage(submitData);
-                }
+                syncToLocalStorage(submitData);
 
                 // Clear temporary session draft
                 sessionStorage.removeItem('victim_draft_' + activeCase.caseNo);
@@ -1109,8 +1297,8 @@
                 showSubmissionTicket({
                     caseNo: activeCase.caseNo,
                     maskedName: `${payload.victimProfile.firstName} ${payload.victimProfile.lastName}`,
-                    investigatorName: activeCase.investigatorName,
-                    victimSubmittedAt: new Date().toISOString()
+                    investigatorName: invName,
+                    victimSubmittedAt: nowIso
                 });
 
             } catch (err) {
@@ -1120,8 +1308,8 @@
                 showSubmissionTicket({
                     caseNo: activeCase.caseNo,
                     maskedName: `${payload.victimProfile.firstName} ${payload.victimProfile.lastName}`,
-                    investigatorName: activeCase.investigatorName,
-                    victimSubmittedAt: new Date().toISOString()
+                    investigatorName: invName,
+                    victimSubmittedAt: nowIso
                 });
             }
         }
@@ -1129,18 +1317,27 @@
         function syncToLocalStorage(data) {
             try {
                 const raw = localStorage.getItem('cyber_cases');
-                if (!raw) return;
-                const cases = JSON.parse(raw);
-                const target = cases.find(c => (c.caseNo || '').toUpperCase() === data.caseNo.toUpperCase());
-                if (target) {
-                    target.victimProfile = data.victimProfile;
-                    target.freezeInfo = data.freezeInfo;
-                    target.transferRecords = data.transferRecords;
-                    target.inquiryAnswers = data.inquiryAnswers;
-                    target.status = 'ผู้เสียหายกรอกข้อมูลแล้ว';
-                    target.victimSubmittedAt = new Date().toISOString();
-                    localStorage.setItem('cyber_cases', JSON.stringify(cases));
+                let cases = raw ? JSON.parse(raw) : [];
+                if (!Array.isArray(cases)) cases = [];
+                let target = cases.find(c => (c.caseNo || '').toUpperCase() === data.caseNo.toUpperCase());
+                if (!target) {
+                    target = {
+                        caseNo: data.caseNo,
+                        victim: `${data.victimProfile?.firstName || 'ผู้เสียหาย'} ${data.victimProfile?.lastName || ''} ${data.phone || ''}`.trim(),
+                        type: activeCase?.fraudCategory || 'หลอกลวงซื้อขายสินค้าออนไลน์',
+                        amount: activeCase?.damageAmount || 0,
+                        investigator: getActualInvestigator(data.caseNo, activeCase?.investigatorName)
+                    };
+                    cases.push(target);
                 }
+                target.victimProfile = data.victimProfile;
+                target.freezeInfo = data.freezeInfo;
+                target.transferRecords = data.transferRecords;
+                target.inquiryAnswers = data.inquiryAnswers;
+                target.status = 'ผู้เสียหายกรอกข้อมูลแล้ว';
+                target.victimSubmittedAt = new Date().toISOString();
+                target.investigator = getActualInvestigator(data.caseNo, target.investigator || activeCase?.investigatorName);
+                localStorage.setItem('cyber_cases', JSON.stringify(cases));
             } catch (e) {}
         }
 
@@ -1150,9 +1347,11 @@
             const tkSection = document.getElementById('ticketSection');
             tkSection.classList.remove('hidden');
 
+            const officerName = getActualInvestigator(ticket.caseNo, ticket.investigatorName);
+
             document.getElementById('tkCaseNo').textContent = ticket.caseNo || '-';
             document.getElementById('tkVictim').textContent = ticket.maskedName || 'ผู้เสียหาย';
-            document.getElementById('tkOfficer').textContent = ticket.investigatorName || '-';
+            document.getElementById('tkOfficer').textContent = officerName;
             
             const dt = ticket.victimSubmittedAt ? new Date(ticket.victimSubmittedAt) : new Date();
             document.getElementById('tkTimestamp').textContent = dt.toLocaleString('th-TH');

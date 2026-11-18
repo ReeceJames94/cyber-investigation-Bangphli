@@ -240,7 +240,51 @@ CREATE TABLE IF NOT EXISTS cyber_details (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS inquiry_templates (
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    points TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 `);
+
+try { db.exec('ALTER TABLE cyber_details ADD COLUMN interrogation_statements TEXT;'); } catch(_) {}
+try { db.exec('ALTER TABLE cyber_details ADD COLUMN statement_variables TEXT;'); } catch(_) {}
+try { db.exec('ALTER TABLE cyber_details ADD COLUMN property_damaged TEXT;'); } catch(_) {}
+try { db.exec('ALTER TABLE cyber_details ADD COLUMN property_recovered TEXT;'); } catch(_) {}
+try { db.exec('ALTER TABLE cyber_details ADD COLUMN property_unrecovered TEXT;'); } catch(_) {}
+
+// Pre-seed inquiry_templates if empty
+try {
+    const countInquiryTemplates = db.prepare('SELECT COUNT(*) as count FROM inquiry_templates;').get().count;
+    if (countInquiryTemplates === 0) {
+        const defaultInquiryTemplates = [
+            { title: '1. หลอกลวงซื้อขายสินค้าออนไลน์', points: ['สั่งซื้อสินค้าผ่านช่องทางใด (Facebook, Line, TikTok, เว็บไซต์)', 'ตรวจสอบหลักฐานการโอนเงิน สลิป และบัญชีปลายทาง', 'วันเวลาที่ตกลงส่งสินค้าและช่องทางการติดต่อที่ถูกบล็อก'] },
+            { title: '2. หลอกให้โอนเงินเพื่อทำงาน (หารายได้พิเศษ)', points: ['พบเห็นโฆษณาชักชวนทำงานจากที่ใด', 'ขั้นตอนการโอนเงินสำรองจ่ายเพื่อรับค่าคอมมิชชั่นแต่ละรอบ', 'ลิงก์เว็บไซต์หรือแอปพลิเคชันที่คนร้ายให้สมัครสมาชิก'] },
+            { title: '3. หลอกให้กู้เงินออนไลน์', points: ['ช่องทางที่ติดต่อขอกู้เงินและวงเงินที่ขอกู้', 'เหตุผลที่คนร้ายอ้างให้โอนเงินค่ามัดจำ ค่าปลดล็อกระบบ หรือค่าแก้ไขเลขบัญชี', 'ตรวจสอบสลิปการโอนเงินทุกครั้งที่โอนให้คนร้าย'] },
+            { title: '4. ข่มขู่ทางโทรศัพท์ (Call Center)', points: ['เบอร์โทรศัพท์ที่โทรเข้ามาแอบอ้างเป็นเจ้าหน้าที่หน่วยงานใด', 'พฤติการณ์การข่มขู่ว่าเกี่ยวข้องกับการฟอกเงินหรือคดียาเสพติด', 'ช่องทางที่ให้แอดไลน์พูดคุยและโอนเงินเพื่อตรวจสอบ'] },
+            { title: '5. หลอกให้ลงทุนผ่านระบบคอมพิวเตอร์', points: ['แพลตฟอร์มหรือแอปพลิเคชันที่ชักชวนให้ลงทุน (หุ้น, คริปโต, ทองคำ)', 'ช่วงแรกได้รับผลตอบแทนจริงหรือไม่ จำนวนเท่าใด', 'ยอดเงินลงทุนทั้งหมดและบัญชีม้าที่รับโอนเงิน'] },
+            { title: '6. หลอกให้รักแล้วโอนเงิน (Romance Scam)', points: ['รู้จักกันผ่านแอปพลิเคชันใด โปรไฟล์คนร้ายอ้างเป็นใคร', 'เหตุผลที่ขอให้โอนเงิน (ส่งพัสดุติดด่านศุลกากร, ค่ารักษาพยาบาล, ลงทุนร่วมกัน)'] },
+            { title: '7. หลอกให้รักแล้วลงทุน (Hybrid Scam)', points: ['ความสัมพันธ์และการชักชวนให้ลงทุนควบคู่กัน', 'แพลตฟอร์มเทรดปลอมที่คนร้ายส่งลิงก์ให้ดาวน์โหลด'] },
+            { title: '8. แฮ็กบัญชีโซเชียลมีเดียหลอกยืมเงิน', points: ['บัญชีโซเชียลที่ถูกแฮ็กเป็นของใคร และคนร้ายทักมายืมเงินอย่างไร', 'บัญชีธนาคารปลายทางที่โอนเงินไปให้'] },
+            { title: '9. หลอกให้ติดตั้งโปรแกรมควบคุมระบบ (รีโมท/แอปดูดเงิน)', points: ['คนร้ายแอบอ้างเป็นหน่วยงานใดหลอกให้กดลิงก์ติดตั้งไฟล์ .apk', 'ช่วงเวลาที่หน้าจอโทรศัพท์ค้างและเงินถูกโอนออกจากบัญชีอัตโนมัติ', 'ตรวจสอบรายการเดินบัญชี (Statement) ปลายทางที่เงินถูกดูดไป'] },
+            { title: '10. หลอกลวงเกี่ยวกับสินทรัพย์ดิจิทัล (Crypto)', points: ['กระเป๋าเงินดิจิทัล (Wallet Address) ต้นทางและปลายทาง', 'รหัสธุรกรรม (TxID / Hash) ที่โอนเหรียญออกไป'] },
+            { title: '11. หลอกลวงให้โอนเงินโดยแอบอ้างเป็นบุคคลอื่น', points: ['แอบอ้างเป็นญาติ ผู้บังคับบัญชา หรือคนรู้จัก', 'เบอร์โทรหรือบัญชีไลน์ที่ใช้ติดต่อขอยืมเงิน'] },
+            { title: '12. หลอกลวงให้ทำประกัน/รับรางวัล/โชคลาภ', points: ['ข้อความ SMS หรือโทรศัพท์แจ้งว่าได้รับรางวัลใหญ่', 'เงื่อนไขให้โอนเงินค่าภาษีหรือค่าธรรมเนียมก่อนรับรางวัล'] },
+            { title: '13. หลอกลวงเกี่ยวกับการจองที่พัก/ตั๋วเครื่องบิน', points: ['เพจปลอมที่แอบอ้างชื่อโรงแรม รีสอร์ท หรือสายการบิน', 'ตรวจสอบความแตกต่างของชื่อบัญชีรับโอนกับชื่อสถานประกอบการ'] },
+            { title: '14. คดีอาชญากรรมทางเทคโนโลยีประเภทอื่นๆ', points: ['รายละเอียดพฤติการณ์แห่งคดีโดยละเอียด', 'พยานหลักฐานทางอิเล็กทรอนิกส์ที่รวบรวมได้'] }
+        ];
+        const ins = db.prepare('INSERT INTO inquiry_templates (id, title, points, updated_at) VALUES (?, ?, ?, ?);');
+        const nowIso = new Date().toISOString();
+        defaultInquiryTemplates.forEach((t, idx) => {
+            ins.run(idx + 1, t.title, JSON.stringify(t.points), nowIso);
+        });
+        console.log('[SECURITY] Pre-seeded 14 fraud inquiry templates in SQLite.');
+    }
+} catch (e) {
+    console.error('[DB INQUIRY TEMPLATES INIT ERROR]', e.message);
+}
 
 // Migration: Ensure victim self-reporting columns exist in cyber_details
 try {
@@ -276,8 +320,8 @@ if (countCyberDetails === 0) {
             financial_trails: JSON.stringify([
                 { step: 1, trail_type: 'โอนเงินค่าสินค้าออนไลน์', from_source: 'บัญชีผู้เสียหาย (ฐิติพร ชุมชอบ)', to_destination: 'Max Card 320001000578130 (เบญจมาภรณ์ บุญทนา)', amount: 8000, timestamp: '2026-11-08 14:22:15', tx_reference: 'TXN-691108-88219' }
             ]),
-            investigator_name: 'ร.ต.ต.ธนกฤต ไทยกมล',
-            investigator_badge: '10000',
+            investigator_name: 'พ.ต.ต.ธีรเดช สุขเกษม',
+            investigator_badge: '30002',
             detective_name: 'ร.ต.ต.ธนกฤต ไทยกมล',
             status: 'warroom',
             urgency: JSON.stringify(['ภจว.ติดตาม']),
@@ -299,8 +343,8 @@ if (countCyberDetails === 0) {
             financial_trails: JSON.stringify([
                 { step: 1, trail_type: 'โอนเงินซื้อสินค้าโมเดล', from_source: 'บัญชีผู้เสียหาย (ปริญ มหโชคภัทรวิมล)', to_destination: 'ธ.ก.ส. 020228673257 (ชฎาพร ป่าเกลือ)', amount: 9000, timestamp: '2026-11-08 15:45:00', tx_reference: 'TXN-691108-99014' }
             ]),
-            investigator_name: 'ร.ต.ต.ธนกฤต ไทยกมล',
-            investigator_badge: '10000',
+            investigator_name: 'พ.ต.ต.ธีรเดช สุขเกษม',
+            investigator_badge: '30002',
             detective_name: 'ร.ต.ต.ธนกฤต ไทยกมล',
             status: 'พบพงส.',
             urgency: JSON.stringify(['คดีเร่งด่วน ภ.1ติดตาม']),
@@ -324,8 +368,8 @@ if (countCyberDetails === 0) {
                 { step: 1, trail_type: 'โอนชำระสินค้า', from_source: 'ผู้เสียหาย', to_destination: 'QR Code xxxxxx7621 (ชินกร กันทะวงษ์)', amount: 1599, timestamp: '2026-11-08 16:10:00', tx_reference: 'TXN-691108-7621' },
                 { step: 2, trail_type: 'ยักย้ายถ่ายเทเงินแถว 2', from_source: 'ชินกร กันทะวงษ์', to_destination: 'QR Code xxxxxx7917 (วีศรุต ไชยสุรินทร์)', amount: 1500, timestamp: '2026-11-08 16:15:20', tx_reference: 'TXN-691108-7917' }
             ]),
-            investigator_name: 'ร.ต.ต.ธนกฤต ไทยกมล',
-            investigator_badge: '10000',
+            investigator_name: 'พ.ต.ต.ธีรเดช สุขเกษม',
+            investigator_badge: '30002',
             detective_name: 'ร.ต.ต.ธนกฤต ไทยกมล',
             status: 'พบพงส.',
             urgency: JSON.stringify(['ตร.ติดตาม']),
@@ -445,6 +489,16 @@ if (!hasThanakrit) {
         INSERT INTO users (username, badge_no, rank_name, position, department, role, password_hash, salt, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
     `).run('thanakrit', '10000', 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล', 'รอง สว.(สส.) สภ.บางพลี (Admin)', 'ฝ่ายสืบสวน', 'admin', hash, salt, new Date().toISOString());
+}
+
+// Ensure 'theeradej' (พ.ต.ต.ธีรเดช สุขเกษม) inquiry account always exists
+const hasTheeradej = db.prepare("SELECT id FROM users WHERE username = 'theeradej';").get();
+if (!hasTheeradej) {
+    const { hash, salt } = hashPassword('Police@2569');
+    db.prepare(`
+        INSERT INTO users (username, badge_no, rank_name, position, department, role, password_hash, salt, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+    `).run('theeradej', '30002', 'พ.ต.ต.ธีรเดช สุขเกษม', 'สารวัตร (สอบสวน) สภ.บางพลี', 'งานสอบสวน', 'inquiry', hash, salt, new Date().toISOString());
 }
 
 // Pre-seed or upgrade untouched sample encrypted arrest record
@@ -991,7 +1045,7 @@ const server = http.createServer(async (req, res) => {
                         amount: 8000,
                         status: 'พบพงส.',
                         accounts: [{ bank: 'Max card เลขอ้างอิง', no: '320001000578130', name: 'เบญจมาภรณ์ บุญทนา' }],
-                        investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        investigator: 'พ.ต.ต.ธีรเดช สุขเกษม',
                         detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
                         summons1: true,
                         summons1Date: '2026-11-09',
@@ -1008,7 +1062,7 @@ const server = http.createServer(async (req, res) => {
                         amount: 9000,
                         status: 'พบพงส.',
                         accounts: [{ bank: 'ธกส', no: '020228673257', name: 'ชฎาพร ป่าเกลือ' }],
-                        investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        investigator: 'พ.ต.ต.ธีรเดช สุขเกษม',
                         detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
                         summons1: true,
                         summons1Date: '2026-11-09',
@@ -1028,7 +1082,7 @@ const server = http.createServer(async (req, res) => {
                             { bank: 'Qr Code: เลขอ้างอิง', no: 'xxxxxx7621', name: 'ชินกร กันทะวงษ์' },
                             { bank: 'Qr Code: เลขอ้างอิง', no: 'xxxxxx7917', name: 'วีศรุต ไชยสุรินทร์' }
                         ],
-                        investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        investigator: 'พ.ต.ต.ธีรเดช สุขเกษม',
                         detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
                         summons1: false,
                         summons1Date: '',
@@ -1092,6 +1146,14 @@ const server = http.createServer(async (req, res) => {
                     try { if (r.transfer_records) tRecs = JSON.parse(r.transfer_records); } catch(e) {}
                     let inqAns = [];
                     try { if (r.inquiry_answers) inqAns = JSON.parse(r.inquiry_answers); } catch(e) {}
+                    let intStmts = null;
+                    try { if (r.interrogation_statements) intStmts = JSON.parse(r.interrogation_statements); } catch(e) {}
+                    let pDamaged = null;
+                    try { if (r.property_damaged) pDamaged = JSON.parse(r.property_damaged); } catch(e) {}
+                    let pRecovered = null;
+                    try { if (r.property_recovered) pRecovered = JSON.parse(r.property_recovered); } catch(e) {}
+                    let pUnrecovered = null;
+                    try { if (r.property_unrecovered) pUnrecovered = JSON.parse(r.property_unrecovered); } catch(e) {}
 
                     return {
                         id: r.id,
@@ -1118,6 +1180,12 @@ const server = http.createServer(async (req, res) => {
                         transfer_records: tRecs,
                         inquiryAnswers: inqAns,
                         inquiry_answers: inqAns,
+                        interrogationStatements: intStmts,
+                        statementVariables: r.statement_variables ? JSON.parse(r.statement_variables) : null,
+                        statement_variables: r.statement_variables ? JSON.parse(r.statement_variables) : null,
+                        propertyDamaged: pDamaged,
+                        propertyRecovered: pRecovered,
+                        propertyUnrecovered: pUnrecovered,
                         victimSubmittedAt: r.victim_submitted_at || null,
                         victim_submitted_at: r.victim_submitted_at || null,
                         station_code: r.station_code || 'POLICE-STN-BANGPHLI-001'
@@ -1401,6 +1469,17 @@ const server = http.createServer(async (req, res) => {
                 try { if (row.transfer_records) existingTransfers = JSON.parse(row.transfer_records); } catch(e) {}
                 try { if (row.inquiry_answers) existingAnswers = JSON.parse(row.inquiry_answers); } catch(e) {}
 
+                // ดึง templates ประเด็นคำถาม 14 กลโกง ล่าสุด
+                let inqTemplates = [];
+                try {
+                    const tRows = db.prepare('SELECT id, title, points FROM inquiry_templates ORDER BY id ASC;').all();
+                    inqTemplates = tRows.map(r => ({
+                        id: r.id,
+                        title: r.title,
+                        points: JSON.parse(r.points || '[]')
+                    }));
+                } catch(e) {}
+
                 return sendJson(res, 200, {
                     success: true,
                     verified: true,
@@ -1416,6 +1495,7 @@ const server = http.createServer(async (req, res) => {
                     status: row.status,
                     alreadySubmitted: row.status === 'ผู้เสียหายกรอกข้อมูลแล้ว' || !!row.victim_submitted_at,
                     victimSubmittedAt: row.victim_submitted_at,
+                    inquiryTemplates: inqTemplates,
                     draft: {
                         victimProfile: existingProfile,
                         freezeInfo: existingFreeze,
@@ -1423,6 +1503,117 @@ const server = http.createServer(async (req, res) => {
                         inquiryAnswers: existingAnswers
                     }
                 });
+            }
+
+            // 4h-2. INQUIRY TEMPLATES (14 กลโกง DYNAMIC ENDPOINT)
+            if (pathname === '/api/inquiry/templates' && (req.method === 'GET' || req.method === 'HEAD')) {
+                let templates = [];
+                try {
+                    const rows = db.prepare('SELECT id, title, points FROM inquiry_templates ORDER BY id ASC;').all();
+                    templates = rows.map(r => ({
+                        id: r.id,
+                        title: r.title,
+                        points: JSON.parse(r.points || '[]')
+                    }));
+                } catch(e) {}
+                return sendJson(res, 200, { success: true, templates });
+            }
+
+            if (pathname === '/api/inquiry/templates' && req.method === 'POST') {
+                const body = await readBody(req);
+                if (Array.isArray(body.templates)) {
+                    const ins = db.prepare('INSERT OR REPLACE INTO inquiry_templates (id, title, points, updated_at) VALUES (?, ?, ?, ?);');
+                    const now = new Date().toISOString();
+                    db.exec('BEGIN TRANSACTION;');
+                    try {
+                        db.exec('DELETE FROM inquiry_templates;');
+                        body.templates.forEach((t, idx) => {
+                            ins.run(idx + 1, t.title, JSON.stringify(t.points || []), now);
+                        });
+                        db.exec('COMMIT;');
+                    } catch(e) {
+                        db.exec('ROLLBACK;');
+                        return sendJson(res, 500, { success: false, error: e.message });
+                    }
+                    return sendJson(res, 200, { success: true, count: body.templates.length });
+                }
+                return sendJson(res, 400, { success: false, error: 'templates must be an array' });
+            }
+
+            // 4h-3. SAVE INTERACTIVE INTERROGATION STATEMENTS (Q&A LIST)
+            if (pathname === '/api/interrogation/save' && req.method === 'POST') {
+                const body = await readBody(req);
+                const cleanCaseNo = (body.caseNo || '').trim().toUpperCase();
+                if (!cleanCaseNo) {
+                    return sendJson(res, 400, { success: false, error: 'Missing caseNo' });
+                }
+                const nowIso = new Date().toISOString();
+                const qaList = Array.isArray(body.qaList) ? body.qaList : [];
+                const inqAnswers = Array.isArray(body.inquiryAnswers) ? body.inquiryAnswers : null;
+                const victimProfile = body.victimProfile || null;
+
+                const existing = db.prepare('SELECT id FROM cyber_details WHERE UPPER(case_no) = ?;').get(cleanCaseNo);
+                if (!existing) {
+                    return sendJson(res, 404, { success: false, error: 'ไม่พบเคสในฐานข้อมูล' });
+                }
+
+                if (inqAnswers) {
+                    db.prepare('UPDATE cyber_details SET interrogation_statements = ?, inquiry_answers = ?, updated_at = ? WHERE UPPER(case_no) = ?;').run(
+                        JSON.stringify(qaList), JSON.stringify(inqAnswers), nowIso, cleanCaseNo
+                    );
+                } else {
+                    db.prepare('UPDATE cyber_details SET interrogation_statements = ?, updated_at = ? WHERE UPPER(case_no) = ?;').run(
+                        JSON.stringify(qaList), nowIso, cleanCaseNo
+                    );
+                }
+
+                if (victimProfile) {
+                    db.prepare('UPDATE cyber_details SET victim_profile = ? WHERE UPPER(case_no) = ?;').run(
+                        JSON.stringify(victimProfile), cleanCaseNo
+                    );
+                }
+
+                if (body.statementVariables) {
+                    try {
+                        db.prepare('UPDATE cyber_details SET statement_variables = ? WHERE UPPER(case_no) = ?;').run(
+                            JSON.stringify(body.statementVariables), cleanCaseNo
+                        );
+                    } catch (_) {}
+                }
+
+                if (body.propertyDamaged) {
+                    try {
+                        db.prepare('UPDATE cyber_details SET property_damaged = ? WHERE UPPER(case_no) = ?;').run(
+                            JSON.stringify(body.propertyDamaged), cleanCaseNo
+                        );
+                    } catch (_) {}
+                }
+
+                if (body.propertyRecovered) {
+                    try {
+                        db.prepare('UPDATE cyber_details SET property_recovered = ? WHERE UPPER(case_no) = ?;').run(
+                            JSON.stringify(body.propertyRecovered), cleanCaseNo
+                        );
+                    } catch (_) {}
+                }
+
+                if (body.propertyUnrecovered) {
+                    try {
+                        db.prepare('UPDATE cyber_details SET property_unrecovered = ? WHERE UPPER(case_no) = ?;').run(
+                            JSON.stringify(body.propertyUnrecovered), cleanCaseNo
+                        );
+                    } catch (_) {}
+                }
+
+                recordAuditLog(
+                    { user_name: body.officerName || 'พนักงานสอบสวน', user_badge: 'INVESTIGATOR', user_role: 'inquiry' },
+                    'INTERROGATION_SAVE',
+                    cleanCaseNo,
+                    `บันทึกคำให้การในโหมดสอบปากคำ (${qaList.length} ประเด็น)`,
+                    req
+                );
+
+                return sendJson(res, 200, { success: true, caseNo: cleanCaseNo, savedCount: qaList.length });
             }
 
             // 4i. VICTIM PRE-INVESTIGATION: SUBMIT FORM & UPDATE CASE DATA DIRECTLY
@@ -1478,6 +1669,24 @@ const server = http.createServer(async (req, res) => {
                     nowIso,
                     cleanCaseNo
                 );
+
+                // Sync status to Supabase cases table if reachable
+                try {
+                    const SUPA_URL = process.env.VITE_SUPABASE_URL || 'https://yofvfkfjyndjctoyvgpe.supabase.co';
+                    const SUPA_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MC3Z6VYA-wFAhAZLfikxDA_DM1W_J4K';
+                    fetch(`${SUPA_URL}/rest/v1/cases?case_no=eq.${encodeURIComponent(cleanCaseNo)}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'apikey': SUPA_KEY,
+                            'Authorization': `Bearer ${SUPA_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            status: 'ผู้เสียหายกรอกข้อมูลแล้ว',
+                            updated_at: nowIso
+                        })
+                    }).catch(() => {});
+                } catch(_) {}
 
                 // บันทึก Audit Log
                 recordAuditLog(
@@ -1930,12 +2139,13 @@ const server = http.createServer(async (req, res) => {
         }
 
         // =====================================================================
-        // STATIC FILE SERVING
+        // STATIC FILE SERVING (SUPPORT /victim-form AND SPA REFRESH)
         // =====================================================================
         let safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
-        if (safePath === '/' || safePath === '\\') {
+        const normLower = safePath.toLowerCase().replace(/[\/\\]+$/, '');
+        if (normLower === '' || normLower === '/' || normLower === '\\') {
             safePath = '/index.html';
-        } else if (safePath === '/victim-form' || safePath === '\\victim-form' || safePath === '/victim-form/' || safePath === '\\victim-form\\') {
+        } else if (normLower === '/victim-form' || normLower === '\\victim-form' || normLower.startsWith('/victim-form/') || normLower.startsWith('\\victim-form\\') || normLower === '/victim_form' || normLower === '\\victim_form') {
             safePath = '/victim-form.html';
         }
 

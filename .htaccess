@@ -1,0 +1,16 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  
+  # Rewrite /victim-form to victim-form.html
+  RewriteRule ^victim-form/?$ victim-form.html [L,QSA]
+  RewriteRule ^victim-form/(.*)$ victim-form.html [L,QSA]
+  
+  # Static files check
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  
+  # Fallback to index.html for SPA
+  RewriteRule ^(.*)$ index.html [L,QSA]
+</IfModule>

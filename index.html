@@ -7,6 +7,8 @@
     <link rel="icon" type="image/png" href="assets/police_logo_transparent.png">
     <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
     <script src="assets/docx.umd.js"></script>
+    <script src="assets/jszip.min.js"></script>
+    <script src="assets/docx-templates-data.js"></script>
     <script src="assets/supabase.js"></script>
     <script src="js/config.js"></script>
     <script src="js/zk-crypto.js"></script>
@@ -1439,6 +1441,9 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 flex-wrap">
+                                <button type="button" onclick="refreshNewPoliceRequestsData(true)" class="px-3.5 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold transition flex items-center gap-1.5 shadow-sm" title="ดึงข้อมูลคำขอสิทธิ์ล่าสุดแบบ Realtime">
+                                    <span>🔄</span> <span>รีเฟรชข้อมูลคำขอ</span>
+                                </button>
                                 <button type="button" onclick="openNewPoliceModal(true)" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-bold transition flex items-center gap-1" title="จำลองเจ้าหน้าที่ newpolice ส่งคำขอเชื่อมต่อใหม่">
                                     <span>➕</span> <span>จำลอง User ส่งคำขอ</span>
                                 </button>
@@ -2948,6 +2953,9 @@
                                     <span class="font-bold">🔒 นโยบายความมั่นคง:</span> เจ้าหน้าที่ newpolice แต่ละนายต้องได้รับอนุมัติจากแอดมินก่อนจึงจะเข้าถึงข้อมูลคดี สภ.บางพลี ได้
                                 </div>
                                 <div class="flex items-center gap-2">
+                                    <button type="button" onclick="refreshNewPoliceRequestsData(true)" class="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 text-[10px] font-bold transition flex items-center gap-1 shadow-sm">
+                                        <span>🔄</span> <span>รีเฟรชข้อมูลคำขอ</span>
+                                    </button>
                                     <button type="button" onclick="resetNewPoliceSimulation()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[10px] font-bold transition">
                                         🔄 รีเซ็ตข้อมูลจำลอง (3 นาย)
                                     </button>
@@ -3238,14 +3246,412 @@
                     </div>
                 </div>
 
+                <!-- Interactive Interrogation Mode Modal (โหมดสอบปากคำ & ส่งออกคำให้การ/บัญชีทรัพย์ .docx) -->
+                <div id="interrogationModal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-5xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden">
+                        <!-- Modal Header -->
+                        <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/70 shrink-0">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold uppercase tracking-wider">INTERACTIVE INTERROGATION MODE</span>
+                                    <span id="intModalCaseNoBadge" class="px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30 text-[10px] font-mono font-bold">-</span>
+                                </div>
+                                <h3 class="text-base sm:text-lg font-bold text-white mt-1">🎙️ โหมดสอบปากคำ & พิมพ์คำให้การผู้กล่าวหา / บัญชีทรัพย์ถูกประทุษร้าย</h3>
+                                <p id="intModalSubtitle" class="text-[11px] text-slate-400">-</p>
+                            </div>
+                            <button type="button" onclick="closeInterrogationModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-sm transition">✕</button>
+                        </div>
+
+                        <!-- Metadata & Quick Controls Bar -->
+                        <div class="px-5 py-2.5 bg-slate-950/60 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
+                            <div id="intStatsSummary" class="text-[11px] text-slate-400 flex items-center gap-3 flex-wrap">
+                                <span>กำลังโหลดข้อมูล...</span>
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <button type="button" onclick="regenerateInterrogationQA(true)" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition flex items-center gap-1" title="สร้างชุดคำถาม-คำตอบใหม่จากข้อมูลล่าสุดที่ผู้เสียหายกรอกเข้ามา">
+                                    <span>🔄</span> <span>รีเฟรชคำตอบจากผู้เสียหาย</span>
+                                </button>
+                                <button type="button" onclick="openPropertyAccountsModal()" class="px-3 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500 text-purple-300 hover:text-slate-950 border border-purple-500/40 text-xs font-bold transition flex items-center gap-1.5 shadow-sm" title="จัดการบัญชีทรัพย์ถูกประทุษร้าย / ได้คืน / ไม่ได้คืน (แบบ ส ๕๖ - ๘)">
+                                    <span>📦</span> <span>จัดการบัญชีทรัพย์ (๓ แบบ)</span>
+                                </button>
+                                <button type="button" onclick="insertNewInterrogationBlock()" class="px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500 text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold transition flex items-center gap-1">
+                                    <span>➕</span> <span>แทรกคำถามใหม่</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Statement Variables Form (ตามแบบ สตช. แผ่นที่ ๑) -->
+                        <div class="px-5 py-2.5 bg-slate-950/40 border-b border-slate-800 max-h-[38vh] overflow-y-auto shrink-0">
+                            <details open id="intVariablesDetails" class="group bg-slate-950/70 border border-slate-800 rounded-2xl overflow-hidden transition-all shadow-inner">
+                                <summary class="px-4 py-2.5 bg-slate-900/90 hover:bg-slate-800 cursor-pointer flex items-center justify-between text-xs font-bold text-amber-400 select-none border-b border-slate-800/80">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span>📋</span>
+                                        <span>ตัวแปรแบบฟอร์มคำให้การ (ตามแบบ สตช. แผ่นที่ ๑)</span>
+                                        <span class="text-[10px] font-normal text-slate-400 font-sans">| 1. วันที่-เดือน-ปี • 2. เลขบัตรประชาชน • 3. ชื่อ-อายุ-อาชีพ • 4. ที่อยู่ • 5. บิดา-มารดา</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] text-slate-400 font-normal group-open:hidden">คลิกเปิดกรอกตัวแปร ▾</span>
+                                        <span class="text-[10px] text-slate-400 font-normal hidden group-open:inline">คลิกเพื่อย่อ ▴</span>
+                                    </div>
+                                </summary>
+                                <div class="p-3.5 space-y-3 bg-slate-950/40 text-xs">
+                                    
+                                    <!-- 1. วันที่ เดือน ปี (พร้อมปุ่ม วันนี้) & ข้อมูลคดี/สถานีตำรวจ -->
+                                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800/80 space-y-2.5">
+                                        <div class="text-[11px] font-bold text-amber-400 flex items-center justify-between">
+                                            <span class="flex items-center gap-1.5">
+                                                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                                                <span>1. วันที่ เดือน ปี & ข้อมูลสถานีตำรวจ / คดี</span>
+                                            </span>
+                                        </div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                                            <div class="lg:col-span-2">
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">วันที่สอบปากคำ (วัน / เดือน / พ.ศ.)</label>
+                                                <div class="flex items-center gap-1.5">
+                                                    <input type="text" id="intStmtDateDay" placeholder="วัน" class="w-14 px-2 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white text-center focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono" title="วันที่ เช่น 8 หรือ 18">
+                                                    <select id="intStmtDateMonth" class="flex-1 px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                                        <option value="มกราคม">มกราคม</option>
+                                                        <option value="กุมภาพันธ์">กุมภาพันธ์</option>
+                                                        <option value="มีนาคม">มีนาคม</option>
+                                                        <option value="เมษายน">เมษายน</option>
+                                                        <option value="พฤษภาคม">พฤษภาคม</option>
+                                                        <option value="มิถุนายน">มิถุนายน</option>
+                                                        <option value="กรกฎาคม">กรกฎาคม</option>
+                                                        <option value="สิงหาคม">สิงหาคม</option>
+                                                        <option value="กันยายน">กันยายน</option>
+                                                        <option value="ตุลาคม">ตุลาคม</option>
+                                                        <option value="พฤศจิกายน" selected>พฤศจิกายน</option>
+                                                        <option value="ธันวาคม">ธันวาคม</option>
+                                                    </select>
+                                                    <input type="text" id="intStmtDateYear" placeholder="พ.ศ." class="w-20 px-2 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white text-center focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono" title="ปี พ.ศ. เช่น 2569">
+                                                    <button type="button" onclick="setInterrogationDateToday()" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition flex items-center gap-1 shadow-sm shrink-0" title="ตั้งค่าเป็นวันที่ปัจจุบัน">
+                                                        <span>📅</span> <span>วันนี้</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">สถานีตำรวจ</label>
+                                                <input type="text" id="intStationInput" value="ภูธรบางพลี" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">อำเภอ / จังหวัด</label>
+                                                <div class="flex items-center gap-1.5">
+                                                    <input type="text" id="intStationAmphoeInput" value="บางพลี" class="w-1/2 px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" placeholder="อำเภอ">
+                                                    <input type="text" id="intStationProvinceInput" value="สมุทรปราการ" class="w-1/2 px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" placeholder="จังหวัด">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">ชื่อผู้ต้องหา / เจ้าของบัญชีคนร้าย</label>
+                                                <input type="text" id="intSuspectNameInput" placeholder="เช่น น.ส.เบญจมาภรณ์ บุญทนา หรือ ไม่ทราบชื่อ" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">พนักงานสอบสวนผู้สอบปากคำ</label>
+                                                <input type="text" id="intOfficerNameInput" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-amber-400 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">ตำแหน่ง พงส.</label>
+                                                <input type="text" id="intOfficerPositionInput" value="รอง สว.(สอบสวน) สภ.บางพลี" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-amber-400 mb-1">เลขคดีอาญา / บัญชีทรัพย์ (คดีที่)</label>
+                                                <input type="text" id="intCrimCaseNoInput" placeholder="เช่น ๑๒/๒๕๖๙ หรือ T6911087326" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-amber-300 font-mono focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-amber-400 mb-1">ข้อหา / ฐานความผิด (บัญชีทรัพย์ &amp; คำให้การ)</label>
+                                                <input type="text" id="intChargeInput" placeholder="เช่น ฉ้อโกงประชาชน และนำเข้าสู่ระบบคอมพิวเตอร์ฯ" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 2. เลขบัตรประชาชน & 3. ข้อมูลส่วนตัวผู้กล่าวหา -->
+                                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800/80 space-y-2.5">
+                                        <div class="text-[11px] font-bold text-sky-400 flex items-center justify-between">
+                                            <span class="flex items-center gap-1.5">
+                                                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                                                <span>2. เลขบัตรประชาชน & 3. ข้อมูลส่วนตัวผู้กล่าวหา (ชื่อ, อายุ, เชื้อชาติ, สัญชาติ, ศาสนา, อาชีพ, เบอร์โทร)</span>
+                                            </span>
+                                        </div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">เลขประจำตัวประชาชน (13 หลัก)</label>
+                                                <input type="text" id="intVictimIdCardInput" placeholder="เช่น 1-1004-99887-23-1" maxlength="17" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-amber-300 font-mono focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                            <div class="flex items-center gap-1.5">
+                                                <div class="w-24">
+                                                    <label class="block text-[10px] font-bold text-slate-400 mb-1">คำนำหน้า</label>
+                                                    <input type="text" id="intVictimPrefixInput" placeholder="นางสาว" class="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                                </div>
+                                                <div class="flex-1">
+                                                    <label class="block text-[10px] font-bold text-slate-400 mb-1">ชื่อ - นามสกุล ผู้กล่าวหา</label>
+                                                    <input type="text" id="intVictimNameInput" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-semibold focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">อายุ (ปี)</label>
+                                                <div class="flex items-center gap-1">
+                                                    <input type="text" id="intVictimAgeInput" placeholder="30" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white text-center focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono">
+                                                    <span class="text-xs text-slate-400">ปี</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">เบอร์โทรศัพท์</label>
+                                                <input type="text" id="intVictimPhoneInput" placeholder="0655492824" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-emerald-400 font-mono focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">เชื้อชาติ</label>
+                                                <input type="text" id="intVictimRaceInput" value="ไทย" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">สัญชาติ</label>
+                                                <input type="text" id="intVictimNationalityInput" value="ไทย" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">ศาสนา</label>
+                                                <input type="text" id="intVictimReligionInput" value="พุทธ" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">อาชีพ</label>
+                                                <input type="text" id="intVictimCareerInput" placeholder="เช่น รับจ้าง, พนักงานบริษัท" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 4. ที่อยู่ตามแบบในภาพ -->
+                                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800/80 space-y-2.5">
+                                        <div class="text-[11px] font-bold text-purple-400 flex items-center justify-between">
+                                            <span class="flex items-center gap-1.5">
+                                                <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                                                <span>4. ที่อยู่ของผู้กล่าวหา (ตามแบบในภาพ)</span>
+                                            </span>
+                                            <button type="button" onclick="syncAddressToQuestion1()" class="text-[10px] text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 transition" title="อัปเดตที่อยู่และอาชีพไปยังคำตอบข้อที่ 1 อัตโนมัติ">
+                                                <span>🔄</span> <span>ซิงค์ที่อยู่ไปยังคำตอบข้อที่ 1</span>
+                                            </button>
+                                        </div>
+                                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">อยู่บ้านเลขที่</label>
+                                                <input type="text" id="intAddrHouseNoInput" placeholder="99/12" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">หมู่ที่</label>
+                                                <input type="text" id="intAddrMooInput" placeholder="5 หรือ -" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">แขวง / ตำบล</label>
+                                                <input type="text" id="intAddrTambonInput" placeholder="บางพลีใหญ่" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">เขต / อำเภอ</label>
+                                                <input type="text" id="intAddrAmphoeInput" placeholder="บางพลี" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">จังหวัด</label>
+                                                <input type="text" id="intAddrProvinceInput" placeholder="สมุทรปราการ" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">ชื่อผู้ใหญ่บ้าน</label>
+                                                <input type="text" id="intAddrHeadmanInput" value="-" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">ชื่อกำนัน</label>
+                                                <input type="text" id="intAddrKamnanInput" value="-" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 5. ชื่อบิดา มารดา & ความเกี่ยวข้อง -->
+                                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800/80 space-y-2.5">
+                                        <div class="text-[11px] font-bold text-emerald-400 flex items-center justify-between">
+                                            <span class="flex items-center gap-1.5">
+                                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                                <span>5. ชื่อบิดา มารดา & ความเกี่ยวข้องกับคู่กรณี</span>
+                                            </span>
+                                        </div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">ชื่อบิดา</label>
+                                                <input type="text" id="intFatherNameInput" placeholder="เช่น - ชุมชอบ หรือ นาย... ชุมชอบ" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">ชื่อมารดา</label>
+                                                <input type="text" id="intMotherNameInput" placeholder="เช่น - ชุมชอบ หรือ นาง... ชุมชอบ" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-400 mb-1">เกี่ยวข้องเป็นอะไรกับคู่กรณี</label>
+                                                <input type="text" id="intRelationInput" value="ไม่เกี่ยวข้อง สาบานตนแล้ว" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </details>
+                        </div>
+
+                        <!-- Scrollable Q&A Blocks List -->
+                        <div id="interrogationQAContainer" class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 bg-slate-900">
+                            <!-- Populated dynamically by renderInterrogationBlocks() -->
+                        </div>
+
+                        <!-- Modal Footer -->
+                        <div class="px-5 py-3.5 border-t border-slate-800 bg-slate-950/80 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <button type="button" onclick="saveInterrogationData()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-emerald-500/20">
+                                    <span>💾</span> <span>บันทึกคำให้การ</span>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <button type="button" onclick="exportInterrogationPackageDocx('statement')" class="px-3 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500 text-sky-300 hover:text-slate-950 border border-sky-500/40 font-bold text-xs transition flex items-center gap-1">
+                                    <span>📄</span> <span>คำให้การ (.docx)</span>
+                                </button>
+                                <button type="button" onclick="openPropertyAccountsModal()" class="px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500 text-purple-300 hover:text-slate-950 border border-purple-500/40 font-bold text-xs transition flex items-center gap-1.5 shadow-sm" title="จัดการบัญชีทรัพย์ ๓ แบบ (ถูกประทุษร้าย/ได้คืน/ไม่ได้คืน)">
+                                    <span>📦</span> <span>จัดการบัญชีทรัพย์ (๓ แบบ)</span>
+                                </button>
+                                <button type="button" onclick="exportInterrogationPackageDocx('property')" class="px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500 text-purple-300 hover:text-slate-950 border border-purple-500/40 font-bold text-xs transition flex items-center gap-1" title="ส่งออกบัญชีทรัพย์ถูกประทุษร้ายทันที">
+                                    <span>📊</span> <span>บัญชีทรัพย์ (.docx)</span>
+                                </button>
+                                <button type="button" onclick="exportInterrogationPackageDocx('both')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-xs transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20">
+                                    <span>📦</span> <span>ส่งออกคำให้การ + บัญชีทรัพย์ (.docx)</span>
+                                </button>
+                                <button type="button" onclick="closeInterrogationModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+                                    ปิด
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nested Modal: จัดการบัญชีทรัพย์ 3 แบบ (แบบ ส ๕๖ - ๘) -->
+                <div id="propertyManageModal" class="fixed inset-0 z-[60] hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
+                    <div class="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                        <!-- Header -->
+                        <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/80 shrink-0">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold uppercase tracking-wider">แบบ ส ๕๖ - ๘</span>
+                                    <span id="propModalCaseNoBadge" class="px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30 text-[10px] font-mono font-bold">-</span>
+                                </div>
+                                <h3 class="text-base sm:text-lg font-bold text-white mt-1">📦 จัดการข้อมูลบัญชีทรัพย์ (ถูกประทุษร้าย / ได้คืน / ไม่ได้คืน)</h3>
+                                <p id="propModalSubtitle" class="text-[11px] text-slate-400">กรอกและแก้ไขรายการทรัพย์สำหรับส่งออกเอกสาร Word (.docx) ตามแบบ สตช. 100%</p>
+                            </div>
+                            <button type="button" onclick="closePropertyAccountsModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-sm transition">✕</button>
+                        </div>
+
+                        <!-- 3 Tabs Navigation -->
+                        <div class="px-5 py-2.5 bg-slate-950/50 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
+                            <div class="flex items-center gap-1.5 p-1 bg-slate-950 rounded-2xl border border-slate-800/80 text-xs">
+                                <button type="button" id="propTabBtnDamaged" onclick="switchPropertyTab('damaged')" class="px-3.5 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                                    <span>🔴</span> <span>๑. ทรัพย์ถูกประทุษร้าย</span>
+                                    <span id="propTabCountDamaged" class="px-1.5 py-0.2 rounded-md bg-rose-950 text-rose-300 text-[10px] font-mono">0</span>
+                                </button>
+                                <button type="button" id="propTabBtnRecovered" onclick="switchPropertyTab('recovered')" class="px-3.5 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-emerald-300">
+                                    <span>🟢</span> <span>๒. ทรัพย์ได้คืน</span>
+                                    <span id="propTabCountRecovered" class="px-1.5 py-0.2 rounded-md bg-slate-800 text-slate-400 text-[10px] font-mono">0</span>
+                                </button>
+                                <button type="button" id="propTabBtnUnrecovered" onclick="switchPropertyTab('unrecovered')" class="px-3.5 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-amber-300">
+                                    <span>🟡</span> <span>๓. ทรัพย์ไม่ได้คืน</span>
+                                    <span id="propTabCountUnrecovered" class="px-1.5 py-0.2 rounded-md bg-slate-800 text-slate-400 text-[10px] font-mono">0</span>
+                                </button>
+                            </div>
+
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <button type="button" onclick="addPropertyItemRow()" class="px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500 text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold transition flex items-center gap-1">
+                                    <span>➕</span> <span>เพิ่มรายการทรัพย์</span>
+                                </button>
+                                <button type="button" id="propSyncBtn" onclick="syncCurrentPropertyTab()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold transition flex items-center gap-1">
+                                    <span>🔄</span> <span id="propSyncBtnText">ซิงค์จากรายการโอนเงิน</span>
+                                </button>
+                                <button type="button" onclick="exportCurrentPropertyTabDocx()" class="px-3 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500 text-purple-300 hover:text-slate-950 border border-purple-500/40 text-xs font-bold transition flex items-center gap-1">
+                                    <span>📄</span> <span>ส่งออก .docx บัญชีนี้</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Active Tab Header Banner -->
+                        <div class="px-5 py-2.5 bg-slate-950/30 border-b border-slate-800/80 flex items-center justify-between text-xs text-slate-300 shrink-0">
+                            <div class="flex items-center gap-2 font-medium">
+                                <span id="propActiveTabBadge" class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                                <span id="propActiveTabTitle" class="font-bold text-white">บัญชีทรัพย์ถูกประทุษร้าย (แบบ ส ๕๖ - ๘)</span>
+                                <span class="text-slate-500">|</span>
+                                <span id="propActiveTabStats" class="text-slate-400">รวม 0 รายการ • ราคารวม 0.00 บาท</span>
+                            </div>
+                            <div class="text-[11px] text-slate-400">
+                                <span>* ข้อมูลจะถูกดึงไปใส่ในตาราง ๗ คอลัมน์ และคำนวณยอดรวมในไฟล์ Word อัตโนมัติ</span>
+                            </div>
+                        </div>
+
+                        <!-- Property Items Table Container -->
+                        <div class="flex-1 overflow-y-auto p-4 sm:p-5 bg-slate-900 space-y-3">
+                            <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/60 shadow-inner">
+                                <table class="w-full text-left text-xs border-collapse">
+                                    <thead>
+                                        <tr class="border-b border-slate-800 bg-slate-900/90 text-slate-400 text-[11px] font-bold">
+                                            <th class="py-2.5 px-3 text-center w-12">ลำดับ</th>
+                                            <th class="py-2.5 px-3 min-w-[220px]">รายการทรัพย์</th>
+                                            <th class="py-2.5 px-2 text-center w-24">จำนวน</th>
+                                            <th class="py-2.5 px-2 text-right w-28">ราคา (บาท)</th>
+                                            <th class="py-2.5 px-3 min-w-[140px]">ของใคร / ยึดจากใคร</th>
+                                            <th class="py-2.5 px-3 text-center min-w-[140px]">วัน เดือน ปี ที่ถูกประทุษร้าย / ได้คืน</th>
+                                            <th class="py-2.5 px-3 min-w-[110px]">หมายเหตุ</th>
+                                            <th class="py-2.5 px-2 text-center w-14">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="propertyItemsTableBody" class="divide-y divide-slate-800/60 text-slate-200">
+                                        <!-- Dynamically generated rows -->
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="bg-slate-950/90 font-bold border-t border-slate-800 text-white">
+                                            <td colspan="3" class="py-3 px-4 text-right text-amber-400">
+                                                <span>รวมทั้งสิ้น:</span>
+                                                <span id="propSummaryItemsText" class="ml-1 text-slate-300 font-normal">0 รายการ</span>
+                                            </td>
+                                            <td id="propSummaryAmountText" class="py-3 px-2 text-right text-emerald-400 font-mono">0.00</td>
+                                            <td colspan="4" id="propSummaryBahtText" class="py-3 px-4 text-slate-400 font-normal text-[11px] italic">
+                                                (ศูนย์บาทถ้วน)
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Modal Footer -->
+                        <div class="px-5 py-3 border-t border-slate-800 bg-slate-950/80 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="savePropertyAccountsFromModal()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition flex items-center gap-1.5 shadow-md shadow-emerald-500/20">
+                                    <span>💾</span> <span>บันทึกบัญชีทรัพย์</span>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <button type="button" onclick="exportCurrentPropertyTabDocx()" class="px-3.5 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500 text-purple-300 hover:text-slate-950 border border-purple-500/40 font-bold text-xs transition flex items-center gap-1">
+                                    <span>📄</span> <span>ส่งออกบัญชีนี้ (.docx)</span>
+                                </button>
+                                <button type="button" onclick="exportAllThreePropertyDocx()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-slate-950 font-bold text-xs transition flex items-center gap-1.5 shadow-lg shadow-purple-500/20">
+                                    <span>📦</span> <span>ส่งออกทั้ง ๓ บัญชี (.docx)</span>
+                                </button>
+                                <button type="button" onclick="closePropertyAccountsModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+                                    ปิด
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
 
     <script>
         // Officers Database
-        let investigatorsList = ['ร.ต.อ.ธนากร พิศุจน์', 'ร.ต.ต.ธนกฤต ไทยกมล', 'ร.ต.ท.สมชาย ใจมั่น', 'พ.ต.ต.เกรียงไกร สืบสร้าง'];
-        let detectivesList = ['ร.ต.ต.ธนกฤต ไทยกมล', 'ร.ต.อ.ธนากร พิศุจน์', 'ด.ต.สมศักดิ์ มุ่งมั่น', 'ส.ต.อ.วิชาญ ชำนาญสืบ'];
+        let investigatorsList = ['พ.ต.ต.ธีรเดช สุขเกษม', 'พ.ต.ท.ประเสริฐ กุลบุตร', 'ร.ต.อ.ธนากร พิศุจน์', 'ร.ต.ต.ธนกฤต ไทยกมล', 'ร.ต.ท.สมชาย ใจมั่น', 'พ.ต.ต.เกรียงไกร สืบสร้าง'];
+        let detectivesList = ['ร.ต.ต.ธนกฤต ไทยกมล', 'พ.ต.ต.ธีรเดช สุขเกษม', 'ร.ต.อ.ธนากร พิศุจน์', 'ด.ต.สมศักดิ์ มุ่งมั่น', 'ส.ต.อ.วิชาญ ชำนาญสืบ'];
         window.investigatorsList = investigatorsList;
         window.detectivesList = detectivesList;
         window.mockInvestigators = investigatorsList;
@@ -3263,7 +3669,7 @@
                 status: 'warroom',
                 urgency: ['ภจว.ติดตาม'],
                 accounts: ['Max card เลขอ้างอิง: 320001000578130 (เบญจมาภรณ์ บุญทนา)'],
-                investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                investigator: 'พ.ต.ต.ธีรเดช สุขเกษม',
                 detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
                 summons1: true,
                 summons1Date: '08/11/2569',
@@ -3284,7 +3690,7 @@
                 status: 'พบพงส.',
                 urgency: ['คดีเร่งด่วน ภ.1ติดตาม'],
                 accounts: ['ธกส: 020228673257 (ชฎาพร ป่าเกลือ)'],
-                investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                investigator: 'พ.ต.ต.ธีรเดช สุขเกษม',
                 detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
                 summons1: true,
                 summons1Date: '08/11/2569',
@@ -3308,7 +3714,7 @@
                     'Qr Code: เลขอ้างอิง xxxxxx7621 (ชินกร กันทะวงษ์)',
                     'Qr Code: เลขอ้างอิง xxxxxx7917 (วีศรุต ไชยสุรินทร์)'
                 ],
-                investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                investigator: 'พ.ต.ต.ธีรเดช สุขเกษม',
                 detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
                 summons1: false,
                 summons1Date: '',
@@ -3329,7 +3735,7 @@
                 status: 'นัดหมาย',
                 urgency: [],
                 accounts: ['กสิกรไทย: 0451239988 (สมรักษ์ คำสิงห์พาณิชย์)'],
-                investigator: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                investigator: 'พ.ต.ท.ประเสริฐ กุลบุตร',
                 detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
                 summons1: false,
                 summons1Date: '',
@@ -3352,14 +3758,19 @@
                         if (!Array.isArray(c.urgency)) {
                             c.urgency = c.urgency ? [c.urgency] : [];
                         }
-                        // เติมค่าตั้งต้นให้คดีตัวอย่างเดิมที่ยังไม่มีความเร่งด่วน เพื่อให้แสดงผลครบถ้วน
+                        // เติมค่าตั้งต้นและปรับปรุง พงส. ให้ตรงกับฐานข้อมูลจริง สภ.บางพลี
                         if (c.caseNo === 'T6911087326' || c.id === '1') {
                             if (!c.status || c.status === 'พบพงส.') c.status = 'warroom';
                             if (!c.urgency.includes('ภจว.ติดตาม')) c.urgency.push('ภจว.ติดตาม');
+                            c.investigator = 'พ.ต.ต.ธีรเดช สุขเกษม';
                         } else if (c.caseNo === 'T6911087748' || c.id === '2') {
                             if (!c.urgency.includes('คดีเร่งด่วน ภ.1ติดตาม')) c.urgency.push('คดีเร่งด่วน ภ.1ติดตาม');
+                            c.investigator = 'พ.ต.ต.ธีรเดช สุขเกษม';
                         } else if (c.caseNo === 'T6911087788' || c.id === '3') {
                             if (!c.urgency.includes('ตร.ติดตาม')) c.urgency.push('ตร.ติดตาม');
+                            c.investigator = 'พ.ต.ต.ธีรเดช สุขเกษม';
+                        } else if (c.caseNo === 'T6911088120' || c.id === '4') {
+                            c.investigator = 'พ.ต.ท.ประเสริฐ กุลบุตร';
                         }
                     });
                     mockCases = parsedCases;
@@ -3730,6 +4141,13 @@
             const detSel = document.getElementById('mCaseDetective');
             if (!invSel || !detSel) return;
 
+            if (selectedInv && !investigatorsList.includes(selectedInv)) {
+                investigatorsList.push(selectedInv);
+            }
+            if (selectedDet && !detectivesList.includes(selectedDet)) {
+                detectivesList.push(selectedDet);
+            }
+
             invSel.innerHTML = '<option value="">-- เลือกพนักงานสอบสวน --</option>';
             investigatorsList.forEach(name => {
                 const opt = document.createElement('option');
@@ -3843,7 +4261,7 @@
         function syncCaseToWarrants(c) {
             if (!c.warrant) return;
             const existingIndex = mockWarrants.findIndex(w => w.caseNo === c.caseNo);
-            const suspectInfo = (c.accounts && c.accounts.length > 0) ? `${c.accounts[0]}` : `${c.victim} (ผู้ต้องหา)`;
+            const suspectInfo = (c.accounts && c.accounts.length > 0) ? formatAccountDisplay(c.accounts[0]) : `${c.victim} (ผู้ต้องหา)`;
             const warrantData = {
                 caseNo: c.caseNo,
                 no: existingIndex >= 0 ? mockWarrants[existingIndex].no : `จ.${Math.floor(100 + Math.random() * 899)}/2569`,
@@ -3897,11 +4315,17 @@
             box.innerHTML = '';
             if (c.accounts && c.accounts.length > 0) {
                 c.accounts.forEach(acc => {
-                    const match = acc.match(/^(.*?):\s*(.*?)\s*\((.*?)\)$/);
-                    if (match) {
-                        addMockAccountRow(match[1], match[2], match[3]);
+                    if (typeof acc === 'object' && acc !== null) {
+                        addMockAccountRow(acc.bank || '', acc.no || acc.account_no || acc.accNo || acc.accountNo || '', acc.name || acc.account_name || acc.accName || acc.accountName || '');
+                    } else if (typeof acc === 'string') {
+                        const match = acc.match(/^(.*?):\s*(.*?)\s*\((.*?)\)$/);
+                        if (match) {
+                            addMockAccountRow(match[1], match[2], match[3]);
+                        } else {
+                            addMockAccountRow('', '', acc);
+                        }
                     } else {
-                        addMockAccountRow('', '', acc);
+                        addMockAccountRow('', '', String(acc));
                     }
                 });
             } else {
@@ -4006,15 +4430,60 @@
             }
         }
 
-        // ฟังก์ชันตัดคำนำหน้ายศตำรวจและคำนำหน้านาม เพื่อการเปรียบเทียบชื่อที่แม่นยำ
+        // ฟังก์ชันแปลงข้อมูลบัญชีคนร้ายให้แสดงเป็นข้อความชื่อธนาคารและเลขบัญชีให้ถูกต้อง (ป้องกัน [object Object])
+        function formatAccountDisplay(acc) {
+            if (!acc) return '-';
+            if (typeof acc === 'string') return acc;
+            if (typeof acc === 'object' && acc !== null) {
+                const bank = acc.bank || '';
+                const no = acc.no || acc.account_no || acc.accNo || acc.accountNo || '';
+                const name = acc.name || acc.account_name || acc.accName || acc.accountName || '';
+                const tier = acc.tier ? `แถว ${acc.tier} - ` : '';
+                if (bank && no && name) return `${tier}${bank}: ${no} (${name})`;
+                if (bank && no) return `${tier}${bank}: ${no}`;
+                if (no) return `${tier}${bank ? bank + ' ' : ''}${no}${name ? ' (' + name + ')' : ''}`;
+                return `${tier}${name || bank || JSON.stringify(acc)}`;
+            }
+            return String(acc);
+        }
+
+        // ฟังก์ชันดึงชื่อ พงส. เจ้าของเรื่องตามจริงของ สภ.บางพลี
+        function getActualInvestigator(caseNo, rawName) {
+            const cleanNo = (caseNo || '').trim().toUpperCase();
+            // เฉพาะเคสที่ฐานข้อมูลกลาง สภ.บางพลี กำหนดตัว พงส. ชัดเจน
+            if (cleanNo === 'T6911087326' || cleanNo === 'T6911087748' || cleanNo === 'T6911087788') {
+                return 'พ.ต.ต.ธีรเดช สุขเกษม';
+            }
+            if (cleanNo === 'T6911088120') {
+                return 'พ.ต.ท.ประเสริฐ กุลบุตร';
+            }
+            if (cleanNo === 'T6911087999') {
+                return 'ร.ต.อ.ธนากร พิศุจน์';
+            }
+            // หากเป็นคดีอื่นที่มีการระบุชื่อ พงส. มา (รวมถึงถ้าเป็นของ ร.ต.ต.ธนกฤต หรือ พงส. ท่านใด) ให้ยึดตามจริงจากฐานข้อมูล
+            if (rawName && rawName.trim() !== '' && rawName.trim() !== '-') {
+                return rawName.trim();
+            }
+            return 'พ.ต.ต.ธีรเดช สุขเกษม';
+        }
+
+        // ฟังก์ชันตัดคำนำหน้ายศตำรวจและคำนำหน้านาม พร้อมตัดช่องว่างทั้งหมด เพื่อการเปรียบเทียบชื่อ-นามสกุลแบบยืดหยุ่น 100%
         function cleanPoliceRankName(str) {
             if (!str) return '';
             return String(str)
-                .replace(/^ว่าที่\s*/i, '')
-                .replace(/^(พล\.ต\.[ตโทอ]|พ\.ต\.[ตโทอ]|ร\.ต\.[ตโทอ]|จ\.ส\.ต|ส\.ต\.[ตโทอ]|ด\.ต|นายดาบ|นาย|นาง|นางสาว)\.?\s*/i, '')
+                .replace(/^(ว่าที่\s*)?(พล\.?ต\.?[ตโทอ]|พ\.?ต\.?[ตโทอ]|ร\.?ต\.?[ตโทอ]|จ\.?ส\.?ต\.?|ส\.?ต\.?[ตโทอ]|ด\.?ต\.?|ดาบตำรวจ|นายดาบ|หมวด|ผู้กอง|สารวัตร|นาย|นาง|นางสาว)\.?\s*/i, '')
                 .replace(/^[พรรดจสดาหมวด]\.?[ตโทอ]?\.?[ตโทอ]?\.?\s*/i, '')
-                .replace(/\s+/g, ' ')
+                .replace(/[\s\.\-_]/g, '')
                 .trim();
+        }
+
+        // ฟังก์ชันตรวจสอบความตรงกันของชื่อเจ้าหน้าที่แบบยืดหยุ่น (ตัดยศและช่องว่าง เทียบเฉพาะชื่อ-นามสกุล)
+        function isMatchOfficer(officerRawName, userRawName) {
+            if (!officerRawName || !userRawName) return false;
+            const cleanOfficer = cleanPoliceRankName(officerRawName);
+            const cleanUser = cleanPoliceRankName(userRawName);
+            if (!cleanOfficer || !cleanUser) return false;
+            return cleanOfficer === cleanUser || cleanOfficer.includes(cleanUser) || cleanUser.includes(cleanOfficer);
         }
 
         // ตัวแปรควบคุมการกรองด่วนและการเรียงลำดับความเร่งด่วน (Default: คดีของฉัน)
@@ -4157,15 +4626,13 @@
                 if (u === 'any_urgent' && urgList.length === 0) return false;
                 if (u && u !== 'any_urgent' && !urgList.includes(u)) return false;
 
-                // กรองตาม Quick Filter Pill
+                // กรองตาม Quick Filter Pill (คดีของฉัน: เทียบชื่อ พงส. หรือ สืบสวน แบบยืดหยุ่น ตัดยศและช่องว่าง)
                 if (currentCaseQuickFilter === 'my_cases') {
                     if (typeof currentAuthUser !== 'undefined' && currentAuthUser) {
-                        const myCleanName = cleanPoliceRankName(currentAuthUser.rank_name || currentAuthUser.full_name || currentAuthUser.name || '');
-                        if (myCleanName) {
-                            const invClean = cleanPoliceRankName(c.investigator || c.officerInquiry || '');
-                            const detClean = cleanPoliceRankName(c.detective || c.officerInvestigate || '');
-                            const matchInv = invClean && (invClean.includes(myCleanName) || myCleanName.includes(invClean));
-                            const matchDet = detClean && (detClean.includes(myCleanName) || myCleanName.includes(detClean));
+                        const myRawName = currentAuthUser.rank_name || currentAuthUser.full_name || currentAuthUser.name || '';
+                        if (myRawName) {
+                            const matchInv = isMatchOfficer(c.investigator || c.officerInquiry || '', myRawName);
+                            const matchDet = isMatchOfficer(c.detective || c.officerInvestigate || '', myRawName);
                             if (!matchInv && !matchDet) return false;
                         }
                     }
@@ -4209,12 +4676,11 @@
 
             if (elMy) {
                 if (typeof currentAuthUser !== 'undefined' && currentAuthUser) {
-                    const myCleanName = cleanPoliceRankName(currentAuthUser.rank_name || currentAuthUser.full_name || currentAuthUser.name || '');
+                    const myRawName = currentAuthUser.rank_name || currentAuthUser.full_name || currentAuthUser.name || '';
                     const myCount = mockCases.filter(c => {
-                        const invClean = cleanPoliceRankName(c.investigator || c.officerInquiry || '');
-                        const detClean = cleanPoliceRankName(c.detective || c.officerInvestigate || '');
-                        return (myCleanName && invClean && (invClean.includes(myCleanName) || myCleanName.includes(invClean))) ||
-                               (myCleanName && detClean && (detClean.includes(myCleanName) || myCleanName.includes(detClean)));
+                        const matchInv = isMatchOfficer(c.investigator || c.officerInquiry || '', myRawName);
+                        const matchDet = isMatchOfficer(c.detective || c.officerInvestigate || '', myRawName);
+                        return matchInv || matchDet;
                     }).length;
                     elMy.textContent = myCount;
                 } else {
@@ -4309,11 +4775,14 @@
                 const isWarroom = c.status === 'warroom';
                 const isSubmitted = c.status === 'ผู้เสียหายกรอกข้อมูลแล้ว' || !!c.victim_submitted_at;
 
-                const accountsHtml = (c.accounts || []).map(acc => `
-                    <div class="text-[11px] bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 mb-1 text-slate-700 dark:text-slate-300 font-sans">
-                        ${acc}
-                    </div>
-                `).join('');
+                const accountsHtml = (c.accounts || []).map(acc => {
+                    const label = formatAccountDisplay(acc);
+                    return `
+                        <div class="text-[11px] bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 mb-1 text-slate-700 dark:text-slate-300 font-sans">
+                            ${label}
+                        </div>
+                    `;
+                }).join('');
 
                 const s1PdfHtml = c.summons1Pdf ? `<div class="pl-4 text-[10px] text-blue-500 font-medium">📄 ${c.summons1Pdf}</div>` : '';
                 const s2PdfHtml = c.summons2Pdf ? `<div class="pl-4 text-[10px] text-blue-500 font-medium">📄 ${c.summons2Pdf}</div>` : '';
@@ -4418,7 +4887,10 @@
                             </div>
                         </td>
                         <td class="p-4 align-top text-center">
-                            <div class="inline-flex items-center gap-1.5">
+                            <div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
+                                <button type="button" onclick="openInterrogationModal('${c.caseNo || c.id}')" class="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/30 text-[11px] font-bold transition flex items-center gap-1" title="โหมดสอบปากคำ / พิมพ์คำให้การ">
+                                    <span>🎙️</span> <span class="hidden xl:inline">สอบปากคำ</span>
+                                </button>
                                 <button type="button" onclick="openShareVictimLinkModal('${c.caseNo || c.id}')" class="text-emerald-400 hover:text-emerald-300 p-1.5 rounded-lg hover:bg-emerald-500/10 transition" title="แชร์ลิงก์ / QR Code ให้ผู้เสียหายกรอกข้อมูลล่วงหน้า">
                                     🔗
                                 </button>
@@ -4552,7 +5024,7 @@
                 mule_accounts: muleAccounts,
                 financial_trails: financialTrails,
                 officer_inquiry: {
-                    name: c.investigator || 'ร.ต.ต.ธนกฤต ไทยกมล',
+                    name: getActualInvestigator(c.caseNo, c.investigator || c.officerInquiry),
                     position: 'พนักงานสอบสวนผู้รับผิดชอบ',
                     station: 'สถานีตำรวจภูธรบางพลี'
                 },
@@ -4567,8 +5039,14 @@
                 },
                 // ฟิลด์ข้อมูล 4 ส่วนจากระบบผู้เสียหายกรอกข้อมูลล่วงหน้า (/victim-form) (Lightweight PDPA)
                 victim_profile: c.victim_profile || c.victimProfile || null,
+                victimProfile: c.victim_profile || c.victimProfile || null,
                 freeze_info: c.freeze_info || c.freezeInfo || null,
+                freezeInfo: c.freeze_info || c.freezeInfo || null,
                 transfer_records: (c.transfer_records || c.transferRecords || []).map(tr => {
+                    const { fileData, fileBase64, ...cleanTr } = tr;
+                    return cleanTr;
+                }),
+                transferRecords: (c.transfer_records || c.transferRecords || []).map(tr => {
                     const { fileData, fileBase64, ...cleanTr } = tr;
                     return cleanTr;
                 }),
@@ -4576,7 +5054,12 @@
                     const { fileData, fileBase64, ...cleanIa } = ia;
                     return cleanIa;
                 }),
+                inquiryAnswers: (c.inquiry_answers || c.inquiryAnswers || []).map(ia => {
+                    const { fileData, fileBase64, ...cleanIa } = ia;
+                    return cleanIa;
+                }),
                 victim_submitted_at: c.victim_submitted_at || c.victimSubmittedAt || null,
+                victimSubmittedAt: c.victim_submitted_at || c.victimSubmittedAt || null,
                 metadata: {
                     source_system: 'Cyber Investigation Bangphli Portal',
                     station_code: 'POLICE-STN-BANGPHLI-001',
@@ -4604,9 +5087,9 @@
             const cleanTarget = cleanPoliceRankName(targetOfficer);
 
             return mockCases.filter(c => {
-                const inv = cleanPoliceRankName(c.investigator || c.officerInquiry || '');
-                const det = cleanPoliceRankName(c.detective || c.officerInvestigate || '');
-                return inv.includes(cleanTarget) || cleanTarget.includes(inv) || det.includes(cleanTarget) || cleanTarget.includes(det);
+                const matchInv = isMatchOfficer(c.investigator || c.officerInquiry || '', targetOfficer);
+                const matchDet = isMatchOfficer(c.detective || c.officerInvestigate || '', targetOfficer);
+                return matchInv || matchDet;
             });
         }
 
@@ -4761,10 +5244,10 @@
             const user = (typeof currentAuthUser !== 'undefined' && currentAuthUser) ? currentAuthUser : null;
             const isAdmin = user && (user.role === 'admin' || (user.position && user.position.includes('ผกก')));
             if (!isAdmin && user) {
-                const cleanUser = cleanPoliceRankName(user.rank_name || user.full_name || '');
-                const cleanInv = cleanPoliceRankName(c.investigator || c.officerInquiry || '');
-                const cleanDet = cleanPoliceRankName(c.detective || c.officerInvestigate || '');
-                if (cleanUser && !cleanInv.includes(cleanUser) && !cleanUser.includes(cleanInv) && !cleanDet.includes(cleanUser) && !cleanUser.includes(cleanDet)) {
+                const userRaw = user.rank_name || user.full_name || '';
+                const matchInv = isMatchOfficer(c.investigator || c.officerInquiry || '', userRaw);
+                const matchDet = isMatchOfficer(c.detective || c.officerInvestigate || '', userRaw);
+                if (userRaw && !matchInv && !matchDet) {
                     toast('⚠️ คุณสามารถ Export ได้เฉพาะคดีที่คุณเป็นพนักงานสอบสวนหรือฝ่ายสืบสวนเจ้าของเรื่องเท่านั้น');
                     return;
                 }
@@ -4887,8 +5370,11 @@
             }
         }
 
-        // ฟังก์ชันดึงและซิงก์ข้อมูล Cyber Cases ล่าสุดจาก Backend (รวมข้อมูลที่ผู้เสียหายส่งมา)
+        // ฟังก์ชันดึงและซิงก์ข้อมูล Cyber Cases ล่าสุดจาก Backend และฐานข้อมูลกลาง Supabase (พงส. ตามจริง)
         async function syncCyberCasesFromBackend() {
+            let updated = false;
+
+            // 1. ซิงก์จาก Local Backend API (SQLite cyber_details)
             try {
                 const res = await safeApiFetch('/api/external/newpolice/cases');
                 if (res && res.data && Array.isArray(res.data.cases) && res.data.cases.length > 0) {
@@ -4898,21 +5384,76 @@
                             (c.id && remoteCase.id && String(c.id) === String(remoteCase.id))
                         );
                         if (existing) {
+                            if (remoteCase.investigator) existing.investigator = getActualInvestigator(existing.caseNo || remoteCase.caseNo, remoteCase.investigator);
+                            if (remoteCase.detective) existing.detective = remoteCase.detective;
                             if (remoteCase.status) existing.status = remoteCase.status;
+                            if (remoteCase.amount) existing.amount = remoteCase.amount;
                             if (remoteCase.victim_submitted_at) existing.victim_submitted_at = remoteCase.victim_submitted_at;
                             if (remoteCase.victim_profile) existing.victim_profile = remoteCase.victim_profile;
                             if (remoteCase.freeze_info) existing.freeze_info = remoteCase.freeze_info;
                             if (remoteCase.transfer_records) existing.transfer_records = remoteCase.transfer_records;
                             if (remoteCase.inquiry_answers) existing.inquiry_answers = remoteCase.inquiry_answers;
                         } else {
+                            if (remoteCase.caseNo) remoteCase.investigator = getActualInvestigator(remoteCase.caseNo, remoteCase.investigator);
                             mockCases.push(remoteCase);
                         }
                     });
-                    try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(_) {}
-                    renderCases();
+                    updated = true;
                 }
             } catch(e) {
-                console.warn('[SYNC CYBER CASES]', e);
+                console.warn('[SYNC CYBER CASES BACKEND]', e);
+            }
+
+            // 2. ซิงก์จากฐานข้อมูลกลาง Supabase ตาราง cases (ดึงชื่อ พงส. เจ้าของเรื่องตามจริง)
+            try {
+                const supa = (typeof getActiveSupabaseClient === 'function') ? getActiveSupabaseClient() : null;
+                if (supa) {
+                    const { data: supaCases, error } = await supa.from('cases').select('*');
+                    if (!error && Array.isArray(supaCases) && supaCases.length > 0) {
+                        supaCases.forEach(sc => {
+                            const existing = mockCases.find(c => 
+                                (c.caseNo && sc.case_no && c.caseNo.toUpperCase() === sc.case_no.toUpperCase()) ||
+                                (c.id && sc.id && String(c.id) === String(sc.id))
+                            );
+                            if (existing) {
+                                if (sc.investigator_name) existing.investigator = getActualInvestigator(existing.caseNo || sc.case_no, sc.investigator_name);
+                                if (sc.status) existing.status = sc.status;
+                                if (sc.damage_amount) existing.amount = Number(sc.damage_amount) || existing.amount;
+                                if (sc.case_type) existing.type = sc.case_type;
+                            } else if (sc.case_no) {
+                                mockCases.push({
+                                    id: sc.id || `supa_${Date.now()}`,
+                                    caseNo: sc.case_no,
+                                    date: sc.created_at ? new Date(sc.created_at).toLocaleDateString('th-TH') : '',
+                                    victim: 'ผู้เสียหาย (Supabase กลาง)',
+                                    type: sc.case_type || sc.fraud_category || 'คดีออนไลน์',
+                                    amount: Number(sc.damage_amount) || 0,
+                                    status: sc.status || 'พบพงส.',
+                                    urgency: [],
+                                    accounts: [],
+                                    investigator: getActualInvestigator(sc.case_no, sc.investigator_name),
+                                    detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                                    summons1: false,
+                                    summons1Date: '',
+                                    summons1Pdf: '',
+                                    summons2: false,
+                                    summons2Date: '',
+                                    summons2Pdf: '',
+                                    warrant: false,
+                                    warrantPdf: ''
+                                });
+                            }
+                        });
+                        updated = true;
+                    }
+                }
+            } catch(supaErr) {
+                console.warn('[SYNC CYBER CASES SUPABASE]', supaErr);
+            }
+
+            if (updated) {
+                try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(_) {}
+                renderCases();
             }
         }
 
@@ -5983,6 +6524,57 @@
             m.classList.remove('flex');
         }
 
+        let bangphliInquiryChannel = null;
+        try { bangphliInquiryChannel = new BroadcastChannel('bangphli_inquiry_sync'); } catch(e) {}
+
+        function broadcastInquirySync(templates) {
+            try {
+                if (bangphliInquiryChannel) {
+                    bangphliInquiryChannel.postMessage({ type: 'inquiry_updated', templates: templates });
+                }
+            } catch(e) {}
+        }
+
+        function syncInquiryTemplatesToBackend() {
+            try {
+                try { localStorage.setItem('cyber_inquiry_data', JSON.stringify(mockInquiry)); } catch(e) {}
+                try { localStorage.setItem('cyber_inquiry_templates', JSON.stringify(mockInquiry)); } catch(e) {}
+                broadcastInquirySync(mockInquiry);
+                fetch('/api/inquiry/templates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ templates: mockInquiry })
+                }).catch(() => {});
+            } catch (e) {}
+        }
+
+        async function loadInquiryTemplatesFromBackend() {
+            try {
+                // ถ้าใน localStorage มีการเพิ่ม/แก้ไขประเด็นไว้แล้ว ให้ซิงค์ขึ้น backend ทันที
+                const localSaved = localStorage.getItem('cyber_inquiry_data');
+                if (localSaved) {
+                    try {
+                        const parsed = JSON.parse(localSaved);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            mockInquiry = parsed;
+                            syncInquiryTemplatesToBackend();
+                            renderInquiry();
+                            return;
+                        }
+                    } catch(e) {}
+                }
+
+                const res = await safeApiFetch('/api/inquiry/templates');
+                if (res && res.data && res.data.success && Array.isArray(res.data.templates) && res.data.templates.length > 0) {
+                    mockInquiry = res.data.templates;
+                    try { localStorage.setItem('cyber_inquiry_data', JSON.stringify(mockInquiry)); } catch(e) {}
+                    try { localStorage.setItem('cyber_inquiry_templates', JSON.stringify(mockInquiry)); } catch(e) {}
+                    broadcastInquirySync(mockInquiry);
+                    renderInquiry();
+                }
+            } catch(e) {}
+        }
+
         function saveInquiryPoint() {
             if (!isCurrentUserAdmin()) {
                 toast('❌ ปฏิเสธ: เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่มีสิทธิ์เพิ่มประเด็นสอบสวน');
@@ -5999,6 +6591,7 @@
                 mockInquiry[catIndex].points.push(text);
                 try {
                     localStorage.setItem('cyber_inquiry_data', JSON.stringify(mockInquiry));
+                    syncInquiryTemplatesToBackend();
                 } catch (e) {}
                 closeAddInquiryModal();
                 renderInquiry();
@@ -6019,6 +6612,7 @@
                 cat.points.splice(ptIndex, 1);
                 try {
                     localStorage.setItem('cyber_inquiry_data', JSON.stringify(mockInquiry));
+                    syncInquiryTemplatesToBackend();
                 } catch (e) {}
                 renderInquiry();
                 toast('🗑️ ลบประเด็นสอบสวนเรียบร้อยแล้ว');
@@ -6034,6 +6628,7 @@
                 mockInquiry = JSON.parse(JSON.stringify(defaultInquiryData));
                 try {
                     localStorage.removeItem('cyber_inquiry_data');
+                    syncInquiryTemplatesToBackend();
                 } catch (e) {}
                 renderInquiry();
                 toast('🔄 คืนค่าประเด็นคำถามเริ่มต้นเรียบร้อยแล้ว');
@@ -10874,8 +11469,8 @@ ${currentDocPrintHtml}
                             borders: noBorders,
                             margins: { top: 30, bottom: 50, left: 0, right: 60 },
                             children: [
-                                tP(`(ลงชื่อ) ${L.rank} ...................... ${L.roleLabel}`, { size: 28, after: 10 }),
-                                tP(`( ${L.nameOnly} )`, { size: 28, align: AlignmentType.CENTER, after: 0 })
+                                tP(`(ลงชื่อ) ${L.rank} ...................... ${L.roleLabel}`, { size: SZ, after: 10 }),
+                                tP(`( ${L.nameOnly} )`, { size: SZ, align: AlignmentType.CENTER, after: 0 })
                             ]
                         }),
                         new TableCell({
@@ -10883,8 +11478,8 @@ ${currentDocPrintHtml}
                             borders: noBorders,
                             margins: { top: 30, bottom: 50, left: 60, right: 0 },
                             children: R ? [
-                                tP(`(ลงชื่อ) ${R.rank} ...................... ${R.roleLabel}`, { size: 28, after: 10 }),
-                                tP(`( ${R.nameOnly} )`, { size: 28, align: AlignmentType.CENTER, after: 0 })
+                                tP(`(ลงชื่อ) ${R.rank} ...................... ${R.roleLabel}`, { size: SZ, after: 10 }),
+                                tP(`( ${R.nameOnly} )`, { size: SZ, align: AlignmentType.CENTER, after: 0 })
                             ] : [tP('', { after: 0 })]
                         })
                     ]
@@ -10917,7 +11512,7 @@ ${currentDocPrintHtml}
                 page4BoxChildren.push(new Paragraph({
                     alignment: AlignmentType.CENTER,
                     spacing: { before: 120, after: 200 },
-                    children: [new TextRun({ text: '{ภาพประกอบการจับกุม}', font: FONT, size: 40, noProof: true })]
+                    children: [new TextRun({ text: '{ภาพประกอบการจับกุม}', font: FONT, size: SZ, noProof: true })]
                 }));
             }
 
@@ -11439,6 +12034,17 @@ ${currentDocPrintHtml}
                 position: 'ผบ.หมู่ (ป.) สภ.บางพลี',
                 department: 'งานสารบรรณ / ส่งหมาย',
                 role: 'clerk',
+                status: 'active',
+                pass: 'Police@2569'
+            },
+            {
+                id: 7,
+                username: 'theeradej',
+                badge_no: '30002',
+                rank_name: 'พ.ต.ต.ธีรเดช สุขเกษม',
+                position: 'สารวัตร (สอบสวน) สภ.บางพลี',
+                department: 'งานสอบสวน',
+                role: 'inquiry',
                 status: 'active',
                 pass: 'Police@2569'
             }
@@ -13106,10 +13712,11 @@ ${currentDocPrintHtml}
             } catch (_) {}
         }
 
-        async function initNewPoliceIntegration() {
+        async function refreshNewPoliceRequestsData(showToast = true) {
             const token = getAuthToken();
             let loaded = null;
 
+            // 1. ดึงจาก Local Backend API (Admin หรือ External Endpoint)
             if (token) {
                 const res = await safeApiFetch('/api/admin/newpolice/requests', {
                     headers: { 'Authorization': 'Bearer ' + token }
@@ -13126,13 +13733,54 @@ ${currentDocPrintHtml}
                 }
             }
 
-            if (!loaded || loaded.length === 0) {
-                loaded = getNewPoliceRequestsLocalStore();
+            // 2. ดึงจากฐานข้อมูลกลาง Supabase (ถ้ามีตาราง newpolice_user_requests หรือ newpoliceRequests)
+            try {
+                const supa = (typeof getActiveSupabaseClient === 'function') ? getActiveSupabaseClient() : null;
+                if (supa) {
+                    const { data: supaReqs, error } = await supa.from('newpolice_user_requests').select('*').order('id', { ascending: false });
+                    if (!error && Array.isArray(supaReqs) && supaReqs.length > 0) {
+                        loaded = supaReqs;
+                    }
+                }
+            } catch (_) {}
+
+            if (loaded && loaded.length > 0) {
+                newPoliceUserRequests = loaded;
+                saveNewPoliceRequestsLocalStore(newPoliceUserRequests);
+            } else if (!newPoliceUserRequests || newPoliceUserRequests.length === 0) {
+                newPoliceUserRequests = getNewPoliceRequestsLocalStore();
             }
 
-            newPoliceUserRequests = loaded;
-            saveNewPoliceRequestsLocalStore(newPoliceUserRequests);
             renderNewPoliceUsersUI();
+            if (showToast) {
+                const pending = (newPoliceUserRequests || []).filter(r => r.status === 'pending').length;
+                toast(`🔄 รีเฟรชข้อมูลคำขอ newpolice สำเร็จ (${newPoliceUserRequests.length} รายการ | รออนุมัติ ${pending} นาย)`);
+            }
+        }
+
+        let newPoliceRealtimeTimer = null;
+        function setupNewPoliceRealtimeSync() {
+            if (newPoliceRealtimeTimer) clearInterval(newPoliceRealtimeTimer);
+            newPoliceRealtimeTimer = setInterval(() => {
+                refreshNewPoliceRequestsData(false);
+            }, 10000);
+
+            // Supabase Realtime Channel
+            try {
+                const supa = (typeof getActiveSupabaseClient === 'function') ? getActiveSupabaseClient() : null;
+                if (supa && typeof supa.channel === 'function') {
+                    supa.channel('newpolice_realtime_channel')
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'newpolice_user_requests' }, () => {
+                            refreshNewPoliceRequestsData(false);
+                        })
+                        .subscribe();
+                }
+            } catch (_) {}
+        }
+
+        async function initNewPoliceIntegration() {
+            await refreshNewPoliceRequestsData(false);
+            setupNewPoliceRealtimeSync();
         }
 
         function renderNewPoliceUsersUI() {
@@ -13509,18 +14157,36 @@ ${currentDocPrintHtml}
                 return;
             }
 
-            const payload = { badge_no, rank_name, position, agency, phone, purpose };
+            const requestCode = 'REQ-NP-2569-' + String(newPoliceUserRequests.length + 1).padStart(3, '0');
+            const payload = { badge_no, rank_name, position, agency, phone, purpose, request_code: requestCode };
             const res = await safeApiFetch('/api/external/newpolice/request-access', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
+            // ส่งขึ้น Supabase ตาราง newpolice_user_requests (ถ้าเปิดใช้งาน)
+            try {
+                const supa = (typeof getActiveSupabaseClient === 'function') ? getActiveSupabaseClient() : null;
+                if (supa) {
+                    await supa.from('newpolice_user_requests').insert([{
+                        station_code: 'POLICE-STN-BANGPHLI-001',
+                        request_code: requestCode,
+                        badge_no,
+                        rank_name,
+                        position,
+                        agency,
+                        phone,
+                        purpose,
+                        status: 'pending'
+                    }]);
+                }
+            } catch (_) {}
+
             if (!res._staticCloudMode && res.data && res.data.success && res.data.request) {
                 newPoliceUserRequests.unshift(res.data.request);
             } else {
                 const newId = Date.now();
-                const requestCode = 'REQ-NP-2569-' + String(newPoliceUserRequests.length + 1).padStart(3, '0');
                 newPoliceUserRequests.unshift({
                     id: newId,
                     request_code: requestCode,
@@ -13541,6 +14207,7 @@ ${currentDocPrintHtml}
 
             saveNewPoliceRequestsLocalStore(newPoliceUserRequests);
             renderNewPoliceUsersUI();
+            refreshNewPoliceRequestsData(false);
 
             // Clear form
             document.getElementById('npReqBadge').value = '';
@@ -13660,6 +14327,1595 @@ ${currentDocPrintHtml}
             }
         }
 
+        // =========================================================================
+        // INTERACTIVE INTERROGATION MODE & DOCX STATEMENT / PROPERTY GENERATOR
+        // (โหมดสอบปากคำ & ส่งออกคำให้การผู้กล่าวหา + บัญชีทรัพย์ถูกประทุษร้าย .docx)
+        // =========================================================================
+        let currentInterrogationCase = null;
+        let interrogationQAList = [];
+
+        function toThaiBahtText(amount) {
+            const num = parseFloat(amount);
+            if (isNaN(num) || num === 0) return 'ศูนย์บาทถ้วน';
+            const txtNumArr = ['ศูนย์', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า'];
+            const txtDigitArr = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน'];
+            const readInt = (s) => {
+                let res = '';
+                const len = s.length;
+                for (let i = 0; i < len; i++) {
+                    const n = parseInt(s.charAt(i), 10);
+                    const pos = len - i - 1;
+                    const mod = pos % 6;
+                    if (n !== 0) {
+                        if (mod === 1 && n === 1) res += 'สิบ';
+                        else if (mod === 1 && n === 2) res += 'ยี่สิบ';
+                        else if (mod === 0 && n === 1 && len > 1 && s.charAt(i - 1) !== '0' && i > 0) res += 'เอ็ด';
+                        else res += txtNumArr[n] + txtDigitArr[mod];
+                    }
+                    if (pos > 0 && mod === 0) res += 'ล้าน';
+                }
+                return res;
+            };
+            const parts = Math.abs(num).toFixed(2).split('.');
+            let baht = parts[0] === '0' ? '' : readInt(parts[0]) + 'บาท';
+            let satang = parts[1] === '00' ? 'ถ้วน' : readInt(parts[1]) + 'สตางค์';
+            if (!baht && parts[1] !== '00') return satang;
+            return (num < 0 ? 'ลบ' : '') + baht + satang;
+        }
+
+        function parseThaiDateParts(dateStr) {
+            const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+            const now = new Date();
+            let day = now.getDate();
+            let monthIdx = now.getMonth();
+            let yearBE = now.getFullYear() + 543;
+
+            if (dateStr && typeof dateStr === 'string') {
+                const s = dateStr.trim();
+                if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+                    const [y, m, d] = s.slice(0, 10).split('-').map(Number);
+                    if (y && m && d) {
+                        day = d;
+                        monthIdx = m - 1;
+                        yearBE = y > 2400 ? y : y + 543;
+                    }
+                } else if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)) {
+                    const [d, m, y] = s.split('/').map(Number);
+                    if (y && m && d) {
+                        day = d;
+                        monthIdx = m - 1;
+                        yearBE = y > 2400 ? y : y + 543;
+                    }
+                }
+            }
+            const monthName = thaiMonths[monthIdx] || 'พฤศจิกายน';
+            return { day: String(day), monthName, yearBE: String(yearBE), fullThai: `${day} ${monthName} ${yearBE}` };
+        }
+
+        function extractVictimDisplayName(c) {
+            const vp = c.victimProfile || c.victim_profile;
+            if (vp && (vp.firstName || vp.lastName)) {
+                return `${vp.prefix || ''}${vp.firstName || ''} ${vp.lastName || ''}`.trim();
+            }
+            const raw = (c.victim || 'ผู้กล่าวหา').replace(/\b0\d{8,9}\b/g, '').trim();
+            return raw || 'ผู้กล่าวหา';
+        }
+
+        function extractSuspectDisplayName(c) {
+            const tRecs = Array.isArray(c.transferRecords) ? c.transferRecords : (Array.isArray(c.transfer_records) ? c.transfer_records : []);
+            const names = [];
+            tRecs.forEach(tr => {
+                if (tr.toAccountName && tr.toAccountName.trim() && !names.includes(tr.toAccountName.trim())) {
+                    names.push(tr.toAccountName.trim());
+                }
+            });
+            if (names.length > 0) return names.join(', ');
+            if (Array.isArray(c.accounts) && c.accounts.length > 0) {
+                const firstAcc = c.accounts[0];
+                if (typeof firstAcc === 'string') {
+                    const m = firstAcc.match(/\(([^)]+)\)/);
+                    if (m && m[1]) return m[1].trim();
+                    return firstAcc;
+                } else if (firstAcc && firstAcc.name) {
+                    return firstAcc.name;
+                }
+            }
+            return 'คนร้ายไม่ทราบชื่อ (เจ้าของบัญชีรับโอน)';
+        }
+
+        
+        const THAI_MONTHS = [
+            'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+            'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+        ];
+
+        function setInterrogationDateToday() {
+            const now = new Date();
+            const day = now.getDate().toString();
+            const month = THAI_MONTHS[now.getMonth()];
+            const year = (now.getFullYear() + 543).toString();
+
+            const dEl = document.getElementById('intStmtDateDay');
+            const mEl = document.getElementById('intStmtDateMonth');
+            const yEl = document.getElementById('intStmtDateYear');
+            if (dEl) dEl.value = day;
+            if (mEl) mEl.value = month;
+            if (yEl) yEl.value = year;
+            toast(`📅 ตั้งวันที่สอบปากคำเป็นวันนี้: ${day} ${month} ${year}`);
+        }
+
+        function formatThaiIdCard(id) {
+            if (!id) return '';
+            const clean = id.toString().replace(/\D/g, '');
+            if (clean.length === 13) {
+                return `${clean[0]}-${clean.slice(1,5)}-${clean.slice(5,10)}-${clean.slice(10,12)}-${clean[12]}`;
+            }
+            return id.toString().trim();
+        }
+
+        function populateInterrogationFormVariables(c) {
+            if (!c) return;
+            const sv = c.statementVariables || {};
+            const vp = c.victimProfile || c.victim_profile || {};
+            const now = new Date();
+
+            // 1. วันที่ เดือน ปี & สภ.
+            const defaultDay = sv.stmtDay || now.getDate().toString();
+            const defaultMonth = sv.stmtMonth || THAI_MONTHS[now.getMonth()];
+            const defaultYear = sv.stmtYear || (now.getFullYear() + 543).toString();
+
+            const dEl = document.getElementById('intStmtDateDay');
+            const mEl = document.getElementById('intStmtDateMonth');
+            const yEl = document.getElementById('intStmtDateYear');
+            if (dEl) dEl.value = defaultDay;
+            if (mEl) mEl.value = defaultMonth;
+            if (yEl) yEl.value = defaultYear;
+
+            const stEl = document.getElementById('intStationInput');
+            const saEl = document.getElementById('intStationAmphoeInput');
+            const spEl = document.getElementById('intStationProvinceInput');
+            if (stEl) stEl.value = sv.station || 'ภูธรบางพลี';
+            if (saEl) saEl.value = sv.stationAmphoe || 'บางพลี';
+            if (spEl) spEl.value = sv.stationProvince || 'สมุทรปราการ';
+
+            // ผู้ต้องหา พงส. และตำแหน่ง
+            const susEl = document.getElementById('intSuspectNameInput');
+            if (susEl) susEl.value = sv.suspectFullName || extractSuspectDisplayName(c);
+
+            const offEl = document.getElementById('intOfficerNameInput');
+            if (offEl) offEl.value = sv.officerFullName || getActualInvestigator(c.caseNo, c.investigator);
+
+            const posEl = document.getElementById('intOfficerPositionInput');
+            if (posEl) posEl.value = sv.officerPosition || 'รอง สว.(สอบสวน) สภ.บางพลี';
+
+            const crimEl = document.getElementById('intCrimCaseNoInput');
+            if (crimEl) crimEl.value = sv.crimCaseNo || c.criminalCaseNo || c.caseNo || '';
+
+            const chgEl = document.getElementById('intChargeInput');
+            if (chgEl) chgEl.value = sv.charge || c.charge || c.type || 'ฉ้อโกงประชาชน และนำเข้าสู่ระบบคอมพิวเตอร์ฯ';
+
+            // 2 & 3. ข้อมูลผู้เสียหาย
+            const rawVictimFullName = extractVictimDisplayName(c);
+            const vParsed = parseThaiFullName(rawVictimFullName);
+
+            const vpPrefix = sv.victimPrefix || vp.prefix || vParsed.prefix || 'นาย';
+            const vpName = sv.victimName || [vParsed.firstName, vParsed.lastName].filter(Boolean).join(' ') || rawVictimFullName;
+
+            const pfxEl = document.getElementById('intVictimPrefixInput');
+            if (pfxEl) pfxEl.value = vpPrefix;
+
+            const vNameEl = document.getElementById('intVictimNameInput');
+            if (vNameEl) vNameEl.value = vpName;
+
+            const rawId = sv.victimIdCard || vp.idCard || c.idCard || '';
+            const idEl = document.getElementById('intVictimIdCardInput');
+            if (idEl) idEl.value = formatThaiIdCard(rawId);
+
+            const ageEl = document.getElementById('intVictimAgeInput');
+            if (ageEl) ageEl.value = sv.victimAge || vp.age || c.age || '30';
+
+            const rawPhone = sv.victimPhone || vp.phone || ((c.victim || '').match(/\b0\d{8,9}\b/) || [''])[0];
+            const phEl = document.getElementById('intVictimPhoneInput');
+            if (phEl) phEl.value = rawPhone;
+
+            const raceEl = document.getElementById('intVictimRaceInput');
+            if (raceEl) raceEl.value = sv.victimRace || 'ไทย';
+
+            const natEl = document.getElementById('intVictimNationalityInput');
+            if (natEl) natEl.value = sv.victimNationality || 'ไทย';
+
+            const relEl = document.getElementById('intVictimReligionInput');
+            if (relEl) relEl.value = sv.victimReligion || 'พุทธ';
+
+            const carEl = document.getElementById('intVictimCareerInput');
+            if (carEl) carEl.value = sv.victimCareer || vp.career || vp.occupation || c.career || 'รับจ้าง';
+
+            // 4. ที่อยู่
+            const rawAddr = vp.address || '';
+            const houseNoMatch = rawAddr.match(/^([^\s]+(?:\s*หมู่\s*\d+)?)/);
+            const mooMatch = rawAddr.match(/หมู่(?:ที่)?\s*(\d+)/);
+            const tambonMatch = rawAddr.match(/(?:ต\.|ตำบล|แขวง)\s*([^\s]+)/);
+            const amphoeMatch = rawAddr.match(/(?:อ\.|อำเภอ|เขต)\s*([^\s]+)/);
+            const provMatch = rawAddr.match(/(?:จ\.|จังหวัด)\s*([^\s]+)/);
+
+            const hEl = document.getElementById('intAddrHouseNoInput');
+            if (hEl) hEl.value = sv.houseNo || vp.houseNo || (houseNoMatch ? houseNoMatch[1].replace(/หมู่.*/, '').trim() : '99/12');
+
+            const mooEl = document.getElementById('intAddrMooInput');
+            if (mooEl) mooEl.value = sv.moo || vp.moo || (mooMatch ? mooMatch[1] : '5');
+
+            const tamEl = document.getElementById('intAddrTambonInput');
+            if (tamEl) tamEl.value = sv.tambon || vp.tambon || (tambonMatch ? tambonMatch[1] : 'บางพลีใหญ่');
+
+            const ampEl = document.getElementById('intAddrAmphoeInput');
+            if (ampEl) ampEl.value = sv.amphoe || vp.amphoe || (amphoeMatch ? amphoeMatch[1] : 'บางพลี');
+
+            const prvEl = document.getElementById('intAddrProvinceInput');
+            if (prvEl) prvEl.value = sv.province || vp.province || (provMatch ? provMatch[1] : 'สมุทรปราการ');
+
+            const headEl = document.getElementById('intAddrHeadmanInput');
+            if (headEl) headEl.value = sv.headman || '-';
+
+            const kamEl = document.getElementById('intAddrKamnanInput');
+            if (kamEl) kamEl.value = sv.kamnan || '-';
+
+            // 5. บิดา มารดา & ความเกี่ยวข้อง
+            const defLastName = vParsed.lastName ? `- ${vParsed.lastName}` : '-';
+            const faEl = document.getElementById('intFatherNameInput');
+            if (faEl) faEl.value = sv.fatherName || vp.fatherName || defLastName;
+
+            const moEl = document.getElementById('intMotherNameInput');
+            if (moEl) moEl.value = sv.motherName || vp.motherName || defLastName;
+
+            const relCaseEl = document.getElementById('intRelationInput');
+            if (relCaseEl) relCaseEl.value = sv.relation || 'ไม่เกี่ยวข้อง สาบานตนแล้ว';
+        }
+
+        function getInterrogationFormVariables() {
+            const stmtDay = document.getElementById('intStmtDateDay')?.value.trim() || '8';
+            const stmtMonth = document.getElementById('intStmtDateMonth')?.value.trim() || 'พฤศจิกายน';
+            const stmtYear = document.getElementById('intStmtDateYear')?.value.trim() || '2569';
+
+            const station = document.getElementById('intStationInput')?.value.trim() || 'ภูธรบางพลี';
+            const stationAmphoe = document.getElementById('intStationAmphoeInput')?.value.trim() || 'บางพลี';
+            const stationProvince = document.getElementById('intStationProvinceInput')?.value.trim() || 'สมุทรปราการ';
+
+            const suspectFullName = document.getElementById('intSuspectNameInput')?.value.trim() || 'ผู้ต้องหา';
+            const sParsed = parseThaiFullName(suspectFullName);
+
+            const officerFullName = document.getElementById('intOfficerNameInput')?.value.trim() || 'ร.ต.ต. ธนกฤต ไทยกมล';
+            const officerPosition = document.getElementById('intOfficerPositionInput')?.value.trim() || 'รอง สว.(สอบสวน) สภ.บางพลี';
+            const oParsed = parseThaiFullName(officerFullName);
+
+            const crimCaseNo = document.getElementById('intCrimCaseNoInput')?.value.trim() || '';
+            const charge = document.getElementById('intChargeInput')?.value.trim() || 'ฉ้อโกงประชาชน และนำเข้าสู่ระบบคอมพิวเตอร์ฯ';
+
+            const victimPrefix = document.getElementById('intVictimPrefixInput')?.value.trim() || 'นาย';
+            const victimNameOnly = document.getElementById('intVictimNameInput')?.value.trim() || 'ผู้กล่าวหา';
+            const vParsed = parseThaiFullName(victimNameOnly);
+            const victimFirstName = vParsed.firstName || victimNameOnly;
+            const victimLastName = vParsed.lastName || '';
+            const victimFullName = [victimPrefix, victimFirstName, victimLastName].filter(Boolean).join(' ');
+
+            const victimIdCard = document.getElementById('intVictimIdCardInput')?.value.trim() || '1-1103-00451-23-4';
+            const victimAge = document.getElementById('intVictimAgeInput')?.value.trim() || '30';
+            const victimPhone = document.getElementById('intVictimPhoneInput')?.value.trim() || '0918955919';
+            const victimRace = document.getElementById('intVictimRaceInput')?.value.trim() || 'ไทย';
+            const victimNationality = document.getElementById('intVictimNationalityInput')?.value.trim() || 'ไทย';
+            const victimReligion = document.getElementById('intVictimReligionInput')?.value.trim() || 'พุทธ';
+            const victimCareer = document.getElementById('intVictimCareerInput')?.value.trim() || 'รับจ้าง';
+
+            const houseNo = document.getElementById('intAddrHouseNoInput')?.value.trim() || '99/12';
+            const moo = document.getElementById('intAddrMooInput')?.value.trim() || '5';
+            const tambon = document.getElementById('intAddrTambonInput')?.value.trim() || 'บางพลีใหญ่';
+            const amphoe = document.getElementById('intAddrAmphoeInput')?.value.trim() || 'บางพลี';
+            const province = document.getElementById('intAddrProvinceInput')?.value.trim() || 'สมุทรปราการ';
+            const headman = document.getElementById('intAddrHeadmanInput')?.value.trim() || '-';
+            const kamnan = document.getElementById('intAddrKamnanInput')?.value.trim() || '-';
+
+            const fatherName = document.getElementById('intFatherNameInput')?.value.trim() || '-';
+            const motherName = document.getElementById('intMotherNameInput')?.value.trim() || '-';
+            const relation = document.getElementById('intRelationInput')?.value.trim() || 'ไม่เกี่ยวข้อง สาบานตนแล้ว';
+
+            return {
+                stmtDay, stmtMonth, stmtYear,
+                station, stationAmphoe, stationProvince,
+                crimCaseNo, charge,
+                suspectFullName, suspectFirstName: sParsed.firstName, suspectLastName: sParsed.lastName,
+                officerFullName, officerPosition, officerPrefix: oParsed.prefix, officerFirstName: oParsed.firstName, officerLastName: oParsed.lastName,
+                victimPrefix, victimFirstName, victimLastName, victimFullName,
+                victimIdCard, victimAge, victimPhone, victimRace, victimNationality, victimReligion, victimCareer,
+                houseNo, moo, tambon, amphoe, province, headman, kamnan,
+                fatherName, motherName, relation
+            };
+        }
+
+        function syncAddressToQuestion1() {
+            const v = getInterrogationFormVariables();
+            const thaiHouseNo = toThaiNumerals(v.houseNo);
+            const thaiMoo = toThaiNumerals(v.moo);
+            const newAnswer = `ข้าฯ มีภูมิลำเนาตามที่อยู่ที่ข้าฯ ได้แจ้งให้พนักงานสอบสวนทราบแล้วข้างต้น ปัจจุบันพักอาศัยอยู่ บ้านเลขที่ ${thaiHouseNo} หมู่ที่ ${thaiMoo} ต.${v.tambon} อ.${v.amphoe} จ.${v.province} หากข้าฯ ย้ายที่อยู่เมื่อไหร่ใด ข้าฯ จะแจ้งให้พนักงานสอบสวนทราบทันที ปัจจุบันประกอบอาชีพ${v.victimCareer} ทำงานที่- จบการศึกษาชั้น มัธยมศึกษา สถานภาพ โสด`;
+
+            if (Array.isArray(interrogationQAList) && interrogationQAList.length > 0) {
+                interrogationQAList[0].answer = newAnswer;
+                renderInterrogationBlocks();
+                toast('🔄 ซิงค์ที่อยู่และอาชีพไปยังคำตอบข้อที่ 1 เรียบร้อยแล้ว');
+            }
+        }
+
+        async function openInterrogationModal(caseNoOrId) {
+            let c = mockCases.find(item => (item.caseNo && item.caseNo === caseNoOrId) || item.id === caseNoOrId);
+            if (!c) {
+                toast('⚠️ ไม่พบข้อมูลคดี');
+                return;
+            }
+
+            // ดึงข้อมูลล่าสุดจาก Backend SQLite เพื่อให้ได้คำตอบจากผู้เสียหายที่เป็นปัจจุบันที่สุด
+            try {
+                const res = await safeApiFetch(`/api/external/newpolice/cases?caseNo=${encodeURIComponent(c.caseNo || '')}`);
+                if (res && res.data && res.data.success && Array.isArray(res.data.cases) && res.data.cases.length > 0) {
+                    const remote = res.data.cases[0];
+                    if (remote.type) c.type = remote.type;
+                    if (remote.victimProfile) c.victimProfile = remote.victimProfile;
+                    if (Array.isArray(remote.transferRecords) && remote.transferRecords.length > 0) c.transferRecords = remote.transferRecords;
+                    if (Array.isArray(remote.inquiryAnswers) && remote.inquiryAnswers.length > 0) c.inquiryAnswers = remote.inquiryAnswers;
+                    if (Array.isArray(remote.interrogationStatements) && remote.interrogationStatements.length > 0) {
+                        c.interrogationStatements = remote.interrogationStatements;
+                    } else {
+                        c.interrogationStatements = null;
+                    }
+                    if (remote.investigator) c.investigator = getActualInvestigator(c.caseNo, remote.investigator);
+                    if (remote.statementVariables) c.statementVariables = remote.statementVariables;
+                }
+            } catch (e) {}
+
+            // ดึงแม่แบบคำถาม 14 กลโกง ล่าสุดจาก Backend ด้วย (ถ้ายังไม่มีการแก้ไขใน localStorage)
+            try {
+                const tRes = await safeApiFetch('/api/inquiry/templates');
+                if (tRes && tRes.data && tRes.data.success && Array.isArray(tRes.data.templates) && tRes.data.templates.length > 0) {
+                    const localSaved = localStorage.getItem('cyber_inquiry_data');
+                    if (!localSaved) {
+                        mockInquiry = tRes.data.templates;
+                    } else {
+                        // ถ้าใน backend มีจำนวนหัวข้อในหมวดหมู่ใดมากกว่า หรือมีการอัปเดตล่าสุด ให้รวมเข้าด้วยกัน
+                        tRes.data.templates.forEach((bt, idx) => {
+                            if (mockInquiry[idx] && Array.isArray(bt.points)) {
+                                bt.points.forEach(pt => {
+                                    if (!mockInquiry[idx].points.includes(pt)) mockInquiry[idx].points.push(pt);
+                                });
+                            }
+                        });
+                    }
+                }
+            } catch (e) {}
+
+            currentInterrogationCase = c;
+
+            document.getElementById('intModalCaseNoBadge').textContent = c.caseNo || c.id;
+            document.getElementById('intModalSubtitle').textContent = `ประเภทกลโกง: ${c.type || '-'} | ความเสียหาย: ${Number(c.amount || 0).toLocaleString()} บาท`;
+
+            document.getElementById('intVictimNameInput').value = extractVictimDisplayName(c);
+            document.getElementById('intSuspectNameInput').value = extractSuspectDisplayName(c);
+            document.getElementById('intOfficerNameInput').value = getActualInvestigator(c.caseNo, c.investigator);
+            populateInterrogationFormVariables(c);
+
+            if (Array.isArray(c.interrogationStatements) && c.interrogationStatements.length > 0) {
+                interrogationQAList = JSON.parse(JSON.stringify(c.interrogationStatements));
+            } else {
+                interrogationQAList = buildInitialInterrogationQA(c);
+            }
+
+            renderInterrogationBlocks();
+            const m = document.getElementById('interrogationModal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+        }
+
+        function closeInterrogationModal() {
+            const m = document.getElementById('interrogationModal');
+            if (m) {
+                m.classList.add('hidden');
+                m.classList.remove('flex');
+            }
+        }
+
+        function buildInitialInterrogationQA(c) {
+            const qa = [];
+            const vp = c.victimProfile || c.victim_profile || {};
+            const tRecs = Array.isArray(c.transferRecords) ? c.transferRecords : (Array.isArray(c.transfer_records) ? c.transfer_records : []);
+            const inqAns = Array.isArray(c.inquiryAnswers) ? c.inquiryAnswers : (Array.isArray(c.inquiry_answers) ? c.inquiry_answers : []);
+            const dmgAmount = Number(c.amount || 0);
+
+            // 1. คำถามบังคับเปิดหัว ข้อที่ 1
+            const rawAddr = vp.address || '';
+            const houseNoMatch = rawAddr.match(/^([^\s]+(?:\s*หมู่\s*\d+)?)/);
+            const mooMatch = rawAddr.match(/หมู่(?:ที่)?\s*(\d+)/);
+            const tambonMatch = rawAddr.match(/(?:ต\.|ตำบล|แขวง)\s*([^\s]+)/);
+            const amphoeMatch = rawAddr.match(/(?:อ\.|อำเภอ|เขต)\s*([^\s]+)/);
+            const provMatch = rawAddr.match(/(?:จ\.|จังหวัด)\s*([^\s]+)/);
+
+            const hNo = toThaiNumerals(vp.houseNo || (houseNoMatch ? houseNoMatch[1].replace(/หมู่.*/, '').trim() : '99/12'));
+            const mooNo = toThaiNumerals(vp.moo || (mooMatch ? mooMatch[1] : '5'));
+            const tbNo = vp.tambon || (tambonMatch ? tambonMatch[1] : 'บางพลีใหญ่');
+            const apNo = vp.amphoe || (amphoeMatch ? amphoeMatch[1] : 'บางพลี');
+            const pvNo = vp.province || (provMatch ? provMatch[1] : 'สมุทรปราการ');
+            const occText = vp.career || vp.occupation || 'รับจ้าง';
+
+            qa.push({
+                id: 'qa_open_1_' + Date.now(),
+                type: 'mandatory_open_1',
+                status: 'mandatory',
+                question: 'ผู้กล่าวหามีภูมิลำเนา และปัจจุบันพักอาศัยอยู่ที่ใด ประกอบอาชีพอะไร',
+                answer: `ข้าฯ มีภูมิลำเนาตามที่อยู่ที่ข้าฯ ได้แจ้งให้พนักงานสอบสวนทราบแล้วข้างต้น ปัจจุบันพักอาศัยอยู่ บ้านเลขที่ ${hNo} หมู่ที่ ${mooNo} ต.${tbNo} อ.${apNo} จ.${pvNo} หากข้าฯ ย้ายที่อยู่เมื่อไหร่ใด ข้าฯ จะแจ้งให้พนักงานสอบสวนทราบทันที ปัจจุบันประกอบอาชีพ${occText} ทำงานที่- จบการศึกษาชั้น มัธยมศึกษา สถานภาพ โสด`
+            });
+
+            // 2. คำถามบังคับเปิดหัว ข้อที่ 2
+            qa.push({
+                id: 'qa_open_2_' + Date.now(),
+                type: 'mandatory_open_2',
+                status: 'mandatory',
+                question: 'ท่านมาพบพนักงานสอบสวนด้วยประสงค์ใด',
+                answer: `มาแจ้งความร้องทุกข์ให้ดำเนินคดีกับคนร้ายที่หลอกลวงเรื่อง ${c.type || 'อาชญากรรมทางเทคโนโลยี'} จนเป็นเหตุให้ผู้กล่าวหาหลงเชื่อโอนเงินไปได้รับความเสียหาย รวมเป็นเงินทั้งสิ้น ${dmgAmount.toLocaleString()} บาท (${toThaiBahtText(dmgAmount)})`
+            });
+
+            // 3. ชุดคำถามและคำตอบจาก inquiryAnswers & 14 กลโกง
+            const cleanType = (c.type || '').trim().toLowerCase();
+            let matchedCat = (Array.isArray(mockInquiry) ? mockInquiry : []).find(cat => {
+                const titleClean = (cat.title || '').replace(/^\d+\.\s*/, '').trim().toLowerCase();
+                return cleanType.includes(titleClean) || titleClean.includes(cleanType);
+            });
+            if (!matchedCat && Array.isArray(mockInquiry) && mockInquiry.length > 0) {
+                matchedCat = mockInquiry[13] || mockInquiry[0];
+            }
+
+            const templatePoints = (matchedCat && Array.isArray(matchedCat.points)) ? matchedCat.points : [];
+            const handledQuestions = new Set();
+
+            // 3a. วนลูปตามหัวข้อประเด็นในหมวดกลโกง 14 ประเภท
+            templatePoints.forEach((pt, idx) => {
+                handledQuestions.add(pt.trim());
+                let foundAns = '';
+                const exactMatch = inqAns.find(a => (a.question || '').trim() === pt.trim());
+                if (exactMatch && exactMatch.answer) {
+                    foundAns = exactMatch.answer.trim();
+                } else if (inqAns[idx] && (!inqAns[idx].question || inqAns[idx].question.trim() === pt.trim()) && inqAns[idx].answer) {
+                    foundAns = inqAns[idx].answer.trim();
+                }
+                qa.push({
+                    id: 'qa_inq_' + idx + '_' + Date.now(),
+                    type: 'inquiry_14',
+                    status: foundAns ? 'answered' : 'unanswered',
+                    question: pt,
+                    answer: foundAns
+                });
+            });
+
+            // 3b. เพิ่มเติมหากผู้เสียหายส่งประเด็นนอกเหนือจากแม่แบบปัจจุบันมา
+            inqAns.forEach((a, idx) => {
+                const qText = (a.question || '').trim();
+                if (qText && !handledQuestions.has(qText)) {
+                    handledQuestions.add(qText);
+                    const ansText = (a.answer || '').trim();
+                    qa.push({
+                        id: 'qa_inq_extra_' + idx + '_' + Date.now(),
+                        type: 'inquiry_14',
+                        status: ansText ? 'answered' : 'unanswered',
+                        question: qText,
+                        answer: ansText
+                    });
+                }
+            });
+
+            // 4. บล็อกสรุปเส้นทางการโอนเงิน (ดึงจาก transferRecords)
+            let transferDesc = '';
+            if (tRecs.length > 0) {
+                let totalSum = 0;
+                const lines = tRecs.map((tr, i) => {
+                    const amt = Number(tr.amount || 0);
+                    totalSum += amt;
+                    const dtPart = parseThaiDateParts(tr.transferDate);
+                    const dtThaiStr = toThaiNumerals(dtPart.fullThai || '');
+                    const timeStr = tr.transferTime ? ` เวลาประมาณ ${toThaiNumerals(tr.transferTime)} น.` : '';
+                    const fromStr = `บัญชี${tr.fromBank || '-'} เลขที่ ${toThaiNumerals(tr.fromAccountNo || '-')} ชื่อบัญชี ${tr.fromAccountName || '-'}`;
+                    const toStr = `บัญชี${tr.toBank || '-'} เลขที่ ${toThaiNumerals(tr.toAccountNo || '-')} ชื่อบัญชี ${tr.toAccountName || '-'}`;
+                    const amtStr = toThaiNumerals(amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                    return `ครั้งที่ ${toThaiNumerals((i + 1).toString())} เมื่อวันที่ ${dtThaiStr}${timeStr} ได้โอนเงินจาก${fromStr} ไปยัง${toStr} จำนวนเงิน ${amtStr} บาท`;
+                });
+                const totalThaiStr = toThaiNumerals(totalSum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                transferDesc = `ผู้กล่าวหาได้โอนเงินให้แก่คนร้าย รวมทั้งสิ้น ${toThaiNumerals(tRecs.length.toString())} ครั้ง รายละเอียดดังนี้\n` +
+                    lines.join('\n') +
+                    `\nรวมยอดเงินที่โอนไปทั้งสิ้น ${totalThaiStr} บาท (${toThaiBahtText(totalSum)})`;
+            } else {
+                const accFallback = Array.isArray(c.accounts) && c.accounts.length > 0
+                    ? c.accounts.map(a => typeof a === 'string' ? a : `${a.bank || ''} ${a.no || ''} (${a.name || ''})`).join(', ')
+                    : '...................................................';
+                transferDesc = `ผู้กล่าวหาได้โอนเงินไปยังบัญชีคนร้าย (${accFallback}) รวมเป็นเงินทั้งสิ้น ${dmgAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท (${toThaiBahtText(dmgAmount)})`;
+            }
+
+            qa.push({
+                id: 'qa_transfer_' + Date.now(),
+                type: 'transfer_summary',
+                status: 'transfer',
+                question: 'ผู้กล่าวหาได้โอนเงินไปยังบัญชีใดของคนร้ายบ้าง วันเวลาใด เป็นจำนวนเงินเท่าใด',
+                answer: transferDesc
+            });
+
+            // 5. คำถามบังคับปิดท้าย ข้อที่ 1
+            qa.push({
+                id: 'qa_close_1_' + Date.now(),
+                type: 'mandatory_close_1',
+                status: 'mandatory',
+                question: 'จะอ้างพยานหลักฐานหรือบุคคลใดเป็นพยานหรือไม่',
+                answer: 'ขออ้างตนเองเป็นพยาน และขอส่งมอบเอกสารหลักฐานสลิปการโอนเงิน ภาพถ่ายหน้าจอการสนทนา และรายการเดินบัญชีธนาคาร ให้พนักงานสอบสวนไว้เป็นพยานหลักฐาน'
+            });
+
+            // 6. คำถามบังคับปิดท้าย ข้อที่ 2
+            qa.push({
+                id: 'qa_close_2_' + Date.now(),
+                type: 'mandatory_close_2',
+                status: 'mandatory',
+                question: 'เคยมีสาเหตุโกรธเคืองกับผู้ใดในคดีนี้มาก่อนหรือไม่ อย่างไร',
+                answer: 'ไม่เคยรู้จักและไม่เคยมีสาเหตุโกรธเคืองกับผู้ต้องหาหรือเจ้าของบัญชีคนร้ายมาก่อนแต่อย่างใด และขอร้องทุกข์ให้ดำเนินคดีตามกฎหมายจนกว่าคดีจะถึงที่สุด'
+            });
+
+            return qa;
+        }
+
+        function regenerateInterrogationQA(confirmOverwrite = false) {
+            if (!currentInterrogationCase) return;
+            if (confirmOverwrite && !confirm('ต้องการสร้างชุดคำถาม-คำตอบใหม่จากข้อมูลผู้เสียหายล่าสุดใช่หรือไม่? (ข้อความที่แก้ไขไว้ในหน้านี้จะถูกแทนที่)')) return;
+            interrogationQAList = buildInitialInterrogationQA(currentInterrogationCase);
+            renderInterrogationBlocks();
+            toast('🔄 รีเฟรชชุดคำถาม-คำตอบจากข้อมูลผู้เสียหายล่าสุดแล้ว');
+        }
+
+        function renderInterrogationBlocks() {
+            const container = document.getElementById('interrogationQAContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            let answeredCnt = 0;
+            let unansweredCnt = 0;
+
+            interrogationQAList.forEach((item, idx) => {
+                const hasAnswer = !!(item.answer && item.answer.trim() !== '');
+                let badgeHtml = '';
+                let cardBorderClass = 'border-slate-800';
+                let answerBorderClass = 'border-slate-800 focus:ring-amber-500';
+                let placeholderText = 'พิมพ์คำตอบของคำให้การ...';
+
+                if (item.type === 'inquiry_14') {
+                    if (hasAnswer) {
+                        answeredCnt++;
+                        badgeHtml = `<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">✓ ผู้เสียหายกรอกข้อมูลแล้ว</span>`;
+                        cardBorderClass = 'border-emerald-500/30';
+                    } else {
+                        unansweredCnt++;
+                        badgeHtml = `<span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold animate-pulse">⚠️ ผู้เสียหายยังไม่ได้กรอก (รอพนักงานสอบสวนซักถามเพิ่มเติม)</span>`;
+                        cardBorderClass = 'border-amber-500/50 bg-amber-950/10';
+                        answerBorderClass = 'border-amber-500/60 bg-amber-950/20 focus:ring-amber-400';
+                        placeholderText = '⚠️ ผู้เสียหายยังไม่ได้กรอก (รอพนักงานสอบสวนซักถามเพิ่มเติม) — คลิกเพื่อพิมพ์คำให้การ...';
+                    }
+                } else if (item.type === 'transfer_summary') {
+                    badgeHtml = `<span class="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold">💳 สรุปเส้นทางการโอนเงินอัตโนมัติ</span>`;
+                } else if (item.type === 'custom') {
+                    badgeHtml = `<span class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold">✏️ คำถามเพิ่มเติมโดย พงส.</span>`;
+                } else {
+                    badgeHtml = `<span class="px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[10px] font-bold">📌 คำถามมาตรฐานสำนวน</span>`;
+                }
+
+                const block = document.createElement('div');
+                block.className = `p-4 rounded-2xl bg-slate-950 border ${cardBorderClass} space-y-2.5 transition`;
+                block.innerHTML = `
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="px-2 py-0.5 rounded-lg bg-slate-800 text-amber-400 font-bold text-xs">ข้อที่ ${idx + 1}</span>
+                            ${badgeHtml}
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="moveInterrogationBlock(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-30 text-slate-300 border border-slate-800 text-[11px] font-semibold transition" title="เลื่อนขึ้น">
+                                ⬆️ เลื่อนขึ้น
+                            </button>
+                            <button type="button" onclick="moveInterrogationBlock(${idx}, 1)" ${idx === interrogationQAList.length - 1 ? 'disabled' : ''} class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-30 text-slate-300 border border-slate-800 text-[11px] font-semibold transition" title="เลื่อนลง">
+                                ⬇️ เลื่อนลง
+                            </button>
+                            <button type="button" onclick="deleteInterrogationBlock(${idx})" class="px-2 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 text-[11px] font-semibold transition" title="ลบข้อนี้">
+                                🗑️ ลบข้อนี้
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-[11px] font-bold text-amber-400 mb-1">ถาม:</label>
+                            <textarea rows="1" oninput="updateInterrogationField(${idx}, 'question', this.value)"
+                                class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-amber-500 transition">${escapeHtml(item.question || '')}</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-emerald-400 mb-1">ตอบ:</label>
+                            <textarea rows="3" oninput="updateInterrogationField(${idx}, 'answer', this.value)" placeholder="${placeholderText}"
+                                class="w-full px-3 py-2 bg-slate-900 border ${answerBorderClass} rounded-xl text-xs text-slate-100 placeholder-amber-400/70 focus:outline-none focus:ring-1 transition leading-relaxed">${escapeHtml(item.answer || '')}</textarea>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(block);
+            });
+
+            const statsEl = document.getElementById('intStatsSummary');
+            if (statsEl) {
+                statsEl.innerHTML = `
+                    <span>รวมทั้งหมด <strong class="text-white">${interrogationQAList.length}</strong> ประเด็น</span>
+                    <span class="text-emerald-400">✓ กรอกแล้ว: <strong>${answeredCnt}</strong></span>
+                    <span class="text-amber-400">⚠️ รอซักถามเพิ่มเติม: <strong>${unansweredCnt}</strong></span>
+                `;
+            }
+        }
+
+        function escapeHtml(str) {
+            return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function updateInterrogationField(idx, field, val) {
+            if (!interrogationQAList[idx]) return;
+            interrogationQAList[idx][field] = val;
+            if (field === 'answer' && interrogationQAList[idx].type === 'inquiry_14') {
+                interrogationQAList[idx].status = val.trim() ? 'answered' : 'unanswered';
+            }
+        }
+
+        function moveInterrogationBlock(idx, delta) {
+            const targetIdx = idx + delta;
+            if (targetIdx < 0 || targetIdx >= interrogationQAList.length) return;
+            const temp = interrogationQAList[idx];
+            interrogationQAList[idx] = interrogationQAList[targetIdx];
+            interrogationQAList[targetIdx] = temp;
+            renderInterrogationBlocks();
+        }
+
+        function insertNewInterrogationBlock() {
+            const insertPos = Math.max(0, interrogationQAList.length - 2); // แทรกก่อน 2 ข้อปิดท้าย
+            interrogationQAList.splice(insertPos, 0, {
+                id: 'qa_custom_' + Date.now(),
+                type: 'custom',
+                status: 'custom',
+                question: '',
+                answer: ''
+            });
+            renderInterrogationBlocks();
+            toast('➕ เพิ่มประเด็นคำถามใหม่เรียบร้อยแล้ว');
+        }
+
+        function deleteInterrogationBlock(idx) {
+            if (interrogationQAList.length <= 1) {
+                toast('⚠️ ต้องมีประเด็นคำถามอย่างน้อย 1 ข้อ');
+                return;
+            }
+            if (!confirm(`ยืนยันการลบประเด็นข้อที่ ${idx + 1} ใช่หรือไม่?`)) return;
+            interrogationQAList.splice(idx, 1);
+            renderInterrogationBlocks();
+            toast('🗑️ ลบประเด็นคำถามเรียบร้อยแล้ว');
+        }
+
+        async function saveInterrogationData(silent = false) {
+            if (!currentInterrogationCase) return;
+            const c = currentInterrogationCase;
+            c.interrogationStatements = JSON.parse(JSON.stringify(interrogationQAList));
+
+            // ซิงค์คำตอบในกลุ่ม inquiry_14 กลับเข้า c.inquiryAnswers
+            const updatedInqAnswers = interrogationQAList
+                .filter(q => q.type === 'inquiry_14')
+                .map(q => ({ question: q.question, answer: q.answer }));
+            if (updatedInqAnswers.length > 0) {
+                c.inquiryAnswers = updatedInqAnswers;
+            }
+
+            try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(e) {}
+
+            const currentVars = getInterrogationFormVariables();
+            c.statementVariables = currentVars;
+
+            try {
+                await safeApiFetch('/api/interrogation/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        caseNo: c.caseNo,
+                        qaList: c.interrogationStatements,
+                        inquiryAnswers: c.inquiryAnswers,
+                        officerName: currentVars.officerFullName || c.investigator,
+                        statementVariables: currentVars,
+                        propertyDamaged: c.propertyDamaged || null,
+                        propertyRecovered: c.propertyRecovered || null,
+                        propertyUnrecovered: c.propertyUnrecovered || null
+                    })
+                });
+            } catch(e) {}
+
+            if (!silent) {
+                toast('💾 บันทึกคำให้การลงในฐานข้อมูลเคสเรียบร้อยแล้ว');
+            }
+        }
+
+        // =========================================================================
+        // AUTHENTIC THAI POLICE DOCX GENERATOR (FROM OFFICIAL NIS/POLICE TEMPLATES)
+        // =========================================================================
+
+        function base64ToUint8Array(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes;
+        }
+
+        async function getDocxTemplateBuffer(templateKey, filename) {
+            if (window.DOCX_TEMPLATES && window.DOCX_TEMPLATES[templateKey]) {
+                return base64ToUint8Array(window.DOCX_TEMPLATES[templateKey]);
+            }
+            try {
+                const res = await fetch('templates/' + filename);
+                if (res.ok) {
+                    const buf = await res.arrayBuffer();
+                    return new Uint8Array(buf);
+                }
+            } catch (e) {
+                console.warn('Failed to fetch template:', filename, e);
+            }
+            throw new Error('ไม่พบแบบฟอร์มเอกสาร ' + filename);
+        }
+
+        function xmlEscape(unsafe) {
+            if (unsafe === null || unsafe === undefined) return '';
+            return unsafe.toString()
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+        }
+
+        function toThaiNumerals(str) {
+            if (!str) return '';
+            const thaiNums = ['๐','๑','๒','๓','๔','๕','๖','๗','๘','๙'];
+            return str.toString().replace(/[0-9]/g, d => thaiNums[parseInt(d, 10)]);
+        }
+
+        function thaiBahtCurrencyText(num) {
+            if (num === null || num === undefined || isNaN(num)) return 'ศูนย์บาทถ้วน';
+            num = Number(num).toFixed(2);
+            const [intPart, decPart] = num.split('.');
+            const digits = ['ศูนย์', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า'];
+            const units = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน'];
+            
+            function convertInt(s) {
+                if (s === '0') return 'ศูนย์';
+                let res = '';
+                const len = s.length;
+                for (let i = 0; i < len; i++) {
+                    const d = parseInt(s[i], 10);
+                    const pos = len - i - 1;
+                    if (d !== 0) {
+                        if (pos === 1 && d === 1) res += 'สิบ';
+                        else if (pos === 1 && d === 2) res += 'ยี่สิบ';
+                        else if (pos === 0 && d === 1 && len > 1 && s[len - 2] !== '0') res += 'เอ็ด';
+                        else res += digits[d] + units[pos];
+                    }
+                }
+                return res;
+            }
+            
+            let result = convertInt(intPart) + 'บาท';
+            if (decPart === '00' || !decPart) {
+                result += 'ถ้วน';
+            } else {
+                let decStr = '';
+                const d1 = parseInt(decPart[0], 10);
+                const d2 = parseInt(decPart[1], 10);
+                if (d1 === 1) decStr += 'สิบ';
+                else if (d1 === 2) decStr += 'ยี่สิบ';
+                else if (d1 > 2) decStr += digits[d1] + 'สิบ';
+                
+                if (d2 === 1 && d1 !== 0) decStr += 'เอ็ด';
+                else if (d2 > 0) decStr += digits[d2];
+                
+                result += decStr + 'สตางค์';
+            }
+            return result;
+        }
+
+        function parseThaiFullName(fullName) {
+            fullName = (fullName || '').trim();
+            const prefixes = [
+                'ว่าที่ ร.ต.ต.', 'ว่าที่ ร.ต.ท.', 'ว่าที่ ร.ต.อ.',
+                'ร.ต.ต.', 'ร.ต.ท.', 'ร.ต.อ.', 'พ.ต.ต.', 'พ.ต.ท.', 'พ.ต.อ.',
+                'พล.ต.ต.', 'พล.ต.ท.', 'พล.ต.อ.',
+                'นางสาว', 'นาง', 'นาย', 'ด.ช.', 'ด.ญ.'
+            ];
+            let prefix = '';
+            let rest = fullName;
+            for (const p of prefixes) {
+                if (rest.startsWith(p)) {
+                    prefix = p;
+                    rest = rest.slice(p.length).trim();
+                    break;
+                }
+            }
+            const parts = rest.split(/\s+/).filter(Boolean);
+            const firstName = parts[0] || '';
+            const lastName = parts.slice(1).join(' ') || '';
+            return { prefix, firstName, lastName, fullName: [prefix, firstName, lastName].filter(Boolean).join(' ') };
+        }
+
+        async function generateStatementFromOfficialTemplate(c, qas) {
+            if (typeof JSZip === 'undefined') {
+                throw new Error('ไม่พบไลบรารี JSZip สำหรับประมวลผลไฟล์ Word');
+            }
+            const templateBytes = await getDocxTemplateBuffer('statement', 'statement_template.docx');
+            const zip = await JSZip.loadAsync(templateBytes);
+            let docXml = await zip.file('word/document.xml').async('string');
+
+            const v = (typeof getInterrogationFormVariables === 'function') ? getInterrogationFormVariables() : {};
+
+            // 1. ปรับปรุงชื่อและคำนำหน้าผู้กล่าวหา (Table 0)
+            // เปลี่ยนชื่อหัวเอกสารเป็น "บันทึกคำให้การของผู้กล่าวหาหรือพยาน" ตามคำสั่ง
+            docXml = docXml.replace(/บันทึกคำให้การของผู้ร้องทุกข์\s*กล่าวโทษ\s*หรือพยาน/g, 'บันทึกคำให้การของผู้กล่าวหาหรือพยาน');
+
+            docXml = docXml.replace(/ปริญ\s+มหโชคภัทรวิมล/g, `${v.victimFirstName} ${v.victimLastName}`);
+            docXml = docXml.replace(/ปริญ/g, v.victimFirstName || 'ผู้กล่าวหา');
+            docXml = docXml.replace(/มหโชคภัทรวิมล/g, v.victimLastName || '');
+            if (v.victimPrefix) {
+                docXml = docXml.replace(/<w:t xml:space="preserve">นาย<\/w:t>/g, `<w:t xml:space="preserve">${xmlEscape(v.victimPrefix)}<\/w:t>`);
+                docXml = docXml.replace(/<w:t>นาย<\/w:t>/g, `<w:t>${xmlEscape(v.victimPrefix)}<\/w:t>`);
+            }
+
+            // 2. ปรับปรุงชื่อผู้ต้องหา
+            docXml = docXml.replace(/ชฎาพร\s+ป่าเกลือ/g, v.suspectFullName || 'ผู้ต้องหา');
+            docXml = docXml.replace(/ชฎาพร/g, v.suspectFirstName || 'ผู้ต้องหา');
+            docXml = docXml.replace(/ป่าเกลือ/g, v.suspectLastName || '');
+
+            // 3. ปรับปรุงชื่อ พงส. ยศ และตำแหน่ง
+            docXml = docXml.replace(/ร\.ต\.ต\.\s+ธนกฤต\s+ไทยกมล/g, `${v.officerPrefix} ${v.officerFirstName} ${v.officerLastName}`);
+            docXml = docXml.replace(/ธนกฤต/g, v.officerFirstName || 'พนักงานสอบสวน');
+            docXml = docXml.replace(/ไทยกมล/g, v.officerLastName || '');
+            if (v.officerPrefix) {
+                docXml = docXml.replace(/ร\.ต\.ต\./g, v.officerPrefix);
+            }
+            if (v.officerPosition) {
+                docXml = docXml.replace(/รอง สว\.\(สอบสวน\) สภ\.บางพลี/g, v.officerPosition);
+            }
+
+            // 4. วันที่ เดือน ปี (เลขไทยตามแบบฟอร์ม สตช. แถวที่ 4)
+            const thaiDay = toThaiNumerals(v.stmtDay || '8');
+            const thaiYear = toThaiNumerals(v.stmtYear || '2569');
+            docXml = docXml.replace(/(<w:t[^>]*>)8(<\/w:t>)/g, `$1${thaiDay}$2`);
+            docXml = docXml.replace(/(<w:t[^>]*>)พฤศจิกายน(<\/w:t>)/g, `$1${xmlEscape(v.stmtMonth || 'พฤศจิกายน')}$2`);
+            docXml = docXml.replace(/(<w:t[^>]*>)2569(<\/w:t>)/g, `$1${thaiYear}$2`);
+
+            // 5. บัตรประชาชนเลขไทย (มีขีดคั่น 13 หลัก)
+            const thaiId = toThaiNumerals(v.victimIdCard || '1-1103-00451-23-4');
+            docXml = docXml.replace(/1-1103-00451-23-4/g, thaiId);
+
+            // 6. อายุเลขไทย
+            const thaiAge = toThaiNumerals(v.victimAge || '30');
+            docXml = docXml.replace(/(<w:t[^>]*>)30(<\/w:t>)/g, `$1${thaiAge}$2`);
+
+            // 7. เบอร์โทรและอาชีพ
+            docXml = docXml.replace(/0918955919/g, toThaiNumerals(v.victimPhone || '0918955919'));
+            if (v.victimCareer) {
+                docXml = docXml.replace(/รับจ้าง/g, xmlEscape(v.victimCareer));
+            }
+
+            // 8. ที่อยู่ (เลขไทย)
+            const thaiHouseNo = toThaiNumerals(v.houseNo || '99/12');
+            const thaiMoo = toThaiNumerals(v.moo || '5');
+            docXml = docXml.replace(/(<w:t[^>]*>)99\/1(<\/w:t>)/g, `$1${thaiHouseNo}$2`);
+            docXml = docXml.replace(/(<w:t[^>]*>)5(<\/w:t>)/g, `$1${thaiMoo}$2`);
+            if (v.tambon && v.tambon !== 'บางพลีใหญ่') {
+                docXml = docXml.replace(/บางพลีใหญ่/g, v.tambon);
+            }
+            if (v.amphoe && v.amphoe !== 'บางพลี') {
+                docXml = docXml.replace(/บางพลี/g, v.amphoe);
+            }
+            if (v.province && v.province !== 'สมุทรปราการ') {
+                docXml = docXml.replace(/สมุทรปราการ/g, v.province);
+            }
+
+            // 9. Row 18 บิดา และ มารดา
+            const pFatherTarget = /<w:p w14:paraId="0FEC0CDD"[\s\S]*?<\/w:p>/;
+            const pFatherReplacement = `<w:p w14:paraId="0FEC0CDD" w14:textId="77777777" w:rsidR="00352F65" w:rsidRPr="00352F65" w:rsidRDefault="00352F65" w:rsidP="000445C5"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:b/><w:bCs/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:b/><w:bCs/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t xml:space="preserve">ชื่อบิดา </w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:tab/><w:t xml:space="preserve">${xmlEscape(v.fatherName || '-')}</w:t></w:r></w:p>`;
+            docXml = docXml.replace(pFatherTarget, pFatherReplacement);
+
+            const pMotherTarget = /<w:p w14:paraId="037BE731"[\s\S]*?<\/w:p>/;
+            const pMotherReplacement = `<w:p w14:paraId="037BE731" w14:textId="77777777" w:rsidR="00352F65" w:rsidRPr="00352F65" w:rsidRDefault="00352F65" w:rsidP="000445C5"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:b/><w:bCs/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:b/><w:bCs/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t xml:space="preserve">ชื่อมารดา </w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:tab/><w:t xml:space="preserve">${xmlEscape(v.motherName || '-')}</w:t></w:r></w:p>`;
+            docXml = docXml.replace(pMotherTarget, pMotherReplacement);
+
+            // 10. Row 19 ความเกี่ยวข้องกับคู่กรณี
+            if (v.relation) {
+                docXml = docXml.replace(/<w:t>ไม่เกี่ยวข้อง สาบานตนแล้ว<\/w:t>/g, `<w:t>${xmlEscape(v.relation)}<\/w:t>`);
+            }
+
+            // 11. คำตอบข้อ 1 ท้ายตารางหน้า 1 (ที่อยู่และอาชีพของผู้กล่าวหา)
+            const q1AddrLine = `บ้านเลขที่ ${thaiHouseNo} หมู่ที่ ${thaiMoo} ต.${v.tambon} อ.${v.amphoe} จ.${v.province}`;
+            docXml = docXml.replace(/(<w:t[^>]*>)บ้านเลขที่\s+99\/1\s+หมู่ที่\s+5\s+ต\.บางพลีใหญ่\s+อ\.บางพลี\s+จ\.สมุทรปราการ(<\/w:t>)/g, `$1${q1AddrLine}$2`);
+            if (v.victimCareer) {
+                docXml = docXml.replace(/ปัจจุบันประกอบอาชีพรับจ้าง/g, 'ปัจจุบันประกอบอาชีพ' + xmlEscape(v.victimCareer));
+            }
+
+            // 2. แยกโครงสร้าง Section Break และเติมชุดคำถาม-คำตอบ (ตั้งแต่ข้อที่ 2 เป็นต้นไป)
+            const firstSectBreakIndex = docXml.indexOf('<w:sectPr');
+            if (firstSectBreakIndex === -1) {
+                throw new Error('โครงสร้างไฟล์แม่แบบไม่ถูกต้อง (ไม่พบ Section Break หน้า 1)');
+            }
+            const firstPEnd = docXml.indexOf('</w:p>', firstSectBreakIndex) + 6;
+            const beforeAfter = docXml.slice(0, firstPEnd);
+
+            const lastSectIndex = docXml.lastIndexOf('<w:sectPr');
+            const finalSectAndClose = docXml.slice(lastSectIndex);
+
+            let pXml = '';
+            const remainingQAs = qas.slice(1);
+
+            for (const qItem of remainingQAs) {
+                pXml += `<w:p><w:pPr><w:spacing w:line="432" w:lineRule="exact"/><w:ind w:hanging="709"/><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>ถาม</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:tab/><w:t xml:space="preserve">${xmlEscape(qItem.question || '')}<\/w:t><\/w:r><\/w:p>`;
+
+                const ansLines = (qItem.answer || '').split(/\r?\n/).filter(Boolean);
+                if (ansLines.length === 0) {
+                    pXml += `<w:p><w:pPr><w:spacing w:line="432" w:lineRule="exact"/><w:ind w:hanging="709"/><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>ตอบ</w:t><\/w:r><w:r><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:tab/><w:t xml:space="preserve">-<\/w:t><\/w:r><\/w:p>`;
+                } else {
+                    ansLines.forEach((al, lineIdx) => {
+                        if (lineIdx === 0) {
+                            pXml += `<w:p><w:pPr><w:spacing w:line="432" w:lineRule="exact"/><w:ind w:hanging="709"/><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>ตอบ</w:t><\/w:r><w:r><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:tab/><w:t xml:space="preserve">${xmlEscape(al)}<\/w:t><\/w:r><\/w:p>`;
+                        } else {
+                            pXml += `<w:p><w:pPr><w:spacing w:line="432" w:lineRule="exact"/><w:ind w:firstLine="709"/><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr><w:t xml:space="preserve">${xmlEscape(al)}<\/w:t><\/w:r><\/w:p>`;
+                        }
+                    });
+                }
+            }
+
+            // เติมเส้นบรรทัดว่างให้เต็มหน้าเอกสาร
+            const totalLinesUsed = qas.length * 2;
+            const remainder = 26 - (totalLinesUsed % 26);
+            const padCount = remainder > 0 && remainder < 26 ? remainder : 6;
+            for (let p = 0; p < padCount; p++) {
+                pXml += `<w:p><w:pPr><w:spacing w:line="432" w:lineRule="exact"/><w:ind w:hanging="709"/><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><\/w:p>`;
+            }
+
+            docXml = beforeAfter + pXml + finalSectAndClose;
+            zip.file('word/document.xml', docXml);
+
+            // อัปเดตส่วนหัวใบต่อ (header4.xml)
+            if (zip.file('word/header4.xml')) {
+                let h4 = await zip.file('word/header4.xml').async('string');
+                h4 = h4.replace(/ปริญ/g, v.victimFirstName || '').replace(/มหโชคภัทรวิมล/g, v.victimLastName || '');
+                if (v.victimPrefix) {
+                    h4 = h4.replace(/นาย/g, v.victimPrefix);
+                }
+                zip.file('word/header4.xml', h4);
+            }
+
+            // อัปเดตส่วนลงนามท้ายเอกสาร (footer1.xml, footer3.xml)
+            for (const f of ['word/footer1.xml', 'word/footer3.xml']) {
+                if (zip.file(f)) {
+                    let fc = await zip.file(f).async('string');
+                    fc = fc.replace(/ปริญ\s+มหโชคภัทรวิมล/g, `${v.victimFirstName} ${v.victimLastName}`);
+                    fc = fc.replace(/ปริญ/g, v.victimFirstName || '');
+                    fc = fc.replace(/มหโชคภัทรวิมล/g, v.victimLastName || '');
+                    if (v.victimPrefix) fc = fc.replace(/นาย/g, v.victimPrefix);
+                    fc = fc.replace(/ธนกฤต\s+ไทยกมล/g, `${v.officerFirstName} ${v.officerLastName}`);
+                    fc = fc.replace(/ธนกฤต/g, v.officerFirstName || '');
+                    fc = fc.replace(/ไทยกมล/g, v.officerLastName || '');
+                    if (v.officerPrefix) fc = fc.replace(/ร\.ต\.ต\./g, v.officerPrefix);
+                    zip.file(f, fc);
+                }
+            }
+
+            return await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        }
+
+        // ==========================================
+        // THAI SHORT DATE & PROPERTY ACCOUNTS SYSTEM
+        // ==========================================
+        const THAI_SHORT_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const THAI_FULL_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+
+        function formatThaiShortDate(dateStr) {
+            if (!dateStr) return '-';
+            dateStr = dateStr.toString().trim();
+            if (!dateStr || dateStr === '-') return '-';
+
+            // 1. ISO format YYYY-MM-DD
+            const isoMatch = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+            if (isoMatch) {
+                let y = parseInt(isoMatch[1], 10);
+                let m = parseInt(isoMatch[2], 10);
+                let d = parseInt(isoMatch[3], 10);
+                if (y < 2400) y += 543;
+                const mStr = THAI_SHORT_MONTHS[m - 1] || '';
+                return toThaiNumerals(d + ' ' + mStr + ' ' + y);
+            }
+
+            // 2. Slash DD/MM/YYYY
+            const slashMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if (slashMatch) {
+                let d = parseInt(slashMatch[1], 10);
+                let m = parseInt(slashMatch[2], 10);
+                let y = parseInt(slashMatch[3], 10);
+                if (y < 2400) y += 543;
+                const mStr = THAI_SHORT_MONTHS[m - 1] || '';
+                return toThaiNumerals(d + ' ' + mStr + ' ' + y);
+            }
+
+            // 3. Text date e.g. "8 พฤศจิกายน 2569"
+            const textMatch = dateStr.match(/^(\d{1,2})\s+([^\s\d]+)\s+(\d{4})/);
+            if (textMatch) {
+                let d = textMatch[1];
+                let mRaw = textMatch[2];
+                let y = parseInt(textMatch[3], 10);
+                if (y < 2400) y += 543;
+                let mIdx = THAI_FULL_MONTHS.indexOf(mRaw);
+                if (mIdx === -1) mIdx = THAI_SHORT_MONTHS.indexOf(mRaw);
+                const mStr = mIdx !== -1 ? THAI_SHORT_MONTHS[mIdx] : mRaw;
+                return toThaiNumerals(d + ' ' + mStr + ' ' + y);
+            }
+
+            return toThaiNumerals(dateStr);
+        }
+
+        let currentPropertyTab = 'damaged'; // 'damaged' | 'recovered' | 'unrecovered'
+
+        function getPropertyItemsForCase(c, tab = 'damaged') {
+            if (!c) return [];
+            const vFullName = (document.getElementById('intVictimNameInput')?.value.trim()) || extractVictimDisplayName(c) || 'ผู้กล่าวหา';
+
+            if (tab === 'recovered') {
+                if (!Array.isArray(c.propertyRecovered)) c.propertyRecovered = [];
+                return c.propertyRecovered;
+            }
+
+            if (tab === 'unrecovered') {
+                if (!Array.isArray(c.propertyUnrecovered)) {
+                    const dmg = getPropertyItemsForCase(c, 'damaged');
+                    c.propertyUnrecovered = JSON.parse(JSON.stringify(dmg));
+                }
+                return c.propertyUnrecovered;
+            }
+
+            // tab === 'damaged'
+            if (!Array.isArray(c.propertyDamaged) || c.propertyDamaged.length === 0) {
+                const tRecs = Array.isArray(c.transferRecords) ? c.transferRecords : (Array.isArray(c.transfer_records) ? c.transfer_records : []);
+                if (tRecs.length > 0) {
+                    c.propertyDamaged = tRecs.map((tr, idx) => ({
+                        id: 'dmg_' + Date.now() + '_' + idx,
+                        itemNo: idx + 1,
+                        description: `เงินสด (โอนผ่านระบบอิเล็กทรอนิกส์ เข้าบัญชีธนาคาร ${tr.toBank || '-'} เลขที่ ${tr.toAccountNo || '-'} ชื่อบัญชี ${tr.toAccountName || '-'})`,
+                        quantity: '๑ รายการ',
+                        amount: Number(tr.amount) || 0,
+                        owner: vFullName,
+                        date: tr.transferDate || '',
+                        note: tr.transferTime ? ('เวลา ' + toThaiNumerals(tr.transferTime) + ' น.') : '-'
+                    }));
+                } else {
+                    c.propertyDamaged = [{
+                        id: 'dmg_' + Date.now() + '_0',
+                        itemNo: 1,
+                        description: 'เงินสด (ความเสียหายในคดีหลอกลวงออนไลน์)',
+                        quantity: '๑ รายการ',
+                        amount: Number(c.damage) || 0,
+                        owner: vFullName,
+                        date: c.date || '',
+                        note: '-'
+                    }];
+                }
+            }
+            return c.propertyDamaged;
+        }
+
+        function openPropertyAccountsModal(initialTab = 'damaged') {
+            if (!currentInterrogationCase) {
+                toast('⚠️ กรุณาเลือกคดีสำหรับสอบปากคำก่อน');
+                return;
+            }
+            const c = currentInterrogationCase;
+            const badge = document.getElementById('propModalCaseNoBadge');
+            if (badge) badge.textContent = c.caseNo || c.id || '-';
+
+            const sub = document.getElementById('propModalSubtitle');
+            const vFullName = (document.getElementById('intVictimNameInput')?.value.trim()) || extractVictimDisplayName(c);
+            const sFullName = (document.getElementById('intSuspectNameInput')?.value.trim()) || extractSuspectDisplayName(c);
+            if (sub) sub.textContent = `เลขคดี: ${c.caseNo || '-'} | ผู้กล่าวหา: ${vFullName} | ผู้ต้องหา: ${sFullName}`;
+
+            // Ensure items exist
+            getPropertyItemsForCase(c, 'damaged');
+            getPropertyItemsForCase(c, 'recovered');
+            getPropertyItemsForCase(c, 'unrecovered');
+
+            switchPropertyTab(initialTab);
+
+            const m = document.getElementById('propertyManageModal');
+            if (m) {
+                m.classList.remove('hidden');
+                m.classList.add('flex');
+            }
+        }
+
+        function closePropertyAccountsModal() {
+            const m = document.getElementById('propertyManageModal');
+            if (m) {
+                m.classList.add('hidden');
+                m.classList.remove('flex');
+            }
+        }
+
+        function switchPropertyTab(tab) {
+            currentPropertyTab = tab;
+            const c = currentInterrogationCase;
+            if (!c) return;
+
+            // Update tab button styles
+            const btnDmg = document.getElementById('propTabBtnDamaged');
+            const btnRec = document.getElementById('propTabBtnRecovered');
+            const btnUnrec = document.getElementById('propTabBtnUnrecovered');
+
+            [btnDmg, btnRec, btnUnrec].forEach(btn => {
+                if (btn) {
+                    btn.className = 'px-3.5 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white';
+                }
+            });
+
+            const badgeElem = document.getElementById('propActiveTabBadge');
+            const titleElem = document.getElementById('propActiveTabTitle');
+            const syncBtnText = document.getElementById('propSyncBtnText');
+
+            if (tab === 'damaged') {
+                if (btnDmg) btnDmg.className = 'px-3.5 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm';
+                if (badgeElem) badgeElem.className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
+                if (titleElem) titleElem.textContent = 'บัญชีทรัพย์ถูกประทุษร้าย (แบบ ส ๕๖ - ๘)';
+                if (syncBtnText) syncBtnText.textContent = 'ซิงค์จากรายการโอนเงิน';
+            } else if (tab === 'recovered') {
+                if (btnRec) btnRec.className = 'px-3.5 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm';
+                if (badgeElem) badgeElem.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
+                if (titleElem) titleElem.textContent = 'บัญชีทรัพย์ถูกประทุษร้ายได้คืน (แบบ ส ๕๖ - ๘)';
+                if (syncBtnText) syncBtnText.textContent = 'ล้างรายการทั้งหมด';
+            } else {
+                if (btnUnrec) btnUnrec.className = 'px-3.5 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm';
+                if (badgeElem) badgeElem.className = 'w-2.5 h-2.5 rounded-full bg-amber-500';
+                if (titleElem) titleElem.textContent = 'บัญชีทรัพย์ถูกประทุษร้ายไม่ได้คืน (แบบ ส ๕๖ - ๘)';
+                if (syncBtnText) syncBtnText.textContent = 'คัดลอกจากทรัพย์ถูกประทุษร้าย';
+            }
+
+            // Update badge counts
+            const cntDmg = (c.propertyDamaged || []).length;
+            const cntRec = (c.propertyRecovered || []).length;
+            const cntUnrec = (c.propertyUnrecovered || []).length;
+            const elemCntDmg = document.getElementById('propTabCountDamaged');
+            const elemCntRec = document.getElementById('propTabCountRecovered');
+            const elemCntUnrec = document.getElementById('propTabCountUnrecovered');
+            if (elemCntDmg) elemCntDmg.textContent = cntDmg;
+            if (elemCntRec) elemCntRec.textContent = cntRec;
+            if (elemCntUnrec) elemCntUnrec.textContent = cntUnrec;
+
+            renderPropertyItemsTable();
+        }
+
+        function renderPropertyItemsTable() {
+            const c = currentInterrogationCase;
+            if (!c) return;
+
+            const items = getPropertyItemsForCase(c, currentPropertyTab);
+            const tbody = document.getElementById('propertyItemsTableBody');
+            if (!tbody) return;
+
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr>
+                    <td colspan="8" class="py-8 text-center text-slate-500 text-xs">
+                        ยังไม่มีรายการทรัพย์ในหมวดหมู่นี้ — กดปุ่ม <b>"+ เพิ่มรายการทรัพย์"</b> หรือปุ่มซิงค์ด้านบน
+                    </td>
+                </tr>`;
+            } else {
+                tbody.innerHTML = items.map((it, idx) => {
+                    const shortDatePreview = formatThaiShortDate(it.date || '');
+                    return `<tr class="hover:bg-slate-800/40 transition">
+                        <td class="py-2 px-3 text-center text-slate-400 font-mono text-[11px]">${idx + 1}</td>
+                        <td class="py-2 px-3">
+                            <input type="text" value="${escapeHtml(it.description || '')}" onchange="updatePropertyItemField('${it.id}', 'description', this.value)" class="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-purple-500" placeholder="รายละเอียดทรัพย์">
+                        </td>
+                        <td class="py-2 px-2 text-center">
+                            <input type="text" value="${escapeHtml(it.quantity || '๑ รายการ')}" onchange="updatePropertyItemField('${it.id}', 'quantity', this.value)" class="w-full px-1.5 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white text-center focus:outline-none focus:border-purple-500">
+                        </td>
+                        <td class="py-2 px-2 text-right">
+                            <input type="number" step="0.01" value="${Number(it.amount) || 0}" onchange="updatePropertyItemField('${it.id}', 'amount', this.value)" class="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs text-emerald-400 text-right font-mono focus:outline-none focus:border-purple-500">
+                        </td>
+                        <td class="py-2 px-3">
+                            <input type="text" value="${escapeHtml(it.owner || '')}" onchange="updatePropertyItemField('${it.id}', 'owner', this.value)" class="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-purple-500" placeholder="ชื่อเจ้าของทรัพย์ / ผู้กล่าวหา">
+                        </td>
+                        <td class="py-2 px-3 text-center">
+                            <input type="text" value="${escapeHtml(it.date || '')}" onchange="updatePropertyItemField('${it.id}', 'date', this.value)" class="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white text-center font-mono focus:outline-none focus:border-purple-500" placeholder="เช่น 2026-11-08">
+                            <div class="text-[10px] text-amber-400/90 mt-0.5 text-center font-mono">${shortDatePreview !== '-' ? shortDatePreview : ''}</div>
+                        </td>
+                        <td class="py-2 px-3">
+                            <input type="text" value="${escapeHtml(it.note || '-')}" onchange="updatePropertyItemField('${it.id}', 'note', this.value)" class="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none focus:border-purple-500" placeholder="หมายเหตุ / เวลา">
+                        </td>
+                        <td class="py-2 px-2 text-center">
+                            <button type="button" onclick="deletePropertyItemRow('${it.id}')" class="text-rose-400 hover:text-rose-300 p-1 rounded hover:bg-rose-500/10 transition" title="ลบรายการนี้">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>`;
+                }).join('');
+            }
+
+            // Summary calculations
+            let totalSum = 0;
+            items.forEach(it => { totalSum += (Number(it.amount) || 0); });
+            const totalSumStr = totalSum.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const bahtText = thaiBahtCurrencyText(totalSum);
+
+            const summaryItemsElem = document.getElementById('propSummaryItemsText');
+            const summaryAmtElem = document.getElementById('propSummaryAmountText');
+            const summaryBahtElem = document.getElementById('propSummaryBahtText');
+            const activeStatsElem = document.getElementById('propActiveTabStats');
+
+            if (summaryItemsElem) summaryItemsElem.textContent = `${items.length} รายการ`;
+            if (summaryAmtElem) summaryAmtElem.textContent = totalSumStr;
+            if (summaryBahtElem) summaryBahtElem.textContent = `(${bahtText})`;
+            if (activeStatsElem) activeStatsElem.textContent = `รวม ${items.length} รายการ • ราคารวม ${totalSumStr} บาท (${bahtText})`;
+        }
+
+        function updatePropertyItemField(itemId, field, value) {
+            const c = currentInterrogationCase;
+            if (!c) return;
+            const items = getPropertyItemsForCase(c, currentPropertyTab);
+            const it = items.find(x => x.id === itemId);
+            if (it) {
+                if (field === 'amount') {
+                    it.amount = Number(value) || 0;
+                } else {
+                    it[field] = value;
+                }
+                renderPropertyItemsTable();
+            }
+        }
+
+        function addPropertyItemRow() {
+            const c = currentInterrogationCase;
+            if (!c) return;
+            const items = getPropertyItemsForCase(c, currentPropertyTab);
+            const vFullName = (document.getElementById('intVictimNameInput')?.value.trim()) || extractVictimDisplayName(c) || 'ผู้กล่าวหา';
+            const defaultDate = c.date || (new Date().toISOString().split('T')[0]);
+
+            items.push({
+                id: 'prop_' + currentPropertyTab + '_' + Date.now(),
+                itemNo: items.length + 1,
+                description: currentPropertyTab === 'damaged' ? 'เงินสด (โอนผ่านระบบอิเล็กทรอนิกส์)' : (currentPropertyTab === 'recovered' ? 'เงินสดที่อายัด/ตรวจยึดได้คืน' : 'เงินสดที่ยังไม่สามารถติดตามคืนได้'),
+                quantity: '๑ รายการ',
+                amount: 0,
+                owner: vFullName,
+                date: defaultDate,
+                note: '-'
+            });
+
+            switchPropertyTab(currentPropertyTab);
+            toast('➕ เพิ่มรายการทรัพย์ใหม่เรียบร้อยแล้ว');
+        }
+
+        function deletePropertyItemRow(itemId) {
+            const c = currentInterrogationCase;
+            if (!c) return;
+            let items = getPropertyItemsForCase(c, currentPropertyTab);
+            const idx = items.findIndex(x => x.id === itemId);
+            if (idx !== -1) {
+                items.splice(idx, 1);
+                items.forEach((it, i) => { it.itemNo = i + 1; });
+                switchPropertyTab(currentPropertyTab);
+                toast('🗑️ ลบรายการทรัพย์เรียบร้อยแล้ว');
+            }
+        }
+
+        function syncCurrentPropertyTab() {
+            const c = currentInterrogationCase;
+            if (!c) return;
+
+            if (currentPropertyTab === 'damaged') {
+                delete c.propertyDamaged;
+                getPropertyItemsForCase(c, 'damaged');
+                switchPropertyTab('damaged');
+                toast('🔄 ซิงค์ข้อมูลทรัพย์ถูกประทุษร้ายจากรายการโอนเงินของเคสเรียบร้อยแล้ว');
+            } else if (currentPropertyTab === 'recovered') {
+                c.propertyRecovered = [];
+                switchPropertyTab('recovered');
+                toast('🧹 ล้างรายการทรัพย์ได้คืนเรียบร้อยแล้ว');
+            } else {
+                const dmg = getPropertyItemsForCase(c, 'damaged');
+                c.propertyUnrecovered = JSON.parse(JSON.stringify(dmg));
+                switchPropertyTab('unrecovered');
+                toast('📋 คัดลอกรายการจากทรัพย์ถูกประทุษร้ายเข้ามาเรียบร้อยแล้ว');
+            }
+        }
+
+        async function savePropertyAccountsFromModal() {
+            if (!currentInterrogationCase) return;
+            try {
+                await saveInterrogationData(true);
+                toast('💾 บันทึกข้อมูลบัญชีทรัพย์ (๓ แบบ) ลงในระบบเรียบร้อยแล้ว');
+            } catch (err) {
+                toast(`❌ บันทึกไม่สำเร็จ: ${err.message}`);
+            }
+        }
+
+        async function exportCurrentPropertyTabDocx() {
+            if (!currentInterrogationCase) return;
+            const c = currentInterrogationCase;
+            const keyMap = {
+                'damaged': 'propertyDamaged',
+                'recovered': 'propertyRecovered',
+                'unrecovered': 'propertyUnrecovered'
+            };
+            const nameMap = {
+                'damaged': 'บัญชีทรัพย์ถูกประทุษร้าย',
+                'recovered': 'บัญชีทรัพย์ได้คืน',
+                'unrecovered': 'บัญชีทรัพย์ไม่ได้คืน'
+            };
+            const templateKey = keyMap[currentPropertyTab] || 'propertyDamaged';
+            const label = nameMap[currentPropertyTab] || 'บัญชีทรัพย์';
+
+            try {
+                toast(`⏳ กำลังสร้างไฟล์ Word (.docx) สำหรับ ${label}...`);
+                const blob = await generatePropertyFromOfficialTemplate(c, templateKey);
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const safeVictimName = ((document.getElementById('intVictimNameInput')?.value.trim()) || extractVictimDisplayName(c)).replace(/\s+/g, '_');
+                a.download = `${c.caseNo || 'CASE'}_${label}_${safeVictimName}.docx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                toast(`✅ ส่งออกไฟล์ ${label} (.docx) ตรงตามแบบฟอร์ม 100% เรียบร้อยแล้ว`);
+            } catch (err) {
+                console.error('[DOCX PROPERTY EXPORT ERROR]', err);
+                toast(`❌ เกิดข้อผิดพลาดในการส่งออกไฟล์ Word: ${err.message}`);
+            }
+        }
+
+        async function exportAllThreePropertyDocx() {
+            if (!currentInterrogationCase) return;
+            const c = currentInterrogationCase;
+            try {
+                toast('⏳ กำลังสร้างไฟล์ Word (.docx) ทั้ง ๓ บัญชีทรัพย์...');
+                const tabs = ['damaged', 'recovered', 'unrecovered'];
+                for (const t of tabs) {
+                    currentPropertyTab = t;
+                    await exportCurrentPropertyTabDocx();
+                    await new Promise(r => setTimeout(r, 400));
+                }
+                toast('✅ ส่งออกไฟล์ Word บัญชีทรัพย์ครบทั้ง ๓ แบบเรียบร้อยแล้ว');
+            } catch (err) {
+                toast(`❌ เกิดข้อผิดพลาด: ${err.message}`);
+            }
+        }
+
+        async function generatePropertyFromOfficialTemplate(c, templateKey = 'propertyDamaged') {
+            if (typeof JSZip === 'undefined') {
+                throw new Error('ไม่พบไลบรารี JSZip สำหรับประมวลผลไฟล์ Word');
+            }
+            const filename = templateKey === 'propertyRecovered' ? 'property_recovered_template.docx' : (templateKey === 'propertyUnrecovered' ? 'property_unrecovered_template.docx' : 'property_damaged_template.docx');
+            const templateBytes = await getDocxTemplateBuffer(templateKey, filename);
+            const zip = await JSZip.loadAsync(templateBytes);
+            let docXml = await zip.file('word/document.xml').async('string');
+
+            // ลบสีแดงใน styles.xml ป้องกันฟอนต์เปลี่ยนเป็นสีแดง
+            let stylesXml = await zip.file('word/styles.xml')?.async('string');
+            if (stylesXml) {
+                stylesXml = stylesXml.replace(/<w:color\s+w:val="FF0000"\/>/g, '<w:color w:val="000000"/>');
+                stylesXml = stylesXml.replace(/<w:color\s+w:val="auto"\/>/g, '<w:color w:val="000000"/>');
+                zip.file('word/styles.xml', stylesXml);
+            }
+
+            const v = (typeof getInterrogationFormVariables === 'function') ? getInterrogationFormVariables() : null;
+            const victimFullName = v?.victimFullName || (document.getElementById('intVictimNameInput')?.value.trim()) || extractVictimDisplayName(c);
+            const suspectFullName = v?.suspectFullName || (document.getElementById('intSuspectNameInput')?.value.trim()) || extractSuspectDisplayName(c);
+            const officerFullName = v?.officerFullName || (document.getElementById('intOfficerNameInput')?.value.trim()) || getActualInvestigator(c.caseNo, c.investigator);
+            const officerPosition = v?.officerPosition || (document.getElementById('intOfficerPositionInput')?.value.trim()) || 'รอง สว.(สอบสวน) สภ.บางพลี';
+            const stmtDay = v?.stmtDay || '18';
+            const stmtMonth = v?.stmtMonth || 'พฤศจิกายน';
+            const stmtYear = v?.stmtYear || '2569';
+
+            const oParsed = parseThaiFullName(officerFullName);
+
+            // 1. หัวตารางคดี (Table 0) เติมตัวแปรครบถ้วน
+            const stationStr = v?.station || 'ภูธรบางพลี';
+            const fullStationStr = stationStr.startsWith('สถานีตำรวจ') ? stationStr : ('สถานีตำรวจ' + stationStr);
+            docXml = docXml.replace(/สถานีตำรวจภูธรบางพลี/g, xmlEscape(fullStationStr));
+
+            const caseNoThai = toThaiNumerals(v?.crimCaseNo || c.caseNo || '-');
+            const idxCase = docXml.indexOf('คดีที่');
+            if (idxCase !== -1) {
+                const nextTc = docXml.indexOf('</w:tc>', idxCase);
+                const caseTcXml = docXml.substring(idxCase, nextTc);
+                if (caseTcXml.includes('๑๒/๒๕๖๙')) {
+                    const newTcXml = caseTcXml.replace('๑๒/๒๕๖๙', caseNoThai);
+                    docXml = docXml.substring(0, idxCase) + newTcXml + docXml.substring(nextTc);
+                } else if (caseTcXml.includes('๑๒') && caseTcXml.includes('๒๕๖๙')) {
+                    let newTcXml = caseTcXml.replace(/<w:t>๑๒<\/w:t>/, `<w:t>${caseNoThai}</w:t>`);
+                    newTcXml = newTcXml.replace(/<w:t>\/<\/w:t>/, '<w:t></w:t>');
+                    newTcXml = newTcXml.replace(/<w:t>๒๕๖๙<\/w:t>/, '<w:t></w:t>');
+                    docXml = docXml.substring(0, idxCase) + newTcXml + docXml.substring(nextTc);
+                }
+            }
+
+            docXml = docXml.replace(/(<w:t[^>]*>)๑๘(<\/w:t>)/g, `$1${toThaiNumerals(stmtDay)}$2`);
+            docXml = docXml.replace(/(<w:t[^>]*>)พฤศจิกายน(<\/w:t>)/g, `$1${xmlEscape(stmtMonth)}$2`);
+            docXml = docXml.replace(/(<w:t[^>]*>)๒๕๖๙(<\/w:t>)/g, `$1${toThaiNumerals(stmtYear)}$2`);
+
+            const chargeStr = v?.charge || c.charge || c.type || 'ฉ้อโกงประชาชน และนำเข้าสู่ระบบคอมพิวเตอร์ฯ';
+
+            const vNameXml = `<w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:b/><w:bCs/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t xml:space="preserve"> ${xmlEscape(victimFullName)}</w:t></w:r>`;
+            const sNameXml = `<w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:b/><w:bCs/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t xml:space="preserve"> ${xmlEscape(suspectFullName)}</w:t></w:r>`;
+            const chgXml = `<w:r><w:rPr><w:rFonts w:hint="cs" w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t xml:space="preserve"> ${xmlEscape(chargeStr)}</w:t></w:r>`;
+
+            // เติมชื่อผู้กล่าวหา (Row 3/4) ลงในเซลล์กว้าง 7082 บนเส้นจุด
+            const idxVictimLabel = docXml.indexOf('<w:t>ผู้กล่าวหา</w:t>');
+            if (idxVictimLabel !== -1) {
+                const trStartV = docXml.lastIndexOf('<w:tr', idxVictimLabel);
+                const idxCell7082V = docXml.indexOf('w:w="7082"', trStartV);
+                if (idxCell7082V !== -1 && idxCell7082V < idxVictimLabel) {
+                    const pCloseV = docXml.indexOf('</w:p>', idxCell7082V);
+                    if (pCloseV !== -1) {
+                        docXml = docXml.slice(0, pCloseV) + vNameXml + docXml.slice(pCloseV);
+                    }
+                }
+            }
+
+            // เติมชื่อผู้ต้องหา (Row 5/6) ลงในเซลล์กว้าง 7082 บนเส้นจุด
+            const idxSuspectLabel = docXml.indexOf('<w:t>ผู้ต้องหา</w:t>');
+            if (idxSuspectLabel !== -1) {
+                const trStartS = docXml.lastIndexOf('<w:tr', idxSuspectLabel);
+                const idxCell7082S = docXml.indexOf('w:w="7082"', trStartS);
+                if (idxCell7082S !== -1 && idxCell7082S < idxSuspectLabel) {
+                    const pCloseS = docXml.indexOf('</w:p>', idxCell7082S);
+                    if (pCloseS !== -1) {
+                        docXml = docXml.slice(0, pCloseS) + sNameXml + docXml.slice(pCloseS);
+                    }
+                }
+            }
+
+            // เติมข้อหา/ฐานความผิด (Row 6/7) ลงในเซลล์กว้าง 8366 บนเส้นจุด (สีดำ ไม่ตกบรรทัด)
+            const idxChg = docXml.indexOf('ข้อหา/ฐานความผิด');
+            if (idxChg !== -1) {
+                const idxCell8366 = docXml.indexOf('w:w="8366"', idxChg);
+                if (idxCell8366 !== -1) {
+                    const pCloseCell8366 = docXml.indexOf('</w:p>', idxCell8366);
+                    if (pCloseCell8366 !== -1) {
+                        docXml = docXml.slice(0, pCloseCell8366) + chgXml + docXml.slice(pCloseCell8366);
+                    }
+                }
+            }
+
+            // 2. ตารางรายการทรัพย์ 7 คอลัมน์ (Table 1)
+            const tables = docXml.match(/<w:tbl[\s\S]*?<\/w:tbl>/g) || [];
+            let tbl1Xml = tables[1];
+
+            const colWidths = templateKey === 'propertyUnrecovered' 
+                ? [728, 2244, 992, 1431, 1620, 2259, 1346]
+                : [728, 2386, 992, 1559, 1843, 1559, 1553];
+
+            // ดึงรายการทรัพย์ตามแท็บที่เลือก
+            const propTabKey = templateKey === 'propertyRecovered' ? 'recovered' : (templateKey === 'propertyUnrecovered' ? 'unrecovered' : 'damaged');
+            const items = getPropertyItemsForCase(c, propTabKey);
+
+            let rowsXml = '';
+            let totalAmount = 0;
+
+            if (items.length > 0) {
+                items.forEach((it, idx) => {
+                    const amt = Number(it.amount) || 0;
+                    totalAmount += amt;
+                    const priceStr = amt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    const shortDateStr = formatThaiShortDate(it.date || '');
+                    rowsXml += `<w:tr w:rsidR="002E601E" w:rsidTr="00A831EC">
+                      <w:tc><w:tcPr><w:tcW w:w="${colWidths[0]}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>${toThaiNumerals((idx + 1).toString())}</w:t></w:r></w:p></w:tc>
+                      <w:tc><w:tcPr><w:tcW w:w="${colWidths[1]}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>${xmlEscape(it.description || '-')}</w:t></w:r></w:p></w:tc>
+                      <w:tc><w:tcPr><w:tcW w:w="${colWidths[2]}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>${xmlEscape(it.quantity || '๑ รายการ')}</w:t></w:r></w:p></w:tc>
+                      <w:tc><w:tcPr><w:tcW w:w="${colWidths[3]}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>${toThaiNumerals(priceStr)}</w:t></w:r></w:p></w:tc>
+                      <w:tc><w:tcPr><w:tcW w:w="${colWidths[4]}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>${xmlEscape(it.owner || victimFullName || 'ผู้กล่าวหา')}</w:t></w:r></w:p></w:tc>
+                      <w:tc><w:tcPr><w:tcW w:w="${colWidths[5]}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>${shortDateStr}</w:t></w:r></w:p></w:tc>
+                      <w:tc><w:tcPr><w:tcW w:w="${colWidths[6]}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>${xmlEscape(it.note || '-')}</w:t></w:r></w:p></w:tc>
+                    </w:tr>`;
+                });
+            } else {
+                rowsXml += `<w:tr w:rsidR="002E601E" w:rsidTr="00A831EC">
+                  <w:tc><w:tcPr><w:tcW w:w="${colWidths[0]}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>-</w:t></w:r></w:p></w:tc>
+                  <w:tc><w:tcPr><w:tcW w:w="${colWidths[1]}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>- ไม่มีรายการทรัพย์ -</w:t></w:r></w:p></w:tc>
+                  <w:tc><w:tcPr><w:tcW w:w="${colWidths[2]}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>-</w:t></w:r></w:p></w:tc>
+                  <w:tc><w:tcPr><w:tcW w:w="${colWidths[3]}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>-</w:t></w:r></w:p></w:tc>
+                  <w:tc><w:tcPr><w:tcW w:w="${colWidths[4]}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>-</w:t></w:r></w:p></w:tc>
+                  <w:tc><w:tcPr><w:tcW w:w="${colWidths[5]}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>-</w:t></w:r></w:p></w:tc>
+                  <w:tc><w:tcPr><w:tcW w:w="${colWidths[6]}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>-</w:t></w:r></w:p></w:tc>
+                </w:tr>`;
+            }
+
+            const headerRowEnd = tbl1Xml.indexOf('</w:tr>') + 7;
+            const newTbl1Xml = tbl1Xml.slice(0, headerRowEnd) + rowsXml + '</w:tbl>';
+            docXml = docXml.replace(tbl1Xml, newTbl1Xml);
+
+            // 3. ยอดรวมและช่องลงนาม (Table 2 หรือ Table 3)
+            const itemCount = items.length;
+            const totalItemsThai = toThaiNumerals(itemCount.toString());
+            const totalAmountStr = totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const totalAmountThai = toThaiNumerals(totalAmountStr);
+            const bahtText = thaiBahtCurrencyText(totalAmount);
+
+            const bm2Insert = `<w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:b/><w:bCs/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t xml:space="preserve"> ${totalItemsThai} </w:t></w:r>`;
+            docXml = docXml.replace(/(<w:bookmarkStart\s+w:name="BM2"[^>]*\/>\s*<w:bookmarkEnd[^>]*\/>)/, '$1' + bm2Insert);
+
+            const bm3Insert = `<w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:color w:val="000000"/><w:b/><w:bCs/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t xml:space="preserve"> ${totalAmountThai} (${bahtText})</w:t></w:r>`;
+            docXml = docXml.replace(/(<w:bookmarkStart\s+w:name="BM3"[^>]*\/>\s*<w:bookmarkEnd[^>]*\/>)/, '$1' + bm3Insert);
+
+            // ป้องกันฟอนต์สีแดงตกค้างในตารางสรุป
+            docXml = docXml.replace(/<w:color\s+w:val="FF0000"\/>/g, '<w:color w:val="000000"/>');
+            docXml = docXml.replace(/<w:color\s+w:val="auto"\/>/g, '<w:color w:val="000000"/>');
+
+            // ลงนาม
+            docXml = docXml.replace(/ธนกฤต\s+ไทยกมล/g, (oParsed.firstName + ' ' + oParsed.lastName).trim());
+            docXml = docXml.replace(/ว่าที่\s+ร\.ต\.ต\./g, oParsed.prefix || 'ร.ต.ต.');
+            docXml = docXml.replace(/<w:t>รอง\s+สว\.<\/w:t>/g, `<w:t>${xmlEscape(officerPosition)}<\/w:t>`);
+            docXml = docXml.replace(/ตำแหน่ง\s+รอง\s+สว\./g, 'ตำแหน่ง ' + officerPosition);
+
+            zip.file('word/document.xml', docXml);
+            return await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        }
+
+        async function exportInterrogationPackageDocx(mode = 'both') {
+            if (!currentInterrogationCase) {
+                toast('⚠️ กรุณาเลือกคดีสำหรับสอบปากคำ');
+                return;
+            }
+
+            try {
+                await saveInterrogationData(true);
+                toast('⏳ กำลังสร้างไฟล์ Word (.docx) ตามแบบฟอร์ม สตช. ที่กำหนด...');
+
+                const c = currentInterrogationCase;
+                const victimFullName = (document.getElementById('intVictimNameInput')?.value.trim()) || extractVictimDisplayName(c);
+                const safeVictimName = victimFullName.replace(/\s+/g, '_');
+                const qas = (interrogationQAList && interrogationQAList.length > 0) ? interrogationQAList : (c.interrogationStatements || []);
+
+                if (mode === 'statement' || mode === 'both') {
+                    const stmtBlob = await generateStatementFromOfficialTemplate(c, qas);
+                    const stmtUrl = URL.createObjectURL(stmtBlob);
+                    const aStmt = document.createElement('a');
+                    aStmt.href = stmtUrl;
+                    aStmt.download = `${c.caseNo || 'CASE'}_คำให้การผู้กล่าวหา_${safeVictimName}.docx`;
+                    document.body.appendChild(aStmt);
+                    aStmt.click();
+                    document.body.removeChild(aStmt);
+                    setTimeout(() => URL.revokeObjectURL(stmtUrl), 1000);
+                }
+
+                if (mode === 'property' || mode === 'both') {
+                    if (mode === 'both') {
+                        await new Promise(r => setTimeout(r, 400));
+                    }
+                    const propBlob = await generatePropertyFromOfficialTemplate(c, 'propertyDamaged');
+                    const propUrl = URL.createObjectURL(propBlob);
+                    const aProp = document.createElement('a');
+                    aProp.href = propUrl;
+                    aProp.download = `${c.caseNo || 'CASE'}_บัญชีทรัพย์ถูกประทุษร้าย_${safeVictimName}.docx`;
+                    document.body.appendChild(aProp);
+                    aProp.click();
+                    document.body.removeChild(aProp);
+                    setTimeout(() => URL.revokeObjectURL(propUrl), 1000);
+                }
+
+                const msg = mode === 'statement' ? 'คำให้การผู้กล่าวหา' : (mode === 'property' ? 'บัญชีทรัพย์ถูกประทุษร้าย' : 'คำให้การ + บัญชีทรัพย์');
+                toast(`✅ ส่งออกไฟล์ ${msg} (.docx) ตรงตามแบบฟอร์ม 100% เรียบร้อยแล้ว`);
+            } catch (err) {
+                console.error('[DOCX EXPORT ERROR]', err);
+                toast(`❌ เกิดข้อผิดพลาดในการส่งออกไฟล์ Word: ${err.message}`);
+            }
+        }
+
         // Initialize Live Preview
         renderCases();
         renderWarrants();
@@ -13673,6 +15929,7 @@ ${currentDocPrintHtml}
         initSupabaseZkConfig();
         initNewPoliceIntegration();
         syncCyberCasesFromBackend();
+        loadInquiryTemplatesFromBackend();
     </script>
 </body>
 </html>

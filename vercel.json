@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/victim-form", "destination": "/victim-form.html" },
+    { "source": "/victim-form/", "destination": "/victim-form.html" },
+    { "source": "/victim-form/(.*)", "destination": "/victim-form.html" },
+    { "source": "/api/(.*)", "destination": "/server.js" }
+  ]
+}
