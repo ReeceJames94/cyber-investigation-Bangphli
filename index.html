@@ -5404,35 +5404,96 @@
                 console.warn('[SYNC CYBER CASES BACKEND]', e);
             }
 
-            // 2. ซิงก์จากฐานข้อมูลกลาง Supabase ตาราง cases (ดึงชื่อ พงส. เจ้าของเรื่องตามจริง)
+            // 2. ซิงก์จากฐานข้อมูลกลาง Supabase ตาราง cyber_details และ cases (ดึงข้อมูลที่ผู้เสียหายกรอกผ่านมือถือ + ชื่อ พงส.)
             try {
                 const supa = (typeof getActiveSupabaseClient === 'function') ? getActiveSupabaseClient() : null;
                 if (supa) {
+                    // 2.1 ซิงก์จากตาราง cyber_details (ถ้ามีตารางนี้บน Supabase)
+                    try {
+                        const { data: cdCases, error: cdErr } = await supa.from('cyber_details').select('*');
+                        if (!cdErr && Array.isArray(cdCases) && cdCases.length > 0) {
+                            cdCases.forEach(cd => {
+                                const existing = mockCases.find(c =>
+                                    (c.caseNo && cd.case_no && c.caseNo.toUpperCase() === cd.case_no.toUpperCase())
+                                );
+                                if (existing) {
+                                    if (cd.investigator_name) existing.investigator = getActualInvestigator(existing.caseNo, cd.investigator_name);
+                                    if (cd.status) existing.status = cd.status;
+                                    if (cd.damage_amount) existing.amount = Number(cd.damage_amount) || existing.amount;
+                                    if (cd.victim_profile) {
+                                        existing.victimProfile = cd.victim_profile;
+                                        existing.victim_profile = cd.victim_profile;
+                                    }
+                                    if (Array.isArray(cd.transfer_records) && cd.transfer_records.length > 0) {
+                                        existing.transferRecords = cd.transfer_records;
+                                        existing.transfer_records = cd.transfer_records;
+                                    }
+                                    if (Array.isArray(cd.inquiry_answers) && cd.inquiry_answers.length > 0) {
+                                        existing.inquiryAnswers = cd.inquiry_answers;
+                                        existing.inquiry_answers = cd.inquiry_answers;
+                                    }
+                                    if (cd.victim_submitted_at) {
+                                        existing.victimSubmittedAt = cd.victim_submitted_at;
+                                        existing.victim_submitted_at = cd.victim_submitted_at;
+                                    }
+                                }
+                            });
+                            updated = true;
+                        }
+                    } catch (_) {}
+
+                    // 2.2 ซิงก์จากตาราง cases (พร้อมถอดรหัส metadata_enc กรณีผู้เสียหายส่งข้อมูลผ่าน Zero-Knowledge Cloud)
                     const { data: supaCases, error } = await supa.from('cases').select('*');
                     if (!error && Array.isArray(supaCases) && supaCases.length > 0) {
-                        supaCases.forEach(sc => {
+                        for (const sc of supaCases) {
                             const existing = mockCases.find(c => 
                                 (c.caseNo && sc.case_no && c.caseNo.toUpperCase() === sc.case_no.toUpperCase()) ||
                                 (c.id && sc.id && String(c.id) === String(sc.id))
                             );
+                            let decDraft = null;
+                            if (sc.metadata_enc && typeof ZeroKnowledgeCrypto !== 'undefined') {
+                                try {
+                                    const decMetaStr = await ZeroKnowledgeCrypto.decryptField(sc.metadata_enc);
+                                    if (decMetaStr && decMetaStr.trim().startsWith('{')) {
+                                        const decMeta = JSON.parse(decMetaStr);
+                                        if (decMeta && decMeta.victimDraft) decDraft = decMeta.victimDraft;
+                                    }
+                                } catch (_) {}
+                            }
                             if (existing) {
                                 if (sc.investigator_name) existing.investigator = getActualInvestigator(existing.caseNo || sc.case_no, sc.investigator_name);
                                 if (sc.status) existing.status = sc.status;
                                 if (sc.damage_amount) existing.amount = Number(sc.damage_amount) || existing.amount;
-                                if (sc.case_type) existing.type = sc.case_type;
+                                if (sc.case_type && !existing.type) existing.type = sc.case_type;
+                                if (sc.victim_profile) existing.victimProfile = sc.victim_profile;
+                                if (Array.isArray(sc.transfer_records) && sc.transfer_records.length > 0) existing.transferRecords = sc.transfer_records;
+                                if (Array.isArray(sc.inquiry_answers) && sc.inquiry_answers.length > 0) existing.inquiryAnswers = sc.inquiry_answers;
+                                if (decDraft) {
+                                    if (decDraft.victimProfile && !existing.victimProfile) existing.victimProfile = decDraft.victimProfile;
+                                    if (Array.isArray(decDraft.transferRecords) && decDraft.transferRecords.length > 0 && (!existing.transferRecords || existing.transferRecords.length === 0)) {
+                                        existing.transferRecords = decDraft.transferRecords;
+                                    }
+                                    if (Array.isArray(decDraft.inquiryAnswers) && decDraft.inquiryAnswers.length > 0 && (!existing.inquiryAnswers || existing.inquiryAnswers.length === 0)) {
+                                        existing.inquiryAnswers = decDraft.inquiryAnswers;
+                                    }
+                                    if (decDraft.victimSubmittedAt) existing.victimSubmittedAt = decDraft.victimSubmittedAt;
+                                }
                             } else if (sc.case_no) {
                                 mockCases.push({
                                     id: sc.id || `supa_${Date.now()}`,
                                     caseNo: sc.case_no,
                                     date: sc.created_at ? new Date(sc.created_at).toLocaleDateString('th-TH') : '',
-                                    victim: 'ผู้เสียหาย (Supabase กลาง)',
-                                    type: sc.case_type || sc.fraud_category || 'คดีออนไลน์',
+                                    victim: sc.victim_name ? `${sc.victim_name} ${sc.victim_phone || ''}`.trim() : 'ผู้เสียหาย (Supabase กลาง)',
+                                    type: sc.fraud_category || sc.case_type || 'คดีออนไลน์',
                                     amount: Number(sc.damage_amount) || 0,
                                     status: sc.status || 'พบพงส.',
                                     urgency: [],
                                     accounts: [],
                                     investigator: getActualInvestigator(sc.case_no, sc.investigator_name),
                                     detective: 'ร.ต.ต.ธนกฤต ไทยกมล',
+                                    victimProfile: sc.victim_profile || (decDraft && decDraft.victimProfile) || null,
+                                    transferRecords: sc.transfer_records || (decDraft && decDraft.transferRecords) || [],
+                                    inquiryAnswers: sc.inquiry_answers || (decDraft && decDraft.inquiryAnswers) || [],
                                     summons1: false,
                                     summons1Date: '',
                                     summons1Pdf: '',
@@ -5443,7 +5504,7 @@
                                     warrantPdf: ''
                                 });
                             }
-                        });
+                        }
                         updated = true;
                     }
                 }
@@ -12252,7 +12313,12 @@ ${currentDocPrintHtml}
                 if (res.status === 404 || res.status === 405 || !contentType.includes('application/json')) {
                     return { _staticCloudMode: true, status: res.status };
                 }
-                const data = await res.json();
+                const rawText = await res.text();
+                const trimmed = (rawText || '').trim();
+                if (!trimmed || (!trimmed.startsWith('{') && !trimmed.startsWith('['))) {
+                    return { _staticCloudMode: true, status: res.status };
+                }
+                const data = JSON.parse(trimmed);
                 return { _staticCloudMode: false, status: res.status, data };
             } catch (err) {
                 return { _staticCloudMode: true, error: err };
@@ -13514,6 +13580,11 @@ ${currentDocPrintHtml}
                 const stationCode = localStorage.getItem('cyber_zk_station_code') || DEFAULT_STATION_CODE;
                 const masterKey = ZeroKnowledgeCrypto.getSavedMasterKey();
 
+                const rawVictim = String(caseItem.victim || '');
+                const victimPhoneMatch = rawVictim.match(/0\d{8,9}/);
+                const victimPhone = victimPhoneMatch ? victimPhoneMatch[0] : (caseItem.victim_phone || '');
+                const victimCleanName = rawVictim.replace(/0\d{8,9}/g, '').replace(/[-\s]+$/g, '').trim() || 'ผู้เสียหาย';
+
                 const encryptedCase = await ZeroKnowledgeCrypto.encryptCaseForSupabase({
                     id: String(caseItem.id || caseItem.caseNo),
                     caseNo: caseItem.caseNo,
@@ -13533,11 +13604,30 @@ ${currentDocPrintHtml}
                     role: 'victim',
                     displayAlias: `ผู้เสียหายคดี ${caseItem.caseNo}`,
                     fullName: caseItem.victim || 'ผู้เสียหาย',
+                    phone: victimPhone,
                     bankAccount: (caseItem.accounts || []).join(' | '),
                     createdBy: currentAuthUser?.rank_name || 'OFFICER'
                 }, masterKey, stationCode);
 
                 await sb.from('subjects').insert([encryptedSubject]);
+
+                // ซิงค์เข้าตาราง cyber_details (ถ้ามีตารางนี้ใน Supabase) เพื่อให้ RPC verify_victim_case ตรวจสอบได้ทันที
+                try {
+                    await sb.from('cyber_details').upsert([{
+                        case_no: String(caseItem.caseNo).trim().toUpperCase(),
+                        station_code: stationCode,
+                        incident_date: caseItem.date || '',
+                        victim_name: victimCleanName,
+                        victim_phone: victimPhone,
+                        damage_amount: Number(caseItem.amount || 0),
+                        fraud_category: caseItem.type || '1. หลอกลวงซื้อขายสินค้าออนไลน์',
+                        mule_accounts: Array.isArray(caseItem.accounts) ? caseItem.accounts : [],
+                        investigator_name: caseItem.investigator || 'พ.ต.ต.ธีรเดช สุขเกษม',
+                        detective_name: caseItem.detective || 'ร.ต.ต.ธนกฤต ไทยกมล',
+                        status: caseItem.status || 'พบพงส.',
+                        updated_at: new Date().toISOString()
+                    }], { onConflict: 'case_no' });
+                } catch (_) {}
             } catch (e) {
                 console.warn('[ZK-Supabase Sync Case]', e.message);
             }

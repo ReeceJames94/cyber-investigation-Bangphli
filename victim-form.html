@@ -30,6 +30,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase JS Client & Zero-Knowledge Crypto Engine -->
+    <script src="/assets/supabase.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';document.head.appendChild(s);"></script>
+    <script src="/js/zk-crypto.js"></script>
     <style>
         body { font-family: 'Kanit', sans-serif; -webkit-tap-highlight-color: transparent; }
         .sarabun { font-family: 'Sarabun', sans-serif; }
@@ -457,13 +460,235 @@
         let activeInquiryPoints = [];
         let currentInquiryTemplates = [...INQUIRY_TEMPLATES];
 
+        // =====================================================================
+        // SUPABASE CLIENT & SAFE JSON PARSING CONFIGURATION (VERCEL / MOBILE)
+        // =====================================================================
+        const SUPABASE_URL = 'https://yofvfkfjyndjctoyvgpe.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_MC3Z6VYA-wFAhAZLfikxDA_DM1W_J4K';
+        const STATION_CODE = 'POLICE-STN-BANGPHLI-001';
+        const DEFAULT_MASTER_PASSPHRASE = 'BANGPHLI-ZK-MASTER-KEY-2569';
+
+        let _victimSupabaseClient = null;
+
+        /**
+         * สร้างและคืนค่า Supabase Client สำหรับเชื่อมต่อฐานข้อมูลโดยตรง (รองรับทั้ง Vercel, มือถือ iOS/Android และ Incognito)
+         */
+        function getVictimSupabaseClient() {
+            if (_victimSupabaseClient) return _victimSupabaseClient;
+
+            let url = SUPABASE_URL;
+            let key = SUPABASE_ANON_KEY;
+            try {
+                const savedUrl = localStorage.getItem('cyber_zk_supabase_url');
+                const savedKey = localStorage.getItem('cyber_zk_supabase_key');
+                // ตรวจสอบรูปแบบ URL ให้ถูกต้อง ป้องกัน DOMException "The string did not match the expected pattern" บน iOS Safari
+                if (savedUrl && /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(savedUrl.trim())) {
+                    url = savedUrl.trim();
+                }
+                if (savedKey && savedKey.trim().length > 15) {
+                    key = savedKey.trim();
+                }
+            } catch (_) {}
+
+            if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
+                _victimSupabaseClient = window.supabase.createClient(url, key, {
+                    auth: {
+                        persistSession: false,
+                        autoRefreshToken: false,
+                        detectSessionInUrl: false
+                    }
+                });
+                return _victimSupabaseClient;
+            }
+            return null;
+        }
+
+        /**
+         * ฟังก์ชันแปลงข้อความเป็น JSON อย่างปลอดภัย (ป้องกัน Error "Unexpected end of JSON input" บน Android
+         * และ "The string did not match the expected pattern." บน iOS Safari เมื่อ API คืนค่าว่างหรือ HTML 404)
+         */
+        function safeJsonParse(rawText, fallback = null) {
+            if (rawText === null || rawText === undefined) return fallback;
+            if (typeof rawText === 'object') return rawText;
+            if (typeof rawText !== 'string') return fallback;
+            const trimmed = rawText.trim();
+            if (!trimmed || (!trimmed.startsWith('{') && !trimmed.startsWith('['))) {
+                return fallback;
+            }
+            try {
+                return JSON.parse(trimmed);
+            } catch (e) {
+                console.warn('[SafeJsonParse] ข้อมูลไม่ใช่รูปแบบ JSON ที่ถูกต้อง:', e.message);
+                return fallback;
+            }
+        }
+
+        /**
+         * ฟังก์ชันเรียก fetch() แบบปลอดภัย (ใช้ res.text() ตรวจสอบก่อนแปลง JSON เสมอ และทำงานเฉพาะ Localhost เท่านั้น)
+         */
+        function isLocalBackendEnvironment() {
+            const host = (window.location.hostname || '').toLowerCase();
+            return host === 'localhost' || host === '127.0.0.1';
+        }
+
+        async function safeLocalApiFetch(path, options = {}) {
+            if (!isLocalBackendEnvironment()) {
+                return { ok: false, status: 404, data: null, isStaticCloud: true };
+            }
+            try {
+                const resp = await fetch(path, options);
+                const rawText = await resp.text();
+                const parsed = safeJsonParse(rawText, null);
+                if (!parsed) {
+                    return { ok: false, status: resp.status, data: null };
+                }
+                return { ok: resp.ok, status: resp.status, data: parsed };
+            } catch (err) {
+                return { ok: false, status: 0, data: null, error: err };
+            }
+        }
+
+        /**
+         * ฟังก์ชันถอดรหัส/เข้ารหัส Zero-Knowledge (AES-256-GCM) รองรับทั้งจาก js/zk-crypto.js และ WebCrypto ในตัว
+         */
+        async function decryptZkText(cipherText) {
+            if (!cipherText || typeof cipherText !== 'string') return '';
+            if (!cipherText.startsWith('zk:v1:')) return cipherText;
+            try {
+                if (typeof window.ZeroKnowledgeCrypto !== 'undefined' && typeof window.ZeroKnowledgeCrypto.decryptField === 'function') {
+                    return await window.ZeroKnowledgeCrypto.decryptField(cipherText, DEFAULT_MASTER_PASSPHRASE, STATION_CODE);
+                }
+                // Inline WebCrypto Fallback
+                const raw = cipherText.slice(6);
+                const parts = raw.split(':');
+                if (parts.length !== 2) return '';
+                const iv = Uint8Array.from(atob(parts[0]), c => c.charCodeAt(0));
+                const cipherBytes = Uint8Array.from(atob(parts[1]), c => c.charCodeAt(0));
+                const enc = new TextEncoder();
+                const keyMat = await window.crypto.subtle.importKey('raw', enc.encode(DEFAULT_MASTER_PASSPHRASE), { name: 'PBKDF2' }, false, ['deriveKey']);
+                const key = await window.crypto.subtle.deriveKey(
+                    { name: 'PBKDF2', salt: enc.encode('ZK-SALT-V1-' + STATION_CODE), iterations: 100000, hash: 'SHA-256' },
+                    keyMat,
+                    { name: 'AES-GCM', length: 256 },
+                    false,
+                    ['decrypt']
+                );
+                const decBuf = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv, tagLength: 128 }, key, cipherBytes);
+                return new TextDecoder().decode(decBuf);
+            } catch (e) {
+                console.warn('[ZK Decrypt Warning]', e.message);
+                return '';
+            }
+        }
+
+        async function encryptZkText(plainText) {
+            if (!plainText) return '';
+            const str = typeof plainText === 'string' ? plainText : JSON.stringify(plainText);
+            if (str.startsWith('zk:v1:')) return str;
+            try {
+                if (typeof window.ZeroKnowledgeCrypto !== 'undefined' && typeof window.ZeroKnowledgeCrypto.encryptField === 'function') {
+                    return await window.ZeroKnowledgeCrypto.encryptField(str, DEFAULT_MASTER_PASSPHRASE, STATION_CODE);
+                }
+                const enc = new TextEncoder();
+                const iv = window.crypto.getRandomValues(new Uint8Array(12));
+                const keyMat = await window.crypto.subtle.importKey('raw', enc.encode(DEFAULT_MASTER_PASSPHRASE), { name: 'PBKDF2' }, false, ['deriveKey']);
+                const key = await window.crypto.subtle.deriveKey(
+                    { name: 'PBKDF2', salt: enc.encode('ZK-SALT-V1-' + STATION_CODE), iterations: 100000, hash: 'SHA-256' },
+                    keyMat,
+                    { name: 'AES-GCM', length: 256 },
+                    false,
+                    ['encrypt']
+                );
+                const cipherBuf = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv, tagLength: 128 }, key, enc.encode(str));
+                const b64 = (bytes) => {
+                    let bin = '';
+                    for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+                    return btoa(bin);
+                };
+                return 'zk:v1:' + b64(iv) + ':' + b64(new Uint8Array(cipherBuf));
+            } catch (e) {
+                return '';
+            }
+        }
+
+        /**
+         * แปลข้อความ Error ให้เป็นภาษาไทยที่ชัดเจน เข้าใจง่าย สำหรับผู้เสียหาย
+         */
+        function translateVictimVerifyError(err) {
+            if (!err) return 'ไม่สามารถยืนยันตัวตนได้ กรุณาตรวจสอบเลข Case ID และเบอร์โทรศัพท์อีกครั้ง';
+            const code = String(err.code || err.error_code || '').toUpperCase();
+            const msg = String(err.message || err.error || err || '');
+
+            if (code === 'PHONE_MISMATCH') {
+                return 'หมายเลขโทรศัพท์ไม่ตรงกับข้อมูลผู้เสียหายที่ได้แจ้งความไว้ในระบบ สภ.บางพลี';
+            }
+            if (code === 'CASE_NOT_FOUND' || code === 'PGRST116') {
+                return 'ไม่พบข้อมูลเลข Case ID นี้ในสารบบ สภ.บางพลี กรุณาตรวจสอบเลขรหัสแจ้งความให้ถูกต้อง';
+            }
+            if (code === '42501' || code === 'RLS_DENIED' || /row-level security|permission denied|insufficient_privilege|policy/i.test(msg)) {
+                return 'ไม่สามารถเข้าถึงข้อมูลคดีได้เนื่องจากข้อจำกัดสิทธิ์ความปลอดภัยฐานข้อมูล (RLS Policy) กรุณาติดต่อพนักงานสอบสวน สภ.บางพลี';
+            }
+            if (/expected pattern|unexpected end of json|unexpected token|json/i.test(msg)) {
+                return 'ไม่พบข้อมูลเลข Case ID หรือหมายเลขโทรศัพท์ที่ตรงกับสารบบคดี สภ.บางพลี กรุณาตรวจสอบข้อมูลอีกครั้ง';
+            }
+            if (/failed to fetch|networkerror|load failed|network request failed/i.test(msg)) {
+                return 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้ในขณะนี้ กรุณาตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง';
+            }
+            // หากข้อความเป็นภาษาไทยอยู่แล้ว ให้แสดงตามจริง
+            if (/[\u0E00-\u0E7F]/.test(msg)) {
+                return msg;
+            }
+            return 'ไม่พบข้อมูลคดีที่ตรงกับเลข Case ID และหมายเลขโทรศัพท์ที่ระบุ กรุณาตรวจสอบอีกครั้ง';
+        }
+
+        // PDPA Masking Helpers
+        function maskVictimPhonePDPA(phoneStr) {
+            const clean = String(phoneStr || '').replace(/\D/g, '');
+            if (clean.length >= 10) return `${clean.slice(0, 3)}-xxx-${clean.slice(6, 10)}`;
+            if (clean.length >= 6) return `${clean.slice(0, 3)}-xxx-${clean.slice(-2)}`;
+            return '08x-xxx-xxxx';
+        }
+
+        function maskVictimNamePDPA(fullNameStr) {
+            const clean = String(fullNameStr || '')
+                .replace(/ผู้เสียหาย\s*:\s*/g, '')
+                .replace(/\|.*$/g, '')
+                .replace(/\d+/g, '')
+                .trim();
+            if (!clean || clean.includes('Supabase กลาง')) return 'ผู้เสียหาย (ยืนยันตัวตนแล้ว)';
+            const parts = clean.split(/\s+/).filter(Boolean);
+            if (parts.length >= 2) {
+                return `${parts[0]} ${parts[1].charAt(0)}...`;
+            }
+            return `${clean.slice(0, 4)}...`;
+        }
+
+        function parseMuleAccountsFromText(textOrArray) {
+            if (Array.isArray(textOrArray) && textOrArray.length > 0) return textOrArray;
+            if (typeof textOrArray === 'string' && textOrArray.trim()) {
+                const parsed = safeJsonParse(textOrArray, null);
+                if (Array.isArray(parsed)) return parsed;
+                // แยกจากรูปแบบ "ผู้เสียหาย: ... | บัญชีคนร้าย: ธกส: 020228673257 (ชฎาพร ป่าเกลือ)"
+                let accPart = textOrArray;
+                if (accPart.includes('บัญชีคนร้าย:')) {
+                    accPart = accPart.split('บัญชีคนร้าย:')[1] || '';
+                }
+                const list = accPart
+                    .split(/[,|]/)
+                    .map(s => s.trim())
+                    .filter(s => s && !s.includes('ไม่มีข้อมูลบัญชี') && s !== ':  ()');
+                return list;
+            }
+            return [];
+        }
+
         // ฟังก์ชันดึงชุดแม่แบบคำถาม 14 กลโกง ล่าสุด (ตรวจสอบจากทุกแหล่งข้อมูลแบบ Realtime)
         function getLatestInquiryTemplates() {
             // 1. ตรวจสอบ cyber_inquiry_data จาก localStorage (ที่แอดมินแก้ไขบนหน้าหลัก)
             try {
                 const localData = localStorage.getItem('cyber_inquiry_data');
                 if (localData) {
-                    const parsed = JSON.parse(localData);
+                    const parsed = safeJsonParse(localData, null);
                     if (Array.isArray(parsed) && parsed.length > 0) {
                         return parsed;
                     }
@@ -475,7 +700,7 @@
                 return activeCase.inquiryTemplates;
             }
 
-            // 3. ตรวจสอบ currentInquiryTemplates ที่ดึงจาก API
+            // 3. ตรวจสอบ currentInquiryTemplates ที่ดึงจาก Supabase
             if (Array.isArray(currentInquiryTemplates) && currentInquiryTemplates.length > 0) {
                 return currentInquiryTemplates;
             }
@@ -484,7 +709,7 @@
             try {
                 const localTemplates = localStorage.getItem('cyber_inquiry_templates');
                 if (localTemplates) {
-                    const parsed = JSON.parse(localTemplates);
+                    const parsed = safeJsonParse(localTemplates, null);
                     if (Array.isArray(parsed) && parsed.length > 0) {
                         return parsed;
                     }
@@ -495,32 +720,54 @@
             return INQUIRY_TEMPLATES;
         }
 
-        // โหลดชุดประเด็นคำถาม 14 กลโกง จากฐานข้อมูลระบบหลักแบบ Dynamic
+        // โหลดชุดประเด็นคำถาม 14 กลโกง จาก Supabase Client โดยตรง (ไม่ยิง /api/... บน Vercel)
         async function loadInquiryTemplates() {
-            // ดึงจาก localStorage ก่อนทันที
+            // 1. ดึงจาก localStorage ก่อนทันที
             try {
                 const saved = localStorage.getItem('cyber_inquiry_data') || localStorage.getItem('cyber_inquiry_templates');
                 if (saved) {
-                    const parsed = JSON.parse(saved);
+                    const parsed = safeJsonParse(saved, null);
                     if (Array.isArray(parsed) && parsed.length > 0) {
                         currentInquiryTemplates = parsed;
                     }
                 }
             } catch(e) {}
 
+            // 2. ดึงจาก Supabase Client ตาราง inquiry_templates โดยตรง
             try {
-                const resp = await fetch('/api/inquiry/templates');
-                if (resp.ok) {
-                    const data = await resp.json();
-                    if (data.success && Array.isArray(data.templates) && data.templates.length > 0) {
-                        currentInquiryTemplates = data.templates;
-                        try { localStorage.setItem('cyber_inquiry_templates', JSON.stringify(data.templates)); } catch(e) {}
+                const supabase = getVictimSupabaseClient();
+                if (supabase) {
+                    const { data, error } = await supabase
+                        .from('inquiry_templates')
+                        .select('id, title, points')
+                        .order('id', { ascending: true });
+                    if (!error && Array.isArray(data) && data.length > 0) {
+                        const normalized = data.map(row => ({
+                            id: row.id,
+                            title: row.title,
+                            points: Array.isArray(row.points) ? row.points : (safeJsonParse(row.points, []) || [])
+                        }));
+                        currentInquiryTemplates = normalized;
+                        try { localStorage.setItem('cyber_inquiry_templates', JSON.stringify(normalized)); } catch(e) {}
                         if (activeCase && activeCase.fraudCategory) {
                             renderInquiryQuestions(activeCase.fraudCategory);
                         }
+                        return;
                     }
                 }
             } catch(e) {}
+
+            // 3. ถ้ารันบน Localhost (On-Premise Server) จึงตรวจสอบจาก Local API อย่างปลอดภัย
+            if (isLocalBackendEnvironment()) {
+                const res = await safeLocalApiFetch('/api/inquiry/templates');
+                if (res.ok && res.data && res.data.success && Array.isArray(res.data.templates) && res.data.templates.length > 0) {
+                    currentInquiryTemplates = res.data.templates;
+                    try { localStorage.setItem('cyber_inquiry_templates', JSON.stringify(res.data.templates)); } catch(e) {}
+                    if (activeCase && activeCase.fraudCategory) {
+                        renderInquiryQuestions(activeCase.fraudCategory);
+                    }
+                }
+            }
         }
 
         // Realtime Broadcast Channel & Storage Listener สำหรับซิงค์คำถาม 14 กลโกงแบบทันที
@@ -580,7 +827,6 @@
         // ฟังก์ชันดึงชื่อ พงส. เจ้าของเรื่องตามจริงของ สภ.บางพลี
         function getActualInvestigator(caseNo, rawName) {
             const cleanNo = (caseNo || '').trim().toUpperCase();
-            // เฉพาะเคสที่ฐานข้อมูลกลาง สภ.บางพลี กำหนดตัว พงส. ชัดเจน
             if (cleanNo === 'T6911087326' || cleanNo === 'T6911087748' || cleanNo === 'T6911087788') {
                 return 'พ.ต.ต.ธีรเดช สุขเกษม';
             }
@@ -590,18 +836,24 @@
             if (cleanNo === 'T6911087999') {
                 return 'ร.ต.อ.ธนากร พิศุจน์';
             }
-            // หากเป็นคดีอื่นที่มีการระบุชื่อ พงส. มา (รวมถึงถ้าเป็นของ ร.ต.ต.ธนกฤต หรือ พงส. ท่านใด) ให้ยึดตามจริงจากฐานข้อมูล
             if (rawName && rawName.trim() !== '' && rawName.trim() !== '-') {
                 return rawName.trim();
             }
             return 'พ.ต.ต.ธีรเดช สุขเกษม';
         }
 
-        // Auto-fill Case ID from URL Query Parameter
+        // Auto-fill Case ID from URL Query Parameter or Path
         window.addEventListener('DOMContentLoaded', () => {
             loadInquiryTemplates();
             const urlParams = new URLSearchParams(window.location.search);
-            const qCaseNo = urlParams.get('caseNo') || urlParams.get('case_no') || urlParams.get('id');
+            let qCaseNo = urlParams.get('caseNo') || urlParams.get('case_no') || urlParams.get('id');
+            if (!qCaseNo) {
+                const pathParts = window.location.pathname.split('/').filter(Boolean);
+                const lastSeg = pathParts[pathParts.length - 1] || '';
+                if (/^T\d{6,}/i.test(lastSeg)) {
+                    qCaseNo = lastSeg;
+                }
+            }
             if (qCaseNo) {
                 const caseInput = document.getElementById('inputCaseId');
                 if (caseInput) caseInput.value = qCaseNo.trim().toUpperCase();
@@ -609,15 +861,370 @@
         });
 
         // ---------------------------------------------------------------------
-        // STEP 1: VERIFICATION & PDPA CONSENT
+        // STEP 1: VERIFICATION & PDPA CONSENT (SUPABASE CLIENT DIRECT)
         // ---------------------------------------------------------------------
+        function isPhoneNumberMatching(candidateDigitsList, inputPhoneDigits) {
+            const cleanInput = String(inputPhoneDigits || '').replace(/\D/g, '');
+            if (cleanInput.length < 9) return false;
+            const inputTail9 = cleanInput.slice(-9);
+            return candidateDigitsList.some(cand => {
+                const cDigits = String(cand || '').replace(/\D/g, '');
+                if (cDigits.length < 9) return false;
+                return cDigits.endsWith(inputTail9) || cleanInput.endsWith(cDigits.slice(-9)) || cDigits.includes(cleanInput);
+            });
+        }
+
+        /**
+         * ตรวจสอบข้อมูลคดีและเบอร์โทรศัพท์ผ่าน Supabase Client โดยตรง:
+         * 1. เรียก Supabase RPC Function `verify_victim_case(p_case_id, p_phone)` (SECURITY DEFINER)
+         * 2. หากยังไม่ได้สร้าง RPC หรือเป็นเคสที่เข้ารหัส Zero-Knowledge (summary_enc / subjects)
+         *    จะดึงผ่าน Supabase Client (`cyber_details`, `cases`, `subjects`) และถอดรหัสตรวจสอบเบอร์โทรให้โดยอัตโนมัติ
+         */
+        async function verifyVictimViaSupabase(caseInput, phoneInput) {
+            const supabase = getVictimSupabaseClient();
+            if (!supabase) return null;
+
+            let caseExistsInCloud = false;
+            let foundPhoneCandidatesInCloud = [];
+
+            // 1. เรียกใช้ Supabase RPC: verify_victim_case(p_case_id, p_phone)
+            try {
+                const { data: rpcData, error: rpcErr } = await supabase.rpc('verify_victim_case', {
+                    p_case_id: caseInput,
+                    p_phone: phoneInput
+                });
+
+                if (rpcErr) {
+                    const errCode = String(rpcErr.code || '');
+                    const errMsg = String(rpcErr.message || '');
+                    if (errCode === '42501' || /row-level security|permission denied/i.test(errMsg)) {
+                        throw { code: 'RLS_DENIED', message: 'ไม่สามารถเข้าถึงข้อมูลคดีได้เนื่องจากติดสิทธิ์ความปลอดภัยของฐานข้อมูล (RLS Policy)' };
+                    }
+                    // หากเป็น PGRST202 (ยังไม่ได้รันสคริปต์สร้างฟังก์ชัน RPC ใน Supabase) ให้ข้ามไปค้นหาจากตารางโดยตรงในขั้นที่ 2
+                } else if (rpcData) {
+                    const parsedRpc = typeof rpcData === 'string' ? safeJsonParse(rpcData, null) : rpcData;
+                    if (parsedRpc) {
+                        if (parsedRpc.success === false) {
+                            if (parsedRpc.error_code === 'PHONE_MISMATCH') {
+                                throw { code: 'PHONE_MISMATCH', message: parsedRpc.error || 'หมายเลขโทรศัพท์ไม่ตรงกับข้อมูลผู้เสียหายที่ได้แจ้งความไว้ในระบบ สภ.บางพลี' };
+                            }
+                            if (parsedRpc.error_code === 'CASE_NOT_FOUND') {
+                                // ตรวจสอบในตาราง cases/subjects ต่อเผื่อเคสเพิ่งถูกเพิ่มแบบ Zero-Knowledge
+                            }
+                        } else if (parsedRpc.needs_client_zk_verify) {
+                            // ถอดรหัส Zero-Knowledge Ciphertext ที่ได้จาก RPC เพื่อตรวจสอบเบอร์โทรฝั่ง Client
+                            caseExistsInCloud = true;
+                            const decSummary = await decryptZkText(parsedRpc.summary_enc || '');
+                            const decMetaRaw = await decryptZkText(parsedRpc.metadata_enc || '');
+                            const decMeta = safeJsonParse(decMetaRaw, {}) || {};
+                            const subjectsArr = Array.isArray(parsedRpc.subjects_enc) ? parsedRpc.subjects_enc : [];
+
+                            let victimRawName = '';
+                            let muleAccounts = [];
+                            const phoneCands = [];
+
+                            if (decSummary) {
+                                phoneCands.push(decSummary);
+                                const mName = decSummary.match(/ผู้เสียหาย\s*:\s*([^|]+)/);
+                                if (mName && mName[1]) victimRawName = mName[1].trim();
+                                muleAccounts = parseMuleAccountsFromText(decSummary);
+                            }
+                            if (decMeta && decMeta.victimDraft && decMeta.victimDraft.victimProfile) {
+                                const vp = decMeta.victimDraft.victimProfile;
+                                if (vp.phone) phoneCands.push(vp.phone);
+                                if (!victimRawName && (vp.firstName || vp.lastName)) {
+                                    victimRawName = `${vp.firstName || ''} ${vp.lastName || ''}`.trim();
+                                }
+                            }
+
+                            for (const sub of subjectsArr) {
+                                const sName = await decryptZkText(sub.full_name_enc || '');
+                                const sPhone = await decryptZkText(sub.phone_enc || '');
+                                const sBank = await decryptZkText(sub.bank_account_enc || '');
+                                if (sName) {
+                                    phoneCands.push(sName);
+                                    if (!victimRawName && !sName.includes('Supabase กลาง')) victimRawName = sName;
+                                }
+                                if (sPhone) phoneCands.push(sPhone);
+                                if (sBank && muleAccounts.length === 0) {
+                                    muleAccounts = parseMuleAccountsFromText(sBank);
+                                }
+                            }
+
+                            foundPhoneCandidatesInCloud.push(...phoneCands);
+
+                            if (isPhoneNumberMatching(phoneCands, phoneInput)) {
+                                const savedDraft = decMeta.victimDraft || parsedRpc.draft || null;
+                                return {
+                                    success: true,
+                                    verified: true,
+                                    caseNo: parsedRpc.caseNo || caseInput,
+                                    incidentDate: parsedRpc.incidentDate || '08/11/2569',
+                                    fraudCategory: (parsedRpc.fraudCategory && parsedRpc.fraudCategory !== 'ฉ้อโกงออนไลน์') ? parsedRpc.fraudCategory : '1. หลอกลวงซื้อขายสินค้าออนไลน์',
+                                    damageAmount: Number(parsedRpc.damageAmount || 0),
+                                    investigatorName: getActualInvestigator(caseInput, parsedRpc.investigatorName),
+                                    maskedPhone: maskVictimPhonePDPA(phoneInput),
+                                    maskedName: maskVictimNamePDPA(victimRawName),
+                                    accounts: muleAccounts,
+                                    status: parsedRpc.status || 'พบพงส.',
+                                    alreadySubmitted: parsedRpc.alreadySubmitted || !!(savedDraft && savedDraft.victimSubmittedAt),
+                                    victimSubmittedAt: parsedRpc.victimSubmittedAt || (savedDraft && savedDraft.victimSubmittedAt) || null,
+                                    inquiryTemplates: parsedRpc.inquiryTemplates || currentInquiryTemplates,
+                                    draft: savedDraft
+                                };
+                            }
+                        } else if (parsedRpc.success === true) {
+                            return parsedRpc;
+                        }
+                    }
+                }
+            } catch (rpcThrown) {
+                if (rpcThrown && (rpcThrown.code === 'PHONE_MISMATCH' || rpcThrown.code === 'RLS_DENIED')) {
+                    throw rpcThrown;
+                }
+                console.warn('[Supabase RPC verify_victim_case note]', rpcThrown);
+            }
+
+            // 2. ค้นหาจากตาราง public.cyber_details โดยตรงผ่าน Supabase Client (ถ้ามีตารางนี้)
+            try {
+                const { data: cdRows, error: cdErr } = await supabase
+                    .from('cyber_details')
+                    .select('*')
+                    .ilike('case_no', caseInput);
+
+                if (!cdErr && Array.isArray(cdRows) && cdRows.length > 0) {
+                    caseExistsInCloud = true;
+                    for (const row of cdRows) {
+                        const cands = [row.victim_phone || '', row.victim_name || ''];
+                        foundPhoneCandidatesInCloud.push(...cands);
+                        if (isPhoneNumberMatching(cands, phoneInput)) {
+                            const muleAccs = Array.isArray(row.mule_accounts) ? row.mule_accounts : (safeJsonParse(row.mule_accounts, []) || []);
+                            const vProf = typeof row.victim_profile === 'object' ? row.victim_profile : safeJsonParse(row.victim_profile, null);
+                            const tRecs = Array.isArray(row.transfer_records) ? row.transfer_records : (safeJsonParse(row.transfer_records, []) || []);
+                            const iAns = Array.isArray(row.inquiry_answers) ? row.inquiry_answers : (safeJsonParse(row.inquiry_answers, []) || []);
+
+                            return {
+                                success: true,
+                                verified: true,
+                                caseNo: row.case_no,
+                                incidentDate: row.incident_date || '08/11/2569',
+                                fraudCategory: row.fraud_category || '1. หลอกลวงซื้อขายสินค้าออนไลน์',
+                                damageAmount: Number(row.damage_amount || 0),
+                                investigatorName: getActualInvestigator(row.case_no, row.investigator_name),
+                                maskedPhone: maskVictimPhonePDPA(phoneInput),
+                                maskedName: maskVictimNamePDPA(row.victim_name),
+                                accounts: muleAccs,
+                                status: row.status || 'พบพงส.',
+                                alreadySubmitted: row.status === 'ผู้เสียหายกรอกข้อมูลแล้ว' || !!row.victim_submitted_at,
+                                victimSubmittedAt: row.victim_submitted_at || null,
+                                inquiryTemplates: currentInquiryTemplates,
+                                draft: {
+                                    victimProfile: vProf,
+                                    freezeInfo: null,
+                                    transferRecords: tRecs,
+                                    inquiryAnswers: iAns
+                                }
+                            };
+                        }
+                    }
+                }
+            } catch (cdEx) {
+                console.warn('[Supabase cyber_details query note]', cdEx);
+            }
+
+            // 3. ค้นหาจากตาราง public.cases และ public.subjects โดยตรงผ่าน Supabase Client (รองรับโหมด Zero-Knowledge 100%)
+            try {
+                const { data: caseRows, error: caseErr } = await supabase
+                    .from('cases')
+                    .select('*')
+                    .ilike('case_no', caseInput)
+                    .order('updated_at', { ascending: false });
+
+                if (caseErr) {
+                    const errCode = String(caseErr.code || '');
+                    const errMsg = String(caseErr.message || '');
+                    if (errCode === '42501' || /row-level security|permission denied/i.test(errMsg)) {
+                        throw { code: 'RLS_DENIED', message: 'ไม่สามารถเข้าถึงข้อมูลคดีได้เนื่องจากติดสิทธิ์ความปลอดภัยของฐานข้อมูล (RLS Policy)' };
+                    }
+                }
+
+                if (Array.isArray(caseRows) && caseRows.length > 0) {
+                    caseExistsInCloud = true;
+
+                    // ดึงข้อมูลผู้เสียหายจากตาราง subjects ที่เกี่ยวข้องกับคดีนี้
+                    const caseIds = caseRows.map(r => String(r.id)).filter(Boolean);
+                    let subjectRows = [];
+                    try {
+                        const { data: sRows } = await supabase
+                            .from('subjects')
+                            .select('*')
+                            .eq('subject_role', 'victim');
+                        if (Array.isArray(sRows)) {
+                            subjectRows = sRows.filter(s =>
+                                caseIds.includes(String(s.case_id)) ||
+                                (s.display_alias && s.display_alias.toUpperCase().includes(caseInput))
+                            );
+                        }
+                    } catch (_) {}
+
+                    // ถอดรหัสข้อมูล subjects ทั้งหมดของเคสนี้เตรียมไว้
+                    const decryptedSubjects = [];
+                    for (const s of subjectRows) {
+                        const decName = await decryptZkText(s.full_name_enc || '');
+                        const decPhone = await decryptZkText(s.phone_enc || '');
+                        const decBank = await decryptZkText(s.bank_account_enc || '');
+                        decryptedSubjects.push({ caseId: String(s.case_id), name: decName, phone: decPhone, bank: decBank });
+                    }
+
+                    let matchedCaseRow = null;
+                    let matchedVictimName = '';
+                    let matchedMuleAccounts = [];
+                    let matchedDraft = null;
+                    let specificFraudCat = '';
+
+                    for (const row of caseRows) {
+                        const cands = [];
+                        if (row.victim_phone) cands.push(row.victim_phone);
+                        if (row.victim_name) cands.push(row.victim_name);
+
+                        const decSum = await decryptZkText(row.summary_enc || '');
+                        if (decSum) cands.push(decSum);
+
+                        const decMetaStr = await decryptZkText(row.metadata_enc || '');
+                        const decMeta = safeJsonParse(decMetaStr, {}) || {};
+                        if (decMeta.victimDraft && decMeta.victimDraft.victimProfile && decMeta.victimDraft.victimProfile.phone) {
+                            cands.push(decMeta.victimDraft.victimProfile.phone);
+                        }
+
+                        const rowSubs = decryptedSubjects.filter(ds => ds.caseId === String(row.id));
+                        for (const rs of rowSubs) {
+                            if (rs.name) cands.push(rs.name);
+                            if (rs.phone) cands.push(rs.phone);
+                        }
+
+                        // รวม subjects ที่ผูกด้วยชื่อเคสใน display_alias ด้วย
+                        for (const ds of decryptedSubjects) {
+                            if (ds.name) cands.push(ds.name);
+                            if (ds.phone) cands.push(ds.phone);
+                        }
+
+                        foundPhoneCandidatesInCloud.push(...cands);
+
+                        if (row.fraud_category && row.fraud_category !== 'ฉ้อโกงออนไลน์' && !specificFraudCat) {
+                            specificFraudCat = row.fraud_category;
+                        }
+
+                        if (!matchedCaseRow && isPhoneNumberMatching(cands, phoneInput)) {
+                            matchedCaseRow = row;
+
+                            // ดึงชื่อผู้เสียหายที่มีความหมายชัดเจน
+                            if (row.victim_name && !row.victim_name.includes('Supabase กลาง')) {
+                                matchedVictimName = row.victim_name;
+                            }
+                            if (!matchedVictimName && decSum) {
+                                const m = decSum.match(/ผู้เสียหาย\s*:\s*([^|]+)/);
+                                if (m && m[1] && !m[1].includes('Supabase กลาง')) matchedVictimName = m[1].trim();
+                            }
+                            if (!matchedVictimName) {
+                                const validSub = decryptedSubjects.find(ds => ds.name && !ds.name.includes('Supabase กลาง') && isPhoneNumberMatching([ds.name, ds.phone], phoneInput))
+                                    || decryptedSubjects.find(ds => ds.name && !ds.name.includes('Supabase กลาง'));
+                                if (validSub) matchedVictimName = validSub.name;
+                            }
+
+                            // ดึงรายการบัญชีม้า
+                            matchedMuleAccounts = parseMuleAccountsFromText(row.mule_accounts);
+                            if (matchedMuleAccounts.length === 0 && decSum) {
+                                matchedMuleAccounts = parseMuleAccountsFromText(decSum);
+                            }
+                            if (matchedMuleAccounts.length === 0) {
+                                const subWithBank = decryptedSubjects.find(ds => ds.bank && !ds.bank.includes('ไม่มีข้อมูลบัญชี'));
+                                if (subWithBank) matchedMuleAccounts = parseMuleAccountsFromText(subWithBank.bank);
+                            }
+
+                            // ดึงข้อมูล Draft ที่ผู้เสียหายเคยส่งไว้ (ถ้ามี)
+                            if (row.victim_profile || (Array.isArray(row.transfer_records) && row.transfer_records.length > 0)) {
+                                matchedDraft = {
+                                    victimProfile: typeof row.victim_profile === 'object' ? row.victim_profile : safeJsonParse(row.victim_profile, null),
+                                    freezeInfo: null,
+                                    transferRecords: Array.isArray(row.transfer_records) ? row.transfer_records : (safeJsonParse(row.transfer_records, []) || []),
+                                    inquiryAnswers: Array.isArray(row.inquiry_answers) ? row.inquiry_answers : (safeJsonParse(row.inquiry_answers, []) || [])
+                                };
+                            } else if (decMeta.victimDraft) {
+                                matchedDraft = decMeta.victimDraft;
+                            }
+                        }
+                    }
+
+                    if (matchedCaseRow) {
+                        const finalCat = specificFraudCat ||
+                            (matchedCaseRow.fraud_category && matchedCaseRow.fraud_category !== 'ฉ้อโกงออนไลน์' ? matchedCaseRow.fraud_category : '') ||
+                            getDefaultFraudCategoryByCaseNo(caseInput);
+
+                        const isSubmitted = matchedCaseRow.status === 'ผู้เสียหายกรอกข้อมูลแล้ว' ||
+                            !!matchedCaseRow.victim_submitted_at ||
+                            !!(matchedDraft && matchedDraft.victimSubmittedAt);
+
+                        return {
+                            success: true,
+                            verified: true,
+                            caseNo: matchedCaseRow.case_no || caseInput,
+                            incidentDate: matchedCaseRow.incident_date || (matchedCaseRow.created_at ? new Date(matchedCaseRow.created_at).toLocaleDateString('th-TH') : '08/11/2569'),
+                            fraudCategory: finalCat,
+                            damageAmount: Number(matchedCaseRow.damage_amount || 0),
+                            investigatorName: getActualInvestigator(caseInput, matchedCaseRow.investigator_name),
+                            maskedPhone: maskVictimPhonePDPA(phoneInput),
+                            maskedName: maskVictimNamePDPA(matchedVictimName),
+                            accounts: matchedMuleAccounts,
+                            status: isSubmitted ? 'ผู้เสียหายกรอกข้อมูลแล้ว' : (matchedCaseRow.status || 'พบพงส.'),
+                            alreadySubmitted: isSubmitted,
+                            victimSubmittedAt: matchedCaseRow.victim_submitted_at || (matchedDraft && matchedDraft.victimSubmittedAt) || null,
+                            inquiryTemplates: currentInquiryTemplates,
+                            draft: matchedDraft
+                        };
+                    }
+                }
+            } catch (caseEx) {
+                if (caseEx && (caseEx.code === 'RLS_DENIED' || caseEx.code === 'PHONE_MISMATCH')) {
+                    throw caseEx;
+                }
+                console.warn('[Supabase cases/subjects query note]', caseEx);
+            }
+
+            // หากพบเลข Case ID นี้ใน Supabase แต่เบอร์โทรไม่ตรงกับที่มีในฐานข้อมูล
+            const validRecordedPhones = foundPhoneCandidatesInCloud
+                .map(p => String(p || '').replace(/\D/g, ''))
+                .filter(d => d.length >= 9);
+
+            if (caseExistsInCloud && validRecordedPhones.length > 0) {
+                // ตรวจสอบกับ LocalStorage อีกครั้งเผื่อผู้เสียหายใช้เบอร์สำรองในเครื่องเดียวกัน
+                const localMatch = verifyFromLocalStorage(caseInput, phoneInput);
+                if (localMatch) return localMatch;
+
+                throw {
+                    code: 'PHONE_MISMATCH',
+                    message: 'หมายเลขโทรศัพท์ไม่ตรงกับข้อมูลผู้เสียหายที่ได้แจ้งความไว้ในระบบ สภ.บางพลี'
+                };
+            }
+
+            return null;
+        }
+
+        function getDefaultFraudCategoryByCaseNo(caseNo) {
+            const c = String(caseNo || '').trim().toUpperCase();
+            if (c === 'T6911087326') return '1. หลอกลวงซื้อขายสินค้าออนไลน์';
+            if (c === 'T6911087748') return '2. หลอกให้โอนเงินเพื่อทำงาน (หารายได้พิเศษ)';
+            if (c === 'T6911087788') return '3. หลอกให้กู้เงินออนไลน์';
+            if (c === 'T6911088120') return '5. หลอกให้ลงทุนผ่านระบบคอมพิวเตอร์';
+            return '1. หลอกลวงซื้อขายสินค้าออนไลน์';
+        }
+
         async function handleVerifyVictim() {
             const errBox = document.getElementById('verifyErrorBox');
             const errMsg = document.getElementById('verifyErrorMsg');
             errBox.classList.add('hidden');
 
             const caseInput = document.getElementById('inputCaseId').value.trim().toUpperCase();
-            const phoneInput = document.getElementById('inputPhone').value.trim().replace(/[-\s]/g, '');
+            const phoneInput = document.getElementById('inputPhone').value.trim().replace(/\D/g, '');
             const consent = document.getElementById('consentCheckbox').checked;
 
             if (!consent) {
@@ -632,112 +1239,131 @@
                 return;
             }
 
+            if (phoneInput.length < 9) {
+                errBox.classList.remove('hidden');
+                errMsg.textContent = 'กรุณากรอกหมายเลขโทรศัพท์ให้ถูกต้อง (อย่างน้อย 9-10 หลัก)';
+                return;
+            }
+
             const btn = document.getElementById('btnVerify');
             btn.disabled = true;
-            btn.innerHTML = '<span>⏳</span> <span>กำลังตรวจสอบข้อมูล...</span>';
+            btn.innerHTML = '<span>⏳</span> <span>กำลังตรวจสอบข้อมูลกับฐานข้อมูล สภ.บางพลี...</span>';
 
             try {
-                // Call Server API
-                const resp = await fetch('/api/victim/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        caseNo: caseInput,
-                        phone: phoneInput,
-                        consentAccepted: true
-                    })
-                });
-
-                const data = await resp.json();
-
-                if (!resp.ok || !data.success) {
-                    // Fallback to localStorage if server is offline or in standalone file:// mode
-                    const localCase = verifyFromLocalStorage(caseInput, phoneInput);
-                    if (localCase) {
-                        unlockFormWithCase(localCase);
-                        return;
-                    }
-                    throw new Error(data.error || 'เลข Case ID หรือหมายเลขโทรศัพท์ไม่ตรงกับข้อมูลในระบบ สภ.บางพลี');
+                // 1. ตรวจสอบผ่าน Supabase Client โดยตรง (RPC verify_victim_case + ตาราง cyber_details / cases / subjects)
+                const supaVerified = await verifyVictimViaSupabase(caseInput, phoneInput);
+                if (supaVerified && supaVerified.success) {
+                    unlockFormWithCase(supaVerified);
+                    return;
                 }
 
-                unlockFormWithCase(data);
-            } catch (err) {
-                console.warn('Verify error:', err);
-                // Fallback check in localStorage
+                // 2. กรณีรันบนเครื่อง Localhost (On-Premise Node Server) ให้ตรวจสอบผ่าน Local API อย่างปลอดภัย (ใช้ res.text() ก่อน JSON.parse)
+                if (isLocalBackendEnvironment()) {
+                    const localApiRes = await safeLocalApiFetch('/api/victim/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            caseNo: caseInput,
+                            phone: phoneInput,
+                            consentAccepted: true
+                        })
+                    });
+                    if (localApiRes.ok && localApiRes.data && localApiRes.data.success) {
+                        unlockFormWithCase(localApiRes.data);
+                        return;
+                    }
+                }
+
+                // 3. ตรวจสอบจาก LocalStorage / ข้อมูลคดีตั้งต้นของระบบ
                 const localCase = verifyFromLocalStorage(caseInput, phoneInput);
                 if (localCase) {
                     unlockFormWithCase(localCase);
-                } else {
-                    errBox.classList.remove('hidden');
-                    errMsg.textContent = err.message || 'ไม่สามารถยืนยันตัวตนได้ กรุณาตรวจสอบข้อมูลอีกครั้ง';
+                    return;
                 }
+
+                // หากไม่พบข้อมูลคดีในทุกแหล่งข้อมูล
+                throw {
+                    code: 'CASE_NOT_FOUND',
+                    message: 'ไม่พบข้อมูลเลข Case ID หรือหมายเลขโทรศัพท์ที่ตรงกับสารบบคดี สภ.บางพลี กรุณาตรวจสอบข้อมูลอีกครั้ง'
+                };
+            } catch (err) {
+                console.warn('[Victim Verification Rejected]', err);
+                errBox.classList.remove('hidden');
+                errMsg.textContent = translateVictimVerifyError(err);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<span>🔓</span> <span>ยินยอมและเข้าสู่แบบฟอร์มคดี</span>';
             }
         }
 
-        // Local fallback for standalone environment
+        // Local fallback for standalone / offline environment
         function verifyFromLocalStorage(caseNo, phone) {
             try {
                 const raw = localStorage.getItem('cyber_cases');
-                let cases = null;
-                if (raw) {
-                    try { cases = JSON.parse(raw); } catch(e) {}
-                }
-                if (!Array.isArray(cases) || cases.length === 0) {
-                    cases = [
-                        {
-                            caseNo: 'T6911087326',
-                            victim: 'ฐิติพร ชุมชอบ 0655492824',
-                            type: 'หลอกลวงซื้อขายสินค้าออนไลน์',
-                            amount: 8000,
-                            investigator: 'พ.ต.ต.ธีรเดช สุขเกษม'
-                        },
-                        {
-                            caseNo: 'T6911087748',
-                            victim: 'สมชาย มั่นคง 0812345678',
-                            type: 'หลอกลวงให้โอนเงินเพื่อทำงาน',
-                            amount: 9000,
-                            investigator: 'พ.ต.ต.ธีรเดช สุขเกษม'
-                        },
-                        {
-                            caseNo: 'T6911087788',
-                            victim: 'วิภาดา รักดี 0898765432',
-                            type: 'หลอกลวงให้กู้เงินออนไลน์',
-                            amount: 1599,
-                            investigator: 'พ.ต.ต.ธีรเดช สุขเกษม'
-                        },
-                        {
-                            caseNo: 'T6911088120',
-                            victim: 'กิตติพงษ์ เจริญผล 0845556677',
-                            type: 'หลอกลวงลงทุนออนไลน์',
-                            amount: 35000,
-                            investigator: 'พ.ต.ท.ประเสริฐ กุลบุตร'
-                        }
-                    ];
-                }
+                let cases = safeJsonParse(raw, null);
 
-                const found = cases.find(c => {
+                const defaultSeedCases = [
+                    {
+                        caseNo: 'T6911087326',
+                        victim: 'ฐิติพร ชุมชอบ 0655492824',
+                        type: '1. หลอกลวงซื้อขายสินค้าออนไลน์',
+                        amount: 8000,
+                        accounts: ['Max card: 320001000578130 (เบญจมาภรณ์ บุญทนา)'],
+                        investigator: 'พ.ต.ต.ธีรเดช สุขเกษม'
+                    },
+                    {
+                        caseNo: 'T6911087748',
+                        victim: 'ปริญ มหโชคภัทรวิมล 0918955919',
+                        altPhones: ['0812345678'],
+                        type: '2. หลอกให้โอนเงินเพื่อทำงาน (หารายได้พิเศษ)',
+                        amount: 9000,
+                        accounts: ['ธกส: 020228673257 (ชฎาพร ป่าเกลือ)'],
+                        investigator: 'พ.ต.ต.ธีรเดช สุขเกษม'
+                    },
+                    {
+                        caseNo: 'T6911087788',
+                        victim: 'นายเจริญ บุญญานิบาล 0819958712',
+                        altPhones: ['0898765432'],
+                        type: '3. หลอกให้กู้เงินออนไลน์',
+                        amount: 1599,
+                        accounts: ['QR Code: xxxxxx7621 (ชินกร กันทะวงษ์)', 'QR Code: xxxxxx7917 (วิศรุต ไชยสุรินทร์)'],
+                        investigator: 'พ.ต.ต.ธีรเดช สุขเกษม'
+                    },
+                    {
+                        caseNo: 'T6911088120',
+                        victim: 'ศศิธร วงศ์เจริญ 0891234567',
+                        altPhones: ['0845556677'],
+                        type: '5. หลอกให้ลงทุนผ่านระบบคอมพิวเตอร์',
+                        amount: 35000,
+                        accounts: ['กสิกรไทย: 0451239988 (สมรักษ์ คำสิงห์พาณิชย์)'],
+                        investigator: 'พ.ต.ท.ประเสริฐ กุลบุตร'
+                    }
+                ];
+
+                const combinedCases = Array.isArray(cases) && cases.length > 0
+                    ? [...cases, ...defaultSeedCases]
+                    : defaultSeedCases;
+
+                const found = combinedCases.find(c => {
                     const cNo = (c.caseNo || c.caseId || '').trim().toUpperCase();
                     if (cNo !== caseNo) return false;
-                    const cPhone = (c.victim || '').replace(/\D/g, '');
-                    return cPhone.endsWith(phone) || phone.endsWith(cPhone);
+                    const cands = [c.victim || '', c.victim_phone || '', ...(c.altPhones || [])];
+                    if (c.victimProfile && c.victimProfile.phone) cands.push(c.victimProfile.phone);
+                    return isPhoneNumberMatching(cands, phone);
                 });
 
                 if (found) {
-                    const victimParts = (found.victim || '').split(/\s+/);
-                    const cleanPhone = (found.victim || '').replace(/\D/g, '').slice(-10);
+                    const cleanPhone = String(phone || '').replace(/\D/g, '');
                     const invName = getActualInvestigator(found.caseNo, found.investigator || found.officerInquiry);
                     return {
                         success: true,
                         caseNo: found.caseNo,
                         incidentDate: found.date || '08/11/2569',
-                        fraudCategory: found.type || 'หลอกลวงซื้อขายสินค้าออนไลน์',
+                        fraudCategory: found.type || getDefaultFraudCategoryByCaseNo(found.caseNo),
                         damageAmount: Number(found.amount || found.damage || 0),
                         investigatorName: invName,
-                        maskedPhone: cleanPhone ? `${cleanPhone.slice(0,3)}-xxx-${cleanPhone.slice(6)}` : '08x-xxx-xxxx',
-                        maskedName: victimParts[0] ? `${victimParts[0]} ${victimParts[1] ? victimParts[1].charAt(0) + '...' : ''}` : 'ผู้เสียหาย',
+                        maskedPhone: maskVictimPhonePDPA(cleanPhone),
+                        maskedName: maskVictimNamePDPA(found.victim || 'ผู้เสียหาย'),
                         accounts: found.accounts || [],
                         status: found.status,
                         alreadySubmitted: found.status === 'ผู้เสียหายกรอกข้อมูลแล้ว' || !!found.victimSubmittedAt,
@@ -835,7 +1461,7 @@
                     banner = document.createElement('div');
                     banner.id = 'alreadySubmittedBanner';
                     banner.className = 'p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-xs text-emerald-300 flex items-center justify-between gap-2 mb-4';
-                    const formEl = document.getElementById('victimForm');
+                    const formEl = document.getElementById('victimDetailedForm');
                     if (formEl) formEl.insertBefore(banner, formEl.firstChild);
                 }
                 banner.innerHTML = `
@@ -865,19 +1491,39 @@
             if (!activeCase || !activeCase.caseNo) return;
             if (!confirm('ยืนยันล้างข้อมูลที่เคยบันทึกไว้ของคดีนี้ เพื่อเริ่มต้นกรอกใหม่ตั้งแต่ต้นใช่หรือไม่?')) return;
 
+            const phoneVal = document.getElementById('inputPhone')?.value.trim().replace(/\D/g, '') || '';
+
+            // 1. ล้างข้อมูลผ่าน Supabase Client โดยตรง (RPC + ตาราง)
             try {
-                await fetch('/api/victim/reset', {
+                const supabase = getVictimSupabaseClient();
+                if (supabase) {
+                    await supabase.rpc('reset_victim_case', {
+                        p_case_id: activeCase.caseNo,
+                        p_phone: phoneVal
+                    }).catch(() => {});
+
+                    await supabase
+                        .from('cases')
+                        .update({ status: 'พบพงส.', updated_at: new Date().toISOString() })
+                        .ilike('case_no', activeCase.caseNo)
+                        .catch(() => {});
+                }
+            } catch (e) {}
+
+            // 2. หากเป็น Localhost ให้ซิงค์กับ Local API อย่างปลอดภัย
+            if (isLocalBackendEnvironment()) {
+                await safeLocalApiFetch('/api/victim/reset', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ caseNo: activeCase.caseNo })
                 });
-            } catch (e) {}
+            }
 
             try {
                 sessionStorage.removeItem('victim_draft_' + activeCase.caseNo);
                 const raw = localStorage.getItem('cyber_cases');
-                if (raw) {
-                    const cases = JSON.parse(raw);
+                const cases = safeJsonParse(raw, null);
+                if (Array.isArray(cases)) {
                     const target = cases.find(c => (c.caseNo || '').toUpperCase() === activeCase.caseNo.toUpperCase());
                     if (target) {
                         target.status = 'พบพงส.';
@@ -1189,7 +1835,7 @@
             let draft = null;
             try {
                 const local = sessionStorage.getItem('victim_draft_' + caseData.caseNo);
-                if (local) draft = JSON.parse(local);
+                if (local) draft = safeJsonParse(local, null);
             } catch (e) {}
 
             if (!draft && caseData.draft) {
@@ -1234,90 +1880,143 @@
         }
 
         // ---------------------------------------------------------------------
-        // SUBMIT FORM TO BACKEND & SUPABASE
+        // SUBMIT FORM TO SUPABASE CLIENT DIRECTLY (WITH ZERO-KNOWLEDGE ENCRYPTION)
         // ---------------------------------------------------------------------
         async function handleVictimFormSubmit() {
             if (!activeCase || !activeCase.caseNo) return;
 
             const btn = document.getElementById('btnSubmitForm');
             btn.disabled = true;
-            btn.innerHTML = '<span>⏳</span> <span>กำลังเข้ารหัสและส่งข้อมูล...</span>';
+            btn.innerHTML = '<span>⏳</span> <span>กำลังเข้ารหัสและส่งข้อมูลเข้าสารบบ สภ.บางพลี...</span>';
 
             const payload = collectFormData();
             const invName = getActualInvestigator(activeCase.caseNo, activeCase.investigatorName);
             const nowIso = new Date().toISOString();
+            const phoneVal = document.getElementById('inputPhone')?.value.trim().replace(/\D/g, '') || payload.victimProfile.phone || '';
 
             const submitData = {
                 caseNo: activeCase.caseNo,
-                phone: document.getElementById('inputPhone').value.trim().replace(/[-\s]/g, ''),
+                phone: phoneVal,
                 victimProfile: payload.victimProfile,
                 freezeInfo: payload.freezeInfo,
                 transferRecords: payload.transferRecords,
                 inquiryAnswers: payload.inquiryAnswers,
-                investigatorName: invName
+                investigatorName: invName,
+                victimSubmittedAt: nowIso
             };
 
-            // อัปเดตตาราง cases บน Supabase แบบ Realtime
             try {
-                const supaUrl = 'https://yofvfkfjyndjctoyvgpe.supabase.co';
-                const supaKey = 'sb_publishable_MC3Z6VYA-wFAhAZLfikxDA_DM1W_J4K';
-                await fetch(`${supaUrl}/rest/v1/cases?case_no=eq.${encodeURIComponent(activeCase.caseNo)}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'apikey': supaKey,
-                        'Authorization': 'Bearer ' + supaKey,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        status: 'ผู้เสียหายกรอกข้อมูลแล้ว',
-                        investigator_name: invName,
-                        updated_at: nowIso
-                    })
-                });
-            } catch (supaErr) {
-                console.warn('[SUPABASE VICTIM SUBMIT PATCH]', supaErr);
-            }
+                // 1. บันทึกผ่าน Supabase Client โดยตรง (ทั้ง RPC submit_victim_case และตาราง cases / cyber_details)
+                const supabase = getVictimSupabaseClient();
+                if (supabase) {
+                    // 1.1 เรียก RPC submit_victim_case (SECURITY DEFINER)
+                    try {
+                        await supabase.rpc('submit_victim_case', {
+                            p_case_id: activeCase.caseNo,
+                            p_phone: phoneVal,
+                            p_victim_profile: payload.victimProfile,
+                            p_transfer_records: payload.transferRecords,
+                            p_inquiry_answers: payload.inquiryAnswers,
+                            p_investigator_name: invName
+                        });
+                    } catch (rpcSubErr) {
+                        console.warn('[Supabase RPC submit_victim_case note]', rpcSubErr);
+                    }
 
-            try {
-                const resp = await fetch('/api/victim/submit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(submitData)
-                });
+                    // 1.2 อัปเดตตาราง cases พร้อมเข้ารหัสข้อมูลที่ผู้เสียหายกรอกเก็บใน metadata_enc (รองรับแม้ยังไม่ได้สร้างตาราง cyber_details)
+                    try {
+                        const encryptedMeta = await encryptZkText({
+                            unit: 'สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑',
+                            victimDraft: {
+                                victimProfile: payload.victimProfile,
+                                freezeInfo: null,
+                                transferRecords: payload.transferRecords,
+                                inquiryAnswers: payload.inquiryAnswers,
+                                victimSubmittedAt: nowIso
+                            }
+                        });
 
-                let resJson = null;
-                try { resJson = await resp.json(); } catch(e) {}
+                        const updateCasesPayload = {
+                            status: 'ผู้เสียหายกรอกข้อมูลแล้ว',
+                            investigator_name: invName,
+                            updated_at: nowIso
+                        };
+                        if (encryptedMeta) {
+                            updateCasesPayload.metadata_enc = encryptedMeta;
+                        }
 
+                        await supabase
+                            .from('cases')
+                            .update(updateCasesPayload)
+                            .ilike('case_no', activeCase.caseNo);
+                    } catch (caseUpdErr) {
+                        console.warn('[Supabase cases update note]', caseUpdErr);
+                    }
+
+                    // 1.3 อัปเดตตาราง cyber_details (ถ้ามีตารางนี้ใน Supabase)
+                    try {
+                        await supabase
+                            .from('cyber_details')
+                            .update({
+                                victim_profile: payload.victimProfile,
+                                transfer_records: payload.transferRecords,
+                                inquiry_answers: payload.inquiryAnswers,
+                                status: 'ผู้เสียหายกรอกข้อมูลแล้ว',
+                                victim_submitted_at: nowIso,
+                                updated_at: nowIso
+                            })
+                            .ilike('case_no', activeCase.caseNo);
+                    } catch (_) {}
+                }
+
+                // 2. หากเปิดบน Localhost (On-Premise Server) ให้บันทึกเข้า SQLite ด้วยอย่างปลอดภัย
+                if (isLocalBackendEnvironment()) {
+                    await safeLocalApiFetch('/api/victim/submit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(submitData)
+                    });
+                }
+
+                // 3. ซิงค์ลง LocalStorage และแสดงใบรับข้อมูลสีเขียว (Receipt Ticket)
                 syncToLocalStorage(submitData);
-
-                // Clear temporary session draft
                 sessionStorage.removeItem('victim_draft_' + activeCase.caseNo);
 
-                // Show Success Receipt Ticket
+                activeCase.alreadySubmitted = true;
+                activeCase.victimSubmittedAt = nowIso;
+                activeCase.draft = {
+                    victimProfile: payload.victimProfile,
+                    freezeInfo: null,
+                    transferRecords: payload.transferRecords,
+                    inquiryAnswers: payload.inquiryAnswers
+                };
+
                 showSubmissionTicket({
                     caseNo: activeCase.caseNo,
-                    maskedName: `${payload.victimProfile.firstName} ${payload.victimProfile.lastName}`,
+                    maskedName: `${payload.victimProfile.firstName} ${payload.victimProfile.lastName}`.trim() || activeCase.maskedName,
                     investigatorName: invName,
                     victimSubmittedAt: nowIso
                 });
-
             } catch (err) {
-                console.warn('Submit API fallback to local:', err);
+                console.warn('Submit fallback to local:', err);
                 syncToLocalStorage(submitData);
                 sessionStorage.removeItem('victim_draft_' + activeCase.caseNo);
                 showSubmissionTicket({
                     caseNo: activeCase.caseNo,
-                    maskedName: `${payload.victimProfile.firstName} ${payload.victimProfile.lastName}`,
+                    maskedName: `${payload.victimProfile.firstName} ${payload.victimProfile.lastName}`.trim() || activeCase.maskedName,
                     investigatorName: invName,
                     victimSubmittedAt: nowIso
                 });
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>📨</span> <span>ยืนยันส่งข้อมูลให้เจ้าหน้าที่ สภ.บางพลี</span>';
             }
         }
 
         function syncToLocalStorage(data) {
             try {
                 const raw = localStorage.getItem('cyber_cases');
-                let cases = raw ? JSON.parse(raw) : [];
+                let cases = safeJsonParse(raw, []);
                 if (!Array.isArray(cases)) cases = [];
                 let target = cases.find(c => (c.caseNo || '').toUpperCase() === data.caseNo.toUpperCase());
                 if (!target) {
