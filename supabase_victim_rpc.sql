@@ -424,9 +424,9 @@ BEGIN
         v_full_name := 'ผู้เสียหาย';
     END IF;
 
-    -- อัปเดตตาราง public.cyber_details
+    -- อัปเดตตาราง public.cyber_details (คง victim_profile เดิมไว้หากไม่ได้ส่งมาตามหลัก PDPA)
     UPDATE public.cyber_details
-    SET victim_profile = p_victim_profile,
+    SET victim_profile = COALESCE(p_victim_profile, victim_profile),
         transfer_records = COALESCE(p_transfer_records, '[]'::jsonb),
         inquiry_answers = COALESCE(p_inquiry_answers, '[]'::jsonb),
         status = 'ผู้เสียหายกรอกข้อมูลแล้ว',
@@ -470,7 +470,7 @@ BEGIN
     -- อัปเดตตาราง public.cases ให้ซิงค์ตรงกัน
     UPDATE public.cases
     SET status = 'ผู้เสียหายกรอกข้อมูลแล้ว',
-        victim_profile = p_victim_profile,
+        victim_profile = COALESCE(p_victim_profile, victim_profile),
         transfer_records = COALESCE(p_transfer_records, '[]'::jsonb),
         inquiry_answers = COALESCE(p_inquiry_answers, '[]'::jsonb),
         victim_submitted_at = v_now,

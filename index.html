@@ -3491,6 +3491,23 @@
                                         </div>
                                     </div>
 
+                                    <!-- 6. ตัวแปรรายการโอนเงินอัตโนมัติ (transferRecords) -->
+                                    <div class="bg-slate-900/80 p-3 rounded-xl border border-purple-500/30 space-y-2.5">
+                                        <div class="text-[11px] font-bold text-purple-300 flex flex-wrap items-center justify-between gap-2">
+                                            <span class="flex items-center gap-1.5">
+                                                <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                                                <span>6. ตัวแปรรายการโอนเงินอัตโนมัติจากผู้เสียหาย (transferRecords)</span>
+                                                <span id="intTransferVarsCountBadge" class="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-mono">0 รายการ</span>
+                                            </span>
+                                            <button type="button" onclick="syncTransferRecordsToInterrogation()" class="text-[10px] px-2.5 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500 text-purple-200 hover:text-slate-950 border border-purple-500/40 font-bold flex items-center gap-1 transition" title="แทรกสรุปการโอนเงินทั้งหมดลงในคำให้การข้อพฤติการณ์/การโอนเงินอัตโนมัติ">
+                                                <span>🔄</span> <span>แทรกสรุปการโอนลงคำให้การ</span>
+                                            </button>
+                                        </div>
+                                        <div id="intTransferVarsSummaryContainer" class="space-y-2 text-[11px] text-slate-300">
+                                            <div class="text-slate-400">ยังไม่มีรายการโอนเงินที่ผู้เสียหายส่งเข้ามา</div>
+                                        </div>
+                                    </div>
+
                                 </div>
                             </details>
                         </div>
@@ -5473,20 +5490,53 @@
                                 if (resolvedDet) existing.detective = resolvedDet;
                                 if (sc.status) existing.status = sc.status;
                                 if (sc.damage_amount) existing.amount = Number(sc.damage_amount) || existing.amount;
-                                if (sc.fraud_category) existing.type = sc.fraud_category;
+                                const isGenericType = !sc.fraud_category || sc.fraud_category === 'ฉ้อโกงออนไลน์' || sc.fraud_category === 'คดีออนไลน์';
+                                if (!isGenericType) existing.type = sc.fraud_category;
                                 else if (sc.case_type && !existing.type) existing.type = sc.case_type;
-                                if (sc.victim_profile) existing.victimProfile = sc.victim_profile;
-                                if (Array.isArray(sc.transfer_records) && sc.transfer_records.length > 0) existing.transferRecords = sc.transfer_records;
-                                if (Array.isArray(sc.inquiry_answers) && sc.inquiry_answers.length > 0) existing.inquiryAnswers = sc.inquiry_answers;
+                                if (sc.victim_profile) {
+                                    existing.victimProfile = sc.victim_profile;
+                                    existing.victim_profile = sc.victim_profile;
+                                }
+                                if (Array.isArray(sc.transfer_records) && sc.transfer_records.length > 0) {
+                                    existing.transferRecords = sc.transfer_records;
+                                    existing.transfer_records = sc.transfer_records;
+                                }
+                                if (Array.isArray(sc.inquiry_answers) && sc.inquiry_answers.length > 0) {
+                                    existing.inquiryAnswers = sc.inquiry_answers;
+                                    existing.inquiry_answers = sc.inquiry_answers;
+                                }
+                                if (sc.victim_submitted_at) {
+                                    existing.victimSubmittedAt = sc.victim_submitted_at;
+                                    existing.victim_submitted_at = sc.victim_submitted_at;
+                                }
                                 if (decDraft) {
                                     if (decDraft.victimProfile && !existing.victimProfile) existing.victimProfile = decDraft.victimProfile;
-                                    if (Array.isArray(decDraft.transferRecords) && decDraft.transferRecords.length > 0 && (!existing.transferRecords || existing.transferRecords.length === 0)) {
+                                    const draftTime = decDraft.victimSubmittedAt ? Date.parse(decDraft.victimSubmittedAt) : 0;
+                                    const existingTime = existing.victimSubmittedAt ? Date.parse(existing.victimSubmittedAt) : 0;
+                                    const shouldUseDraft = !existingTime || (draftTime && draftTime >= existingTime);
+                                    if (Array.isArray(decDraft.transferRecords) && decDraft.transferRecords.length > 0 && (shouldUseDraft || !existing.transferRecords || existing.transferRecords.length === 0)) {
                                         existing.transferRecords = decDraft.transferRecords;
+                                        existing.transfer_records = decDraft.transferRecords;
                                     }
-                                    if (Array.isArray(decDraft.inquiryAnswers) && decDraft.inquiryAnswers.length > 0 && (!existing.inquiryAnswers || existing.inquiryAnswers.length === 0)) {
+                                    if (Array.isArray(decDraft.inquiryAnswers) && decDraft.inquiryAnswers.length > 0 && (shouldUseDraft || !existing.inquiryAnswers || existing.inquiryAnswers.length === 0)) {
                                         existing.inquiryAnswers = decDraft.inquiryAnswers;
+                                        existing.inquiry_answers = decDraft.inquiryAnswers;
                                     }
-                                    if (decDraft.victimSubmittedAt) existing.victimSubmittedAt = decDraft.victimSubmittedAt;
+                                    if (decDraft.victimSubmittedAt && shouldUseDraft) {
+                                        existing.victimSubmittedAt = decDraft.victimSubmittedAt;
+                                        existing.victim_submitted_at = decDraft.victimSubmittedAt;
+                                    }
+                                }
+                                if (decMeta) {
+                                    if (Array.isArray(decMeta.interrogationStatements) && decMeta.interrogationStatements.length > 0 && !existing.interrogationStatements) {
+                                        existing.interrogationStatements = decMeta.interrogationStatements;
+                                    }
+                                    if (decMeta.statementVariables && !existing.statementVariables) {
+                                        existing.statementVariables = decMeta.statementVariables;
+                                    }
+                                    if (Array.isArray(decMeta.propertyDamaged) && decMeta.propertyDamaged.length > 0 && !existing.propertyDamaged) existing.propertyDamaged = decMeta.propertyDamaged;
+                                    if (Array.isArray(decMeta.propertyRecovered) && decMeta.propertyRecovered.length > 0 && !existing.propertyRecovered) existing.propertyRecovered = decMeta.propertyRecovered;
+                                    if (Array.isArray(decMeta.propertyUnrecovered) && decMeta.propertyUnrecovered.length > 0 && !existing.propertyUnrecovered) existing.propertyUnrecovered = decMeta.propertyUnrecovered;
                                 }
                             } else if (sc.case_no) {
                                 const resolvedInv = sc.investigator_name || (decMeta && decMeta.investigatorName);
@@ -5504,8 +5554,14 @@
                                     investigator: getActualInvestigator(sc.case_no, resolvedInv),
                                     detective: resolvedDet,
                                     victimProfile: sc.victim_profile || (decDraft && decDraft.victimProfile) || null,
-                                    transferRecords: sc.transfer_records || (decDraft && decDraft.transferRecords) || [],
-                                    inquiryAnswers: sc.inquiry_answers || (decDraft && decDraft.inquiryAnswers) || [],
+                                    transferRecords: (Array.isArray(sc.transfer_records) && sc.transfer_records.length > 0) ? sc.transfer_records : ((decDraft && decDraft.transferRecords) || []),
+                                    inquiryAnswers: (Array.isArray(sc.inquiry_answers) && sc.inquiry_answers.length > 0) ? sc.inquiry_answers : ((decDraft && decDraft.inquiryAnswers) || []),
+                                    victimSubmittedAt: sc.victim_submitted_at || (decDraft && decDraft.victimSubmittedAt) || null,
+                                    interrogationStatements: (decMeta && Array.isArray(decMeta.interrogationStatements)) ? decMeta.interrogationStatements : null,
+                                    statementVariables: (decMeta && decMeta.statementVariables) || null,
+                                    propertyDamaged: (decMeta && decMeta.propertyDamaged) || null,
+                                    propertyRecovered: (decMeta && decMeta.propertyRecovered) || null,
+                                    propertyUnrecovered: (decMeta && decMeta.propertyUnrecovered) || null,
                                     summons1: false,
                                     summons1Date: '',
                                     summons1Pdf: '',
@@ -14670,6 +14726,268 @@ ${currentDocPrintHtml}
             return id.toString().trim();
         }
 
+        function sanitizeParentNameLabel(val, label) {
+            if (!val) return '';
+            const re = new RegExp('^\\s*(?:' + label + '\\s*[:：]?\\s*)+', 'gi');
+            return String(val).replace(re, '').trim();
+        }
+
+        function parseTransferDateSafe(dateStr) {
+            if (!dateStr || typeof dateStr !== 'string') {
+                return { day: '-', monthName: '-', yearBE: '-', fullThai: '-', shortThai: '-' };
+            }
+            const s = dateStr.trim();
+            if (!s || s === '-') {
+                return { day: '-', monthName: '-', yearBE: '-', fullThai: '-', shortThai: '-' };
+            }
+            const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+            const thaiShortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            let day = 0, monthIdx = -1, yearBE = 0;
+
+            if (/^\d{4}-\d{1,2}-\d{1,2}/.test(s)) {
+                const [y, m, d] = s.slice(0, 10).split('-').map(Number);
+                day = d; monthIdx = m - 1; yearBE = y > 2400 ? y : y + 543;
+            } else if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)) {
+                const [d, m, y] = s.split('/').map(Number);
+                day = d; monthIdx = m - 1; yearBE = y > 2400 ? y : y + 543;
+            }
+            if (day > 0 && monthIdx >= 0 && monthIdx < 12 && yearBE > 0) {
+                const monthName = thaiMonths[monthIdx];
+                const shortMonth = thaiShortMonths[monthIdx];
+                return {
+                    day: String(day),
+                    monthName,
+                    yearBE: String(yearBE),
+                    fullThai: `${day} ${monthName} ${yearBE}`,
+                    shortThai: `${day} ${shortMonth} ${yearBE}`
+                };
+            }
+            return { day: '-', monthName: '-', yearBE: '-', fullThai: s, shortThai: s };
+        }
+
+        function buildTransferVariablesForCase(c) {
+            const tRecs = Array.isArray(c?.transferRecords) ? c.transferRecords : (Array.isArray(c?.transfer_records) ? c.transfer_records : []);
+            const dmgAmount = Number(c?.amount || 0);
+            const varsMap = {};
+
+            if (tRecs.length === 0) {
+                const accFallback = Array.isArray(c?.accounts) && c.accounts.length > 0
+                    ? c.accounts.map(a => typeof a === 'string' ? a : `${a.bank || ''} ${a.no || ''} (${a.name || ''})`).join(', ')
+                    : '...................................................';
+                const totalFormatted = dmgAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const totalThai = toThaiNumerals(totalFormatted);
+                const bahtText = toThaiBahtText(dmgAmount);
+                const fallbackText = `ผู้กล่าวหาได้โอนเงินไปยังบัญชีคนร้าย (${accFallback}) รวมเป็นเงินทั้งสิ้น ${totalThai} บาท (${bahtText})`;
+
+                varsMap.transfer_count = '0';
+                varsMap.transfer_count_thai = '๐';
+                varsMap.transfer_total_amount = totalFormatted;
+                varsMap.transfer_total_amount_thai = totalThai;
+                varsMap.transfer_total_baht_text = bahtText;
+                varsMap.transfer_details_text = fallbackText;
+
+                return {
+                    count: 0,
+                    countThai: '๐',
+                    totalAmount: dmgAmount,
+                    totalAmountFormatted: totalFormatted,
+                    totalAmountThai: totalThai,
+                    totalBahtText: bahtText,
+                    transfer_details_text: fallbackText,
+                    items: [],
+                    varsMap
+                };
+            }
+
+            let totalSum = 0;
+            const items = tRecs.map((tr, i) => {
+                const idxNum = i + 1;
+                const idxThai = toThaiNumerals(String(idxNum));
+                const amt = Number(tr.amount || 0);
+                totalSum += amt;
+
+                const dtPart = parseTransferDateSafe(tr.transferDate || '');
+                const dateThai = toThaiNumerals(dtPart.fullThai || '-');
+                const shortDateThai = toThaiNumerals(dtPart.shortThai || '-');
+                const rawTime = (tr.transferTime || '').trim();
+                const timeThai = rawTime ? toThaiNumerals(rawTime) : '-';
+                const timePhrase = rawTime ? ` เวลาประมาณ ${timeThai} น.` : '';
+
+                const fromBank = (tr.fromBank || '-').trim();
+                const fromAccNo = (tr.fromAccountNo || '-').trim();
+                const fromAccName = (tr.fromAccountName || '-').trim();
+                const fromText = `บัญชีธนาคาร${fromBank} เลขที่ ${toThaiNumerals(fromAccNo)} ชื่อบัญชี ${fromAccName}`;
+
+                const toBank = (tr.toBank || '-').trim();
+                const toAccNo = (tr.toAccountNo || '-').trim();
+                const toAccName = (tr.toAccountName || '-').trim();
+                const toText = `บัญชีธนาคาร${toBank} เลขที่ ${toThaiNumerals(toAccNo)} ชื่อบัญชี ${toAccName}`;
+
+                const amtFormatted = amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const amtThai = toThaiNumerals(amtFormatted);
+                const amtBahtText = toThaiBahtText(amt);
+
+                const lineText = `ครั้งที่ ${idxThai} เมื่อวันที่ ${dateThai}${timePhrase} ได้โอนเงินจาก${fromText} ไปยัง${toText} จำนวนเงิน ${amtThai} บาท`;
+
+                varsMap[`transfer_${idxNum}_date`] = dateThai;
+                varsMap[`transfer_${idxNum}_short_date`] = shortDateThai;
+                varsMap[`transfer_${idxNum}_time`] = timeThai;
+                varsMap[`transfer_${idxNum}_amount`] = amtThai;
+                varsMap[`transfer_${idxNum}_amount_baht`] = amtBahtText;
+                varsMap[`transfer_${idxNum}_from_bank`] = fromBank;
+                varsMap[`transfer_${idxNum}_from_account`] = toThaiNumerals(fromAccNo);
+                varsMap[`transfer_${idxNum}_from_name`] = fromAccName;
+                varsMap[`transfer_${idxNum}_from`] = fromText;
+                varsMap[`transfer_${idxNum}_to_bank`] = toBank;
+                varsMap[`transfer_${idxNum}_to_account`] = toThaiNumerals(toAccNo);
+                varsMap[`transfer_${idxNum}_to_name`] = toAccName;
+                varsMap[`transfer_${idxNum}_to`] = toText;
+                varsMap[`transfer_${idxNum}_text`] = lineText;
+
+                return {
+                    index: idxNum,
+                    indexThai: idxThai,
+                    date: tr.transferDate || '',
+                    dateThai,
+                    shortDateThai,
+                    time: rawTime,
+                    timeThai,
+                    amount: amt,
+                    amountFormatted: amtFormatted,
+                    amountThai: amtThai,
+                    amountBahtText: amtBahtText,
+                    fromBank,
+                    fromAccountNo: fromAccNo,
+                    fromAccountName: fromAccName,
+                    fromText,
+                    toBank,
+                    toAccountNo: toAccNo,
+                    toAccountName: toAccName,
+                    toText,
+                    lineText
+                };
+            });
+
+            const totalFormatted = totalSum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const totalThai = toThaiNumerals(totalFormatted);
+            const totalBahtText = toThaiBahtText(totalSum);
+            const countThai = toThaiNumerals(String(tRecs.length));
+
+            const transferDetailsText =
+                `ผู้กล่าวหาได้โอนเงินให้แก่คนร้าย รวมทั้งสิ้น ${countThai} ครั้ง รายละเอียดดังนี้\n` +
+                items.map(it => it.lineText).join('\n') +
+                `\nรวมยอดเงินที่โอนไปทั้งสิ้น ${totalThai} บาท (${totalBahtText})`;
+
+            varsMap.transfer_count = String(tRecs.length);
+            varsMap.transfer_count_thai = countThai;
+            varsMap.transfer_total_amount = totalFormatted;
+            varsMap.transfer_total_amount_thai = totalThai;
+            varsMap.transfer_total_baht_text = totalBahtText;
+            varsMap.transfer_details_text = transferDetailsText;
+
+            return {
+                count: tRecs.length,
+                countThai,
+                totalAmount: totalSum,
+                totalAmountFormatted: totalFormatted,
+                totalAmountThai: totalThai,
+                totalBahtText,
+                transfer_details_text: transferDetailsText,
+                items,
+                varsMap
+            };
+        }
+
+        function resolveTransferPlaceholders(text, c) {
+            if (!text || typeof text !== 'string' || !text.includes('{{')) return text || '';
+            const tv = buildTransferVariablesForCase(c || currentInterrogationCase);
+            return text.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (full, key) => {
+                return Object.prototype.hasOwnProperty.call(tv.varsMap, key) ? tv.varsMap[key] : full;
+            });
+        }
+
+        function insertTransferVarToInterrogation(varToken) {
+            const tokenStr = `{{${varToken}}}`;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(tokenStr).catch(() => {});
+            }
+            const tv = buildTransferVariablesForCase(currentInterrogationCase);
+            const resolvedVal = tv.varsMap[varToken] || '';
+            const targetIdx = interrogationQAList.findIndex(q => q.type === 'transfer_summary');
+            if (targetIdx !== -1 && varToken === 'transfer_details_text') {
+                interrogationQAList[targetIdx].answer = tv.transfer_details_text;
+                renderInterrogationBlocks();
+                toast('🔄 แทรกข้อความสรุปการโอนเงินทั้งหมดลงในคำให้การเรียบร้อยแล้ว');
+                return;
+            }
+            toast(`📋 คัดลอกตัวแปร ${tokenStr} แล้ว (${String(resolvedVal).slice(0, 45)}${String(resolvedVal).length > 45 ? '...' : ''})`);
+        }
+
+        function syncTransferRecordsToInterrogation() {
+            if (!currentInterrogationCase) return;
+            const tv = buildTransferVariablesForCase(currentInterrogationCase);
+            let tIdx = interrogationQAList.findIndex(q => q.type === 'transfer_summary');
+            if (tIdx === -1) {
+                tIdx = interrogationQAList.findIndex(q => /โอนเงินไปยังบัญชีใด|รายละเอียดการโอน/.test(q.question || ''));
+            }
+            if (tIdx !== -1) {
+                interrogationQAList[tIdx].answer = tv.transfer_details_text;
+            } else {
+                const insertPos = Math.max(0, interrogationQAList.length - 2);
+                interrogationQAList.splice(insertPos, 0, {
+                    id: 'qa_transfer_' + Date.now(),
+                    type: 'transfer_summary',
+                    status: 'transfer',
+                    question: 'ผู้กล่าวหาได้โอนเงินไปยังบัญชีใดของคนร้ายบ้าง วันเวลาใด เป็นจำนวนเงินเท่าใด',
+                    answer: tv.transfer_details_text
+                });
+            }
+            renderInterrogationBlocks();
+            toast(`🔄 แทรกสรุปรายการโอนเงิน ${tv.count} ครั้ง รวม ${tv.totalAmountThai} บาท ลงในคำให้การเรียบร้อยแล้ว`);
+        }
+
+        function renderTransferVariablesPanel(c) {
+            const container = document.getElementById('intTransferVarsSummaryContainer');
+            const badge = document.getElementById('intTransferVarsCountBadge');
+            if (!container) return;
+            const tv = buildTransferVariablesForCase(c);
+            if (badge) badge.textContent = `${tv.count} รายการ (${tv.totalAmountThai} ฿)`;
+
+            if (tv.count === 0) {
+                container.innerHTML = `
+                    <div class="text-slate-400">ยังไม่มีรายการโอนเงินจากหน้า /victim-form (ระบบใช้ข้อมูลบัญชีจากคดีเดิมแทน)</div>
+                    <div class="p-2 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-300 font-mono whitespace-pre-wrap">${escapeHtml(tv.transfer_details_text)}</div>
+                `;
+                return;
+            }
+
+            const chipsHtml = tv.items.map(it => `
+                <div class="p-2 rounded-lg bg-slate-950 border border-slate-800/90 space-y-1">
+                    <div class="flex flex-wrap items-center justify-between gap-1 text-[10px]">
+                        <span class="font-bold text-purple-300">ครั้งที่ ${it.indexThai}: วันที่ ${it.dateThai} เวลา ${it.timeThai} น.</span>
+                        <span class="font-bold text-rose-400">${it.amountThai} บาท</span>
+                    </div>
+                    <div class="text-[10px] text-slate-300">ต้นทาง: ${escapeHtml(it.fromText)} ➔ ปลายทาง: <span class="text-amber-300">${escapeHtml(it.toText)}</span></div>
+                    <div class="flex flex-wrap gap-1 pt-0.5">
+                        ${['date', 'time', 'amount', 'from', 'to', 'text'].map(k => {
+                            const vName = `transfer_${it.index}_${k}`;
+                            return `<button type="button" onclick="insertTransferVarToInterrogation('${vName}')" class="px-1.5 py-0.5 rounded bg-slate-900 hover:bg-purple-500/30 border border-slate-700 text-[9px] font-mono text-purple-300 transition" title="คลิกเพื่อคัดลอกตัวแปร {{${vName}}}">{{${vName}}}</button>`;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="flex flex-wrap items-center gap-1.5 pb-1">
+                    <button type="button" onclick="insertTransferVarToInterrogation('transfer_details_text')" class="px-2 py-0.5 rounded bg-purple-500/20 hover:bg-purple-500/40 border border-purple-500/40 text-[10px] font-mono text-purple-200 transition">{{transfer_details_text}}</button>
+                    <button type="button" onclick="insertTransferVarToInterrogation('transfer_total_amount_thai')" class="px-2 py-0.5 rounded bg-slate-950 hover:bg-purple-500/20 border border-slate-700 text-[10px] font-mono text-amber-300 transition">{{transfer_total_amount_thai}}</button>
+                    <button type="button" onclick="insertTransferVarToInterrogation('transfer_total_baht_text')" class="px-2 py-0.5 rounded bg-slate-950 hover:bg-purple-500/20 border border-slate-700 text-[10px] font-mono text-emerald-300 transition">{{transfer_total_baht_text}}</button>
+                </div>
+                <div class="space-y-1.5">${chipsHtml}</div>
+                <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-200 whitespace-pre-wrap leading-relaxed">${escapeHtml(tv.transfer_details_text)}</div>
+            `;
+        }
+
         function populateInterrogationFormVariables(c) {
             if (!c) return;
             const sv = c.statementVariables || {};
@@ -14695,12 +15013,14 @@ ${currentDocPrintHtml}
             if (saEl) saEl.value = sv.stationAmphoe || 'บางพลี';
             if (spEl) spEl.value = sv.stationProvince || 'สมุทรปราการ';
 
-            // ผู้ต้องหา พงส. และตำแหน่ง
+            // ผู้ต้องหา พงส. และตำแหน่ง (ไม่ใช้ค่า default เก่าทับชื่อจาก transferRecords หรือฐานข้อมูลล่าสุด)
+            const extractedSuspect = extractSuspectDisplayName(c);
+            const isGenericSuspect = !sv.suspectFullName || sv.suspectFullName.includes('คนร้ายไม่ทราบชื่อ');
             const susEl = document.getElementById('intSuspectNameInput');
-            if (susEl) susEl.value = sv.suspectFullName || extractSuspectDisplayName(c);
+            if (susEl) susEl.value = (!isGenericSuspect ? sv.suspectFullName : '') || extractedSuspect;
 
             const offEl = document.getElementById('intOfficerNameInput');
-            if (offEl) offEl.value = sv.officerFullName || getActualInvestigator(c.caseNo, c.investigator);
+            if (offEl) offEl.value = getActualInvestigator(c.caseNo, c.investigator || sv.officerFullName);
 
             const posEl = document.getElementById('intOfficerPositionInput');
             if (posEl) posEl.value = sv.officerPosition || 'รอง สว.(สอบสวน) สภ.บางพลี';
@@ -14776,16 +15096,19 @@ ${currentDocPrintHtml}
             const kamEl = document.getElementById('intAddrKamnanInput');
             if (kamEl) kamEl.value = sv.kamnan || '-';
 
-            // 5. บิดา มารดา & ความเกี่ยวข้อง
+            // 5. บิดา มารดา & ความเกี่ยวข้อง (ตัดคำนำหน้าซ้ำ "ชื่อบิดา"/"ชื่อมารดา" ออกเสมอ)
             const defLastName = vParsed.lastName ? `- ${vParsed.lastName}` : '-';
             const faEl = document.getElementById('intFatherNameInput');
-            if (faEl) faEl.value = sv.fatherName || vp.fatherName || defLastName;
+            if (faEl) faEl.value = sanitizeParentNameLabel(sv.fatherName || vp.fatherName || defLastName, 'ชื่อบิดา') || defLastName;
 
             const moEl = document.getElementById('intMotherNameInput');
-            if (moEl) moEl.value = sv.motherName || vp.motherName || defLastName;
+            if (moEl) moEl.value = sanitizeParentNameLabel(sv.motherName || vp.motherName || defLastName, 'ชื่อมารดา') || defLastName;
 
             const relCaseEl = document.getElementById('intRelationInput');
             if (relCaseEl) relCaseEl.value = sv.relation || 'ไม่เกี่ยวข้อง สาบานตนแล้ว';
+
+            // 6. ตัวแปรรายการโอนเงินอัตโนมัติ (transferRecords)
+            renderTransferVariablesPanel(c);
         }
 
         function getInterrogationFormVariables() {
@@ -14830,9 +15153,11 @@ ${currentDocPrintHtml}
             const headman = document.getElementById('intAddrHeadmanInput')?.value.trim() || '-';
             const kamnan = document.getElementById('intAddrKamnanInput')?.value.trim() || '-';
 
-            const fatherName = document.getElementById('intFatherNameInput')?.value.trim() || '-';
-            const motherName = document.getElementById('intMotherNameInput')?.value.trim() || '-';
+            const fatherName = sanitizeParentNameLabel(document.getElementById('intFatherNameInput')?.value.trim() || '-', 'ชื่อบิดา') || '-';
+            const motherName = sanitizeParentNameLabel(document.getElementById('intMotherNameInput')?.value.trim() || '-', 'ชื่อมารดา') || '-';
             const relation = document.getElementById('intRelationInput')?.value.trim() || 'ไม่เกี่ยวข้อง สาบานตนแล้ว';
+
+            const transferVars = buildTransferVariablesForCase(currentInterrogationCase);
 
             return {
                 stmtDay, stmtMonth, stmtYear,
@@ -14843,7 +15168,9 @@ ${currentDocPrintHtml}
                 victimPrefix, victimFirstName, victimLastName, victimFullName,
                 victimIdCard, victimAge, victimPhone, victimRace, victimNationality, victimReligion, victimCareer,
                 houseNo, moo, tambon, amphoe, province, headman, kamnan,
-                fatherName, motherName, relation
+                fatherName, motherName, relation,
+                transfer_details_text: transferVars.transfer_details_text,
+                transferVariables: transferVars
             };
         }
 
@@ -14860,6 +15187,133 @@ ${currentDocPrintHtml}
             }
         }
 
+        function normalizeQuestionForMatch(q) {
+            return String(q || '')
+                .replace(/^ประเด็นที่\s*\d+\s*[:：]?\s*/g, '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase();
+        }
+
+        function findMatchingVictimInquiryAnswer(inqAns, templatePoint, idx, usedIndices) {
+            if (!Array.isArray(inqAns) || inqAns.length === 0) return '';
+            const normPt = normalizeQuestionForMatch(templatePoint);
+
+            // 1. ตรงกันแบบเป๊ะ
+            let hitIdx = inqAns.findIndex((a, i) => !usedIndices.has(i) && (a.question || '').trim() === templatePoint.trim());
+            // 2. ตรงกันแบบตัดช่องว่าง/คำนำหน้า
+            if (hitIdx === -1) {
+                hitIdx = inqAns.findIndex((a, i) => !usedIndices.has(i) && normalizeQuestionForMatch(a.question) === normPt);
+            }
+            // 3. ตรงกันแบบบางส่วน (Substring)
+            if (hitIdx === -1 && normPt.length >= 8) {
+                hitIdx = inqAns.findIndex((a, i) => {
+                    if (usedIndices.has(i)) return false;
+                    const nq = normalizeQuestionForMatch(a.question);
+                    return nq && (nq.includes(normPt) || normPt.includes(nq));
+                });
+            }
+            // 4. เทียบตามลำดับดัชนี (Fallback เมื่อจำนวนข้อตรงกันและยังไม่ได้ถูกใช้)
+            if (hitIdx === -1 && inqAns[idx] && !usedIndices.has(idx) && inqAns[idx].answer && String(inqAns[idx].answer).trim()) {
+                hitIdx = idx;
+            }
+
+            if (hitIdx !== -1) {
+                usedIndices.add(hitIdx);
+                return String(inqAns[hitIdx].answer || '').trim();
+            }
+            return '';
+        }
+
+        function mergeVictimDataIntoInterrogationQA(existingQA, c) {
+            const qa = JSON.parse(JSON.stringify(existingQA || []));
+            const inqAns = Array.isArray(c.inquiryAnswers) ? c.inquiryAnswers : (Array.isArray(c.inquiry_answers) ? c.inquiry_answers : []);
+            const tRecs = Array.isArray(c.transferRecords) ? c.transferRecords : (Array.isArray(c.transfer_records) ? c.transfer_records : []);
+            const tv = buildTransferVariablesForCase(c);
+
+            const victimTime = c.victimSubmittedAt ? Date.parse(c.victimSubmittedAt) : 0;
+            const savedTime = c._interrogationSavedAt ? Date.parse(c._interrogationSavedAt) : 0;
+            const victimIsNewer = victimTime > 0 && (!savedTime || victimTime >= savedTime);
+
+            // 1. แมปคำตอบผู้เสียหายจาก inquiryAnswers เข้าสู่บล็อก inquiry_14 โดยอัตโนมัติ (ไม่ให้ค่าว่าง/Default เก่าบังข้อมูลใหม่)
+            if (inqAns.length > 0) {
+                const usedAns = new Set();
+                const inqBlocks = qa.filter(item => item.type === 'inquiry_14');
+
+                inqBlocks.forEach((blk, bIdx) => {
+                    const matchedVal = findMatchingVictimInquiryAnswer(inqAns, blk.question || '', bIdx, usedAns);
+                    if (matchedVal) {
+                        const curBlank = !blk.answer || !blk.answer.trim();
+                        if (curBlank || victimIsNewer) {
+                            blk.answer = matchedVal;
+                            blk.status = 'answered';
+                        }
+                    }
+                });
+
+                // กรณีมีประเด็นจากผู้เสียหายที่ยังไม่อยู่ในบล็อกเดิม ให้แทรกก่อน transfer_summary
+                let insertPos = qa.findIndex(item => item.type === 'transfer_summary');
+                if (insertPos === -1) insertPos = Math.max(0, qa.length - 2);
+
+                inqAns.forEach((a, idx) => {
+                    if (usedAns.has(idx)) return;
+                    const qText = (a.question || '').trim();
+                    const ansText = (a.answer || '').trim();
+                    if (!qText || !ansText) return;
+                    const alreadyExists = qa.some(b => normalizeQuestionForMatch(b.question) === normalizeQuestionForMatch(qText));
+                    if (!alreadyExists) {
+                        qa.splice(insertPos, 0, {
+                            id: 'qa_inq_sync_' + idx + '_' + Date.now(),
+                            type: 'inquiry_14',
+                            status: 'answered',
+                            question: qText,
+                            answer: ansText
+                        });
+                        insertPos++;
+                    }
+                });
+            }
+
+            // 2. แปลงและแทรกสรุปรายการโอนเงิน (transferRecords) ลงในข้อโอนเงิน/พฤติการณ์อัตโนมัติ
+            if (tRecs.length > 0) {
+                let tIdx = qa.findIndex(item => item.type === 'transfer_summary');
+                if (tIdx === -1) {
+                    tIdx = qa.findIndex(item => /โอนเงินไปยังบัญชีใด|รายละเอียดการโอน/.test(item.question || ''));
+                }
+                if (tIdx !== -1) {
+                    const curAns = (qa[tIdx].answer || '').trim();
+                    const isPlaceholderOrOld = !curAns || curAns.includes('.....') || curAns.includes('{{transfer_') || victimIsNewer || curAns.includes(`รวมทั้งสิ้น ${toThaiNumerals(String(tRecs.length))} ครั้ง`) === false;
+                    if (isPlaceholderOrOld) {
+                        qa[tIdx].answer = tv.transfer_details_text;
+                    }
+                } else {
+                    const pos = Math.max(0, qa.length - 2);
+                    qa.splice(pos, 0, {
+                        id: 'qa_transfer_' + Date.now(),
+                        type: 'transfer_summary',
+                        status: 'transfer',
+                        question: 'ผู้กล่าวหาได้โอนเงินไปยังบัญชีใดของคนร้ายบ้าง วันเวลาใด เป็นจำนวนเงินเท่าใด',
+                        answer: tv.transfer_details_text
+                    });
+                }
+
+                // อัปเดตยอดรวมในข้อที่ 2 (หากเป็นข้อความแพตเทิร์นอัตโนมัติและยอดต่างกัน)
+                if (qa[1] && qa[1].type === 'mandatory_open_2' && (!qa[1].answer || victimIsNewer)) {
+                    const sumAmt = tv.totalAmount > 0 ? tv.totalAmount : Number(c.amount || 0);
+                    qa[1].answer = `มาแจ้งความร้องทุกข์ให้ดำเนินคดีกับคนร้ายที่หลอกลวงเรื่อง ${c.type || 'อาชญากรรมทางเทคโนโลยี'} จนเป็นเหตุให้ผู้กล่าวหาหลงเชื่อโอนเงินไปได้รับความเสียหาย รวมเป็นเงินทั้งสิ้น ${sumAmt.toLocaleString()} บาท (${toThaiBahtText(sumAmt)})`;
+                }
+            }
+
+            // 3. แปลงตัวแปร {{transfer_...}} ที่ค้างอยู่ในคำตอบทั้งหมด
+            qa.forEach(item => {
+                if (item.answer && item.answer.includes('{{')) {
+                    item.answer = resolveTransferPlaceholders(item.answer, c);
+                }
+            });
+
+            return qa;
+        }
+
         async function openInterrogationModal(caseNoOrId) {
             let c = mockCases.find(item => (item.caseNo && item.caseNo === caseNoOrId) || item.id === caseNoOrId);
             if (!c) {
@@ -14867,26 +15321,135 @@ ${currentDocPrintHtml}
                 return;
             }
 
-            // ดึงข้อมูลล่าสุดจาก Backend SQLite เพื่อให้ได้คำตอบจากผู้เสียหายที่เป็นปัจจุบันที่สุด
+            // 1. ดึงข้อมูลล่าสุดจาก Supabase Cloud (ตาราง cyber_details และ cases) เพื่อให้ได้คำตอบจากผู้เสียหายที่เป็นปัจจุบันที่สุดเสมอ
+            try {
+                const sb = (typeof getActiveSupabaseClient === 'function') ? getActiveSupabaseClient() : null;
+                const cleanCaseNo = (c.caseNo || '').trim();
+                if (sb && cleanCaseNo) {
+                    // 1.1 cyber_details (ถ้ามีสิทธิ์)
+                    if (!window._supaCyberDetailsPermissionDenied) {
+                        try {
+                            const { data: cdRows, error: cdErr, status: cdStatus } = await sb
+                                .from('cyber_details')
+                                .select('*')
+                                .ilike('case_no', cleanCaseNo)
+                                .order('updated_at', { ascending: false })
+                                .limit(1);
+                            if (cdErr && (cdErr.code === '42501' || cdStatus === 401 || cdStatus === 403)) {
+                                window._supaCyberDetailsPermissionDenied = true;
+                            } else if (!cdErr && Array.isArray(cdRows) && cdRows.length > 0) {
+                                const cd = cdRows[0];
+                                if (cd.investigator_name) c.investigator = getActualInvestigator(c.caseNo, cd.investigator_name);
+                                if (cd.detective_name) c.detective = cd.detective_name;
+                                if (cd.fraud_category && cd.fraud_category !== 'ฉ้อโกงออนไลน์') c.type = cd.fraud_category;
+                                if (cd.damage_amount) c.amount = Number(cd.damage_amount) || c.amount;
+                                if (cd.victim_profile) c.victimProfile = cd.victim_profile;
+                                if (Array.isArray(cd.transfer_records) && cd.transfer_records.length > 0) {
+                                    c.transferRecords = cd.transfer_records;
+                                    c.transfer_records = cd.transfer_records;
+                                }
+                                if (Array.isArray(cd.inquiry_answers) && cd.inquiry_answers.length > 0) {
+                                    c.inquiryAnswers = cd.inquiry_answers;
+                                    c.inquiry_answers = cd.inquiry_answers;
+                                }
+                                if (cd.victim_submitted_at) {
+                                    c.victimSubmittedAt = cd.victim_submitted_at;
+                                    c.victim_submitted_at = cd.victim_submitted_at;
+                                }
+                            }
+                        } catch (_) {}
+                    }
+
+                    // 1.2 ตาราง cases เรียงตาม updated_at เพื่อนำข้อมูลล่าสุด (รวมถึง metadata_enc.victimDraft) มาซิงก์ทันที
+                    const { data: caseRows, error: caseErr } = await sb
+                        .from('cases')
+                        .select('*')
+                        .ilike('case_no', cleanCaseNo)
+                        .order('updated_at', { ascending: true });
+
+                    if (!caseErr && Array.isArray(caseRows) && caseRows.length > 0) {
+                        for (const sc of caseRows) {
+                            if (sc.investigator_name) c.investigator = getActualInvestigator(c.caseNo, sc.investigator_name);
+                            if (sc.detective_name) c.detective = sc.detective_name;
+                            if (sc.fraud_category && sc.fraud_category !== 'ฉ้อโกงออนไลน์' && sc.fraud_category !== 'คดีออนไลน์') c.type = sc.fraud_category;
+                            if (sc.damage_amount) c.amount = Number(sc.damage_amount) || c.amount;
+                            if (sc.status) c.status = sc.status;
+                            if (sc.victim_profile) c.victimProfile = sc.victim_profile;
+                            if (Array.isArray(sc.transfer_records) && sc.transfer_records.length > 0) {
+                                c.transferRecords = sc.transfer_records;
+                                c.transfer_records = sc.transfer_records;
+                            }
+                            if (Array.isArray(sc.inquiry_answers) && sc.inquiry_answers.length > 0) {
+                                c.inquiryAnswers = sc.inquiry_answers;
+                                c.inquiry_answers = sc.inquiry_answers;
+                            }
+                            if (sc.victim_submitted_at) {
+                                c.victimSubmittedAt = sc.victim_submitted_at;
+                                c.victim_submitted_at = sc.victim_submitted_at;
+                            }
+
+                            if (sc.metadata_enc && typeof ZeroKnowledgeCrypto !== 'undefined') {
+                                try {
+                                    const decMetaStr = await ZeroKnowledgeCrypto.decryptField(sc.metadata_enc);
+                                    if (decMetaStr && decMetaStr.trim().startsWith('{')) {
+                                        const decMeta = JSON.parse(decMetaStr);
+                                        if (decMeta && decMeta.victimDraft) {
+                                            const vd = decMeta.victimDraft;
+                                            if (vd.victimProfile) c.victimProfile = vd.victimProfile;
+                                            if (Array.isArray(vd.transferRecords) && vd.transferRecords.length > 0) {
+                                                c.transferRecords = vd.transferRecords;
+                                                c.transfer_records = vd.transferRecords;
+                                            }
+                                            if (Array.isArray(vd.inquiryAnswers) && vd.inquiryAnswers.length > 0) {
+                                                c.inquiryAnswers = vd.inquiryAnswers;
+                                                c.inquiry_answers = vd.inquiryAnswers;
+                                            }
+                                            if (vd.victimSubmittedAt) {
+                                                c.victimSubmittedAt = vd.victimSubmittedAt;
+                                                c.victim_submitted_at = vd.victimSubmittedAt;
+                                            }
+                                        }
+                                        if (decMeta && Array.isArray(decMeta.interrogationStatements) && decMeta.interrogationStatements.length > 0) {
+                                            c.interrogationStatements = decMeta.interrogationStatements;
+                                        }
+                                        if (decMeta && decMeta.statementVariables) {
+                                            c.statementVariables = decMeta.statementVariables;
+                                        }
+                                        if (decMeta && Array.isArray(decMeta.propertyDamaged)) c.propertyDamaged = decMeta.propertyDamaged;
+                                        if (decMeta && Array.isArray(decMeta.propertyRecovered)) c.propertyRecovered = decMeta.propertyRecovered;
+                                        if (decMeta && Array.isArray(decMeta.propertyUnrecovered)) c.propertyUnrecovered = decMeta.propertyUnrecovered;
+                                    }
+                                } catch (_) {}
+                            }
+                        }
+                    }
+                }
+            } catch (e) {}
+
+            // 2. ดึงข้อมูลล่าสุดจาก Backend SQLite (กรณีรันบน localhost server.js) โดยไม่เอาค่า Default ว่างมาทับข้อมูลจริงที่ผู้เสียหายส่งเข้ามา
             try {
                 const res = await safeApiFetch(`/api/external/newpolice/cases?caseNo=${encodeURIComponent(c.caseNo || '')}`);
-                if (res && res.data && res.data.success && Array.isArray(res.data.cases) && res.data.cases.length > 0) {
+                if (!res._staticCloudMode && res.data && res.data.success && Array.isArray(res.data.cases) && res.data.cases.length > 0) {
                     const remote = res.data.cases[0];
-                    if (remote.type) c.type = remote.type;
+                    if (remote.type && remote.type !== 'ฉ้อโกงออนไลน์') c.type = remote.type;
                     if (remote.victimProfile) c.victimProfile = remote.victimProfile;
-                    if (Array.isArray(remote.transferRecords) && remote.transferRecords.length > 0) c.transferRecords = remote.transferRecords;
-                    if (Array.isArray(remote.inquiryAnswers) && remote.inquiryAnswers.length > 0) c.inquiryAnswers = remote.inquiryAnswers;
+                    if (Array.isArray(remote.transferRecords) && remote.transferRecords.length > 0) {
+                        c.transferRecords = remote.transferRecords;
+                        c.transfer_records = remote.transferRecords;
+                    }
+                    if (Array.isArray(remote.inquiryAnswers) && remote.inquiryAnswers.length > 0) {
+                        c.inquiryAnswers = remote.inquiryAnswers;
+                        c.inquiry_answers = remote.inquiryAnswers;
+                    }
                     if (Array.isArray(remote.interrogationStatements) && remote.interrogationStatements.length > 0) {
                         c.interrogationStatements = remote.interrogationStatements;
-                    } else {
-                        c.interrogationStatements = null;
                     }
                     if (remote.investigator) c.investigator = getActualInvestigator(c.caseNo, remote.investigator);
                     if (remote.statementVariables) c.statementVariables = remote.statementVariables;
                 }
             } catch (e) {}
 
-            // ดึงแม่แบบคำถาม 14 กลโกง ล่าสุดจากตาราง inquiry_templates ใน Supabase (แทนการเรียก /api/inquiry/templates)
+            // 3. ดึงแม่แบบคำถาม 14 กลโกง ล่าสุดจากตาราง inquiry_templates ใน Supabase (แทนการเรียก /api/inquiry/templates)
             try {
                 const sb = (typeof getActiveSupabaseClient === 'function') ? getActiveSupabaseClient() : null;
                 if (sb && !window._supaInquiryTemplatesPermissionDenied) {
@@ -14924,20 +15487,20 @@ ${currentDocPrintHtml}
             currentInterrogationCase = c;
 
             document.getElementById('intModalCaseNoBadge').textContent = c.caseNo || c.id;
-            document.getElementById('intModalSubtitle').textContent = `ประเภทกลโกง: ${c.type || '-'} | ความเสียหาย: ${Number(c.amount || 0).toLocaleString()} บาท`;
+            const tv = buildTransferVariablesForCase(c);
+            const displayAmt = tv.totalAmount > 0 ? tv.totalAmount : Number(c.amount || 0);
+            document.getElementById('intModalSubtitle').textContent = `ประเภทกลโกง: ${c.type || '-'} | ความเสียหาย: ${displayAmt.toLocaleString()} บาท (${tv.count} รายการโอน)`;
 
-            document.getElementById('intVictimNameInput').value = extractVictimDisplayName(c);
-            document.getElementById('intSuspectNameInput').value = extractSuspectDisplayName(c);
-            document.getElementById('intOfficerNameInput').value = getActualInvestigator(c.caseNo, c.investigator);
             populateInterrogationFormVariables(c);
 
             if (Array.isArray(c.interrogationStatements) && c.interrogationStatements.length > 0) {
-                interrogationQAList = JSON.parse(JSON.stringify(c.interrogationStatements));
+                interrogationQAList = mergeVictimDataIntoInterrogationQA(c.interrogationStatements, c);
             } else {
                 interrogationQAList = buildInitialInterrogationQA(c);
             }
 
             renderInterrogationBlocks();
+            try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch (_) {}
             const m = document.getElementById('interrogationModal');
             m.classList.remove('hidden');
             m.classList.add('flex');
@@ -14954,9 +15517,10 @@ ${currentDocPrintHtml}
         function buildInitialInterrogationQA(c) {
             const qa = [];
             const vp = c.victimProfile || c.victim_profile || {};
-            const tRecs = Array.isArray(c.transferRecords) ? c.transferRecords : (Array.isArray(c.transfer_records) ? c.transfer_records : []);
             const inqAns = Array.isArray(c.inquiryAnswers) ? c.inquiryAnswers : (Array.isArray(c.inquiry_answers) ? c.inquiry_answers : []);
             const dmgAmount = Number(c.amount || 0);
+            const transferVars = buildTransferVariablesForCase(c);
+            const effectiveDmgAmount = transferVars.totalAmount > 0 ? transferVars.totalAmount : dmgAmount;
 
             // 1. คำถามบังคับเปิดหัว ข้อที่ 1
             const rawAddr = vp.address || '';
@@ -14966,12 +15530,13 @@ ${currentDocPrintHtml}
             const amphoeMatch = rawAddr.match(/(?:อ\.|อำเภอ|เขต)\s*([^\s]+)/);
             const provMatch = rawAddr.match(/(?:จ\.|จังหวัด)\s*([^\s]+)/);
 
-            const hNo = toThaiNumerals(vp.houseNo || (houseNoMatch ? houseNoMatch[1].replace(/หมู่.*/, '').trim() : '99/12'));
-            const mooNo = toThaiNumerals(vp.moo || (mooMatch ? mooMatch[1] : '5'));
-            const tbNo = vp.tambon || (tambonMatch ? tambonMatch[1] : 'บางพลีใหญ่');
-            const apNo = vp.amphoe || (amphoeMatch ? amphoeMatch[1] : 'บางพลี');
-            const pvNo = vp.province || (provMatch ? provMatch[1] : 'สมุทรปราการ');
-            const occText = vp.career || vp.occupation || 'รับจ้าง';
+            const sv = c.statementVariables || {};
+            const hNo = toThaiNumerals(sv.houseNo || vp.houseNo || (houseNoMatch ? houseNoMatch[1].replace(/หมู่.*/, '').trim() : '99/12'));
+            const mooNo = toThaiNumerals(sv.moo || vp.moo || (mooMatch ? mooMatch[1] : '5'));
+            const tbNo = sv.tambon || vp.tambon || (tambonMatch ? tambonMatch[1] : 'บางพลีใหญ่');
+            const apNo = sv.amphoe || vp.amphoe || (amphoeMatch ? amphoeMatch[1] : 'บางพลี');
+            const pvNo = sv.province || vp.province || (provMatch ? provMatch[1] : 'สมุทรปราการ');
+            const occText = sv.victimCareer || vp.career || vp.occupation || 'รับจ้าง';
 
             qa.push({
                 id: 'qa_open_1_' + Date.now(),
@@ -14987,7 +15552,7 @@ ${currentDocPrintHtml}
                 type: 'mandatory_open_2',
                 status: 'mandatory',
                 question: 'ท่านมาพบพนักงานสอบสวนด้วยประสงค์ใด',
-                answer: `มาแจ้งความร้องทุกข์ให้ดำเนินคดีกับคนร้ายที่หลอกลวงเรื่อง ${c.type || 'อาชญากรรมทางเทคโนโลยี'} จนเป็นเหตุให้ผู้กล่าวหาหลงเชื่อโอนเงินไปได้รับความเสียหาย รวมเป็นเงินทั้งสิ้น ${dmgAmount.toLocaleString()} บาท (${toThaiBahtText(dmgAmount)})`
+                answer: `มาแจ้งความร้องทุกข์ให้ดำเนินคดีกับคนร้ายที่หลอกลวงเรื่อง ${c.type || 'อาชญากรรมทางเทคโนโลยี'} จนเป็นเหตุให้ผู้กล่าวหาหลงเชื่อโอนเงินไปได้รับความเสียหาย รวมเป็นเงินทั้งสิ้น ${effectiveDmgAmount.toLocaleString()} บาท (${toThaiBahtText(effectiveDmgAmount)})`
             });
 
             // 3. ชุดคำถามและคำตอบจาก inquiryAnswers & 14 กลโกง
@@ -15001,75 +15566,44 @@ ${currentDocPrintHtml}
             }
 
             const templatePoints = (matchedCat && Array.isArray(matchedCat.points)) ? matchedCat.points : [];
-            const handledQuestions = new Set();
+            const usedAnsIndices = new Set();
 
-            // 3a. วนลูปตามหัวข้อประเด็นในหมวดกลโกง 14 ประเภท
+            // 3a. วนลูปตามหัวข้อประเด็นในหมวดกลโกง 14 ประเภท พร้อมจับคู่คำตอบที่ผู้เสียหายกรอกมาอัตโนมัติ
             templatePoints.forEach((pt, idx) => {
-                handledQuestions.add(pt.trim());
-                let foundAns = '';
-                const exactMatch = inqAns.find(a => (a.question || '').trim() === pt.trim());
-                if (exactMatch && exactMatch.answer) {
-                    foundAns = exactMatch.answer.trim();
-                } else if (inqAns[idx] && (!inqAns[idx].question || inqAns[idx].question.trim() === pt.trim()) && inqAns[idx].answer) {
-                    foundAns = inqAns[idx].answer.trim();
-                }
+                const foundAns = findMatchingVictimInquiryAnswer(inqAns, pt, idx, usedAnsIndices);
                 qa.push({
                     id: 'qa_inq_' + idx + '_' + Date.now(),
                     type: 'inquiry_14',
                     status: foundAns ? 'answered' : 'unanswered',
                     question: pt,
-                    answer: foundAns
+                    answer: resolveTransferPlaceholders(foundAns, c)
                 });
             });
 
             // 3b. เพิ่มเติมหากผู้เสียหายส่งประเด็นนอกเหนือจากแม่แบบปัจจุบันมา
             inqAns.forEach((a, idx) => {
+                if (usedAnsIndices.has(idx)) return;
                 const qText = (a.question || '').trim();
-                if (qText && !handledQuestions.has(qText)) {
-                    handledQuestions.add(qText);
-                    const ansText = (a.answer || '').trim();
+                const ansText = (a.answer || '').trim();
+                if (qText) {
+                    usedAnsIndices.add(idx);
                     qa.push({
                         id: 'qa_inq_extra_' + idx + '_' + Date.now(),
                         type: 'inquiry_14',
                         status: ansText ? 'answered' : 'unanswered',
                         question: qText,
-                        answer: ansText
+                        answer: resolveTransferPlaceholders(ansText, c)
                     });
                 }
             });
 
-            // 4. บล็อกสรุปเส้นทางการโอนเงิน (ดึงจาก transferRecords)
-            let transferDesc = '';
-            if (tRecs.length > 0) {
-                let totalSum = 0;
-                const lines = tRecs.map((tr, i) => {
-                    const amt = Number(tr.amount || 0);
-                    totalSum += amt;
-                    const dtPart = parseThaiDateParts(tr.transferDate);
-                    const dtThaiStr = toThaiNumerals(dtPart.fullThai || '');
-                    const timeStr = tr.transferTime ? ` เวลาประมาณ ${toThaiNumerals(tr.transferTime)} น.` : '';
-                    const fromStr = `บัญชี${tr.fromBank || '-'} เลขที่ ${toThaiNumerals(tr.fromAccountNo || '-')} ชื่อบัญชี ${tr.fromAccountName || '-'}`;
-                    const toStr = `บัญชี${tr.toBank || '-'} เลขที่ ${toThaiNumerals(tr.toAccountNo || '-')} ชื่อบัญชี ${tr.toAccountName || '-'}`;
-                    const amtStr = toThaiNumerals(amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                    return `ครั้งที่ ${toThaiNumerals((i + 1).toString())} เมื่อวันที่ ${dtThaiStr}${timeStr} ได้โอนเงินจาก${fromStr} ไปยัง${toStr} จำนวนเงิน ${amtStr} บาท`;
-                });
-                const totalThaiStr = toThaiNumerals(totalSum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                transferDesc = `ผู้กล่าวหาได้โอนเงินให้แก่คนร้าย รวมทั้งสิ้น ${toThaiNumerals(tRecs.length.toString())} ครั้ง รายละเอียดดังนี้\n` +
-                    lines.join('\n') +
-                    `\nรวมยอดเงินที่โอนไปทั้งสิ้น ${totalThaiStr} บาท (${toThaiBahtText(totalSum)})`;
-            } else {
-                const accFallback = Array.isArray(c.accounts) && c.accounts.length > 0
-                    ? c.accounts.map(a => typeof a === 'string' ? a : `${a.bank || ''} ${a.no || ''} (${a.name || ''})`).join(', ')
-                    : '...................................................';
-                transferDesc = `ผู้กล่าวหาได้โอนเงินไปยังบัญชีคนร้าย (${accFallback}) รวมเป็นเงินทั้งสิ้น ${dmgAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท (${toThaiBahtText(dmgAmount)})`;
-            }
-
+            // 4. บล็อกสรุปเส้นทางการโอนเงิน (ดึงตัวแปรสำเร็จรูปจาก transferRecords มาใส่โดยอัตโนมัติ)
             qa.push({
                 id: 'qa_transfer_' + Date.now(),
                 type: 'transfer_summary',
                 status: 'transfer',
                 question: 'ผู้กล่าวหาได้โอนเงินไปยังบัญชีใดของคนร้ายบ้าง วันเวลาใด เป็นจำนวนเงินเท่าใด',
-                answer: transferDesc
+                answer: transferVars.transfer_details_text
             });
 
             // 5. คำถามบังคับปิดท้าย ข้อที่ 1
@@ -15230,7 +15764,17 @@ ${currentDocPrintHtml}
         async function saveInterrogationData(silent = false) {
             if (!currentInterrogationCase) return;
             const c = currentInterrogationCase;
+            const nowIso = new Date().toISOString();
+
+            // แปลง Placeholder ตัวแปรโอนเงิน {{transfer_...}} ให้เป็นข้อความจริงก่อนบันทึก
+            interrogationQAList.forEach(item => {
+                if (item.answer && item.answer.includes('{{')) {
+                    item.answer = resolveTransferPlaceholders(item.answer, c);
+                }
+            });
+
             c.interrogationStatements = JSON.parse(JSON.stringify(interrogationQAList));
+            c._interrogationSavedAt = nowIso;
 
             // ซิงค์คำตอบในกลุ่ม inquiry_14 กลับเข้า c.inquiryAnswers
             const updatedInqAnswers = interrogationQAList
@@ -15238,12 +15782,46 @@ ${currentDocPrintHtml}
                 .map(q => ({ question: q.question, answer: q.answer }));
             if (updatedInqAnswers.length > 0) {
                 c.inquiryAnswers = updatedInqAnswers;
+                c.inquiry_answers = updatedInqAnswers;
             }
-
-            try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(e) {}
 
             const currentVars = getInterrogationFormVariables();
             c.statementVariables = currentVars;
+
+            try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(e) {}
+
+            // บันทึกขึ้น Supabase Cloud (metadata_enc + inquiry_answers) เพื่อไม่ให้ข้อมูลสอบปากคำหายเมื่อรีเฟรช
+            try {
+                const sb = (typeof getActiveSupabaseClient === 'function') ? getActiveSupabaseClient() : null;
+                const cleanCaseNo = String(c.caseNo || '').trim().toUpperCase();
+                if (sb && cleanCaseNo && typeof ZeroKnowledgeCrypto !== 'undefined') {
+                    const stationCode = localStorage.getItem('cyber_zk_station_code') || DEFAULT_STATION_CODE;
+                    const masterKey = ZeroKnowledgeCrypto.getSavedMasterKey();
+                    const encMeta = await ZeroKnowledgeCrypto.encryptField(JSON.stringify({
+                        unit: stationCode,
+                        investigatorName: currentVars.officerFullName || c.investigator || '',
+                        detectiveName: c.detective || '',
+                        victimDraft: {
+                            victimProfile: c.victimProfile || null,
+                            freezeInfo: c.freezeInfo || null,
+                            transferRecords: Array.isArray(c.transferRecords) ? c.transferRecords : [],
+                            inquiryAnswers: updatedInqAnswers,
+                            victimSubmittedAt: c.victimSubmittedAt || null
+                        },
+                        interrogationStatements: c.interrogationStatements,
+                        statementVariables: currentVars,
+                        propertyDamaged: c.propertyDamaged || null,
+                        propertyRecovered: c.propertyRecovered || null,
+                        propertyUnrecovered: c.propertyUnrecovered || null
+                    }), masterKey, stationCode);
+
+                    await sb.from('cases').update({
+                        inquiry_answers: updatedInqAnswers,
+                        metadata_enc: encMeta,
+                        updated_at: nowIso
+                    }).ilike('case_no', cleanCaseNo);
+                }
+            } catch (_) {}
 
             try {
                 await safeApiFetch('/api/interrogation/save', {
@@ -15453,13 +16031,15 @@ ${currentDocPrintHtml}
                 docXml = docXml.replace(/สมุทรปราการ/g, v.province);
             }
 
-            // 9. Row 18 บิดา และ มารดา
+            // 9. Row 18 บิดา และ มารดา (ใน Template มีเซลล์ป้ายกำกับ "ชื่อบิดา" / "ชื่อมารดา" อยู่แล้ว ห้ามใส่ซ้ำในช่องค่า)
+            const cleanFatherName = sanitizeParentNameLabel(v.fatherName || '-', 'ชื่อบิดา') || '-';
             const pFatherTarget = /<w:p w14:paraId="0FEC0CDD"[\s\S]*?<\/w:p>/;
-            const pFatherReplacement = `<w:p w14:paraId="0FEC0CDD" w14:textId="77777777" w:rsidR="00352F65" w:rsidRPr="00352F65" w:rsidRDefault="00352F65" w:rsidP="000445C5"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:b/><w:bCs/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:b/><w:bCs/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t xml:space="preserve">ชื่อบิดา </w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:tab/><w:t xml:space="preserve">${xmlEscape(v.fatherName || '-')}</w:t></w:r></w:p>`;
+            const pFatherReplacement = `<w:p w14:paraId="0FEC0CDD" w14:textId="067D5C0D" w:rsidR="006D2D56" w:rsidRPr="008B3D57" w:rsidRDefault="003F6660" w:rsidP="003F6660"><w:pPr><w:spacing w:line="460" w:lineRule="exact"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t xml:space="preserve">${xmlEscape(cleanFatherName)}</w:t></w:r></w:p>`;
             docXml = docXml.replace(pFatherTarget, pFatherReplacement);
 
+            const cleanMotherName = sanitizeParentNameLabel(v.motherName || '-', 'ชื่อมารดา') || '-';
             const pMotherTarget = /<w:p w14:paraId="037BE731"[\s\S]*?<\/w:p>/;
-            const pMotherReplacement = `<w:p w14:paraId="037BE731" w14:textId="77777777" w:rsidR="00352F65" w:rsidRPr="00352F65" w:rsidRDefault="00352F65" w:rsidP="000445C5"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:b/><w:bCs/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:b/><w:bCs/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t xml:space="preserve">ชื่อมารดา </w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="TH SarabunPSK" w:hAnsi="TH SarabunPSK" w:cs="TH SarabunPSK"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:tab/><w:t xml:space="preserve">${xmlEscape(v.motherName || '-')}</w:t></w:r></w:p>`;
+            const pMotherReplacement = `<w:p w14:paraId="037BE731" w14:textId="55C14A6A" w:rsidR="006D2D56" w:rsidRPr="008B3D57" w:rsidRDefault="003F6660" w:rsidP="003F6660"><w:pPr><w:spacing w:line="460" w:lineRule="exact"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t xml:space="preserve">${xmlEscape(cleanMotherName)}</w:t></w:r></w:p>`;
             docXml = docXml.replace(pMotherTarget, pMotherReplacement);
 
             // 10. Row 19 ความเกี่ยวข้องกับคู่กรณี
@@ -15489,9 +16069,11 @@ ${currentDocPrintHtml}
             const remainingQAs = qas.slice(1);
 
             for (const qItem of remainingQAs) {
-                pXml += `<w:p><w:pPr><w:spacing w:line="432" w:lineRule="exact"/><w:ind w:hanging="709"/><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>ถาม</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:tab/><w:t xml:space="preserve">${xmlEscape(qItem.question || '')}<\/w:t><\/w:r><\/w:p>`;
+                const resolvedQ = resolveTransferPlaceholders(qItem.question || '', c);
+                const resolvedA = resolveTransferPlaceholders(qItem.answer || '', c);
+                pXml += `<w:p><w:pPr><w:spacing w:line="432" w:lineRule="exact"/><w:ind w:hanging="709"/><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>ถาม</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:tab/><w:t xml:space="preserve">${xmlEscape(resolvedQ)}<\/w:t><\/w:r><\/w:p>`;
 
-                const ansLines = (qItem.answer || '').split(/\r?\n/).filter(Boolean);
+                const ansLines = resolvedA.split(/\r?\n/).filter(Boolean);
                 if (ansLines.length === 0) {
                     pXml += `<w:p><w:pPr><w:spacing w:line="432" w:lineRule="exact"/><w:ind w:hanging="709"/><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:t>ตอบ</w:t><\/w:r><w:r><w:rPr><w:rFonts w:ascii="TH SarabunIT๙" w:hAnsi="TH SarabunIT๙" w:cs="TH SarabunIT๙" w:eastAsia="TH SarabunIT๙"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:cs/></w:rPr><w:tab/><w:t xml:space="preserve">-<\/w:t><\/w:r><\/w:p>`;
                 } else {

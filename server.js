@@ -1711,18 +1711,18 @@ const server = http.createServer(async (req, res) => {
                     return sendJson(res, 401, { success: false, error: 'หมายเลขโทรศัพท์ไม่ตรงกับข้อมูลในระบบ' });
                 }
 
-                const victimProfile = body.victimProfile || {};
-                const freezeInfo = body.freezeInfo || {};
+                const victimProfile = (body.victimProfile && typeof body.victimProfile === 'object' && Object.keys(body.victimProfile).length > 0) ? body.victimProfile : null;
+                const freezeInfo = body.freezeInfo || null;
                 const transferRecords = Array.isArray(body.transferRecords) ? body.transferRecords : [];
                 const inquiryAnswers = Array.isArray(body.inquiryAnswers) ? body.inquiryAnswers : [];
 
                 const nowIso = new Date().toISOString();
 
-                // อัปเดตตาราง cyber_details ใน SQLite
+                // อัปเดตตาราง cyber_details ใน SQLite (ไม่เขียนทับ victim_profile เดิมหากผู้เสียหายไม่ได้ส่งมาตามหลัก PDPA)
                 db.prepare(`
                     UPDATE cyber_details
-                    SET victim_profile = ?,
-                        freeze_info = ?,
+                    SET victim_profile = COALESCE(?, victim_profile),
+                        freeze_info = COALESCE(?, freeze_info),
                         transfer_records = ?,
                         inquiry_answers = ?,
                         status = 'ผู้เสียหายกรอกข้อมูลแล้ว',
@@ -1730,8 +1730,8 @@ const server = http.createServer(async (req, res) => {
                         updated_at = ?
                     WHERE UPPER(case_no) = ?;
                 `).run(
-                    JSON.stringify(victimProfile),
-                    JSON.stringify(freezeInfo),
+                    victimProfile ? JSON.stringify(victimProfile) : null,
+                    freezeInfo ? JSON.stringify(freezeInfo) : null,
                     JSON.stringify(transferRecords),
                     JSON.stringify(inquiryAnswers),
                     nowIso,

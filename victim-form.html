@@ -181,96 +181,31 @@
             <form id="victimDetailedForm" onsubmit="event.preventDefault(); handleVictimFormSubmit();" class="space-y-5">
 
                 <!-- ----------------------------------------------------------- -->
-                <!-- ส่วนที่ 1: ข้อมูลส่วนตัวผู้เสียหาย (victimProfile)           -->
+                <!-- PDPA Hardening: งดเก็บข้อมูลส่วนตัวเชิงลึกผ่านหน้าเว็บ       -->
                 <!-- ----------------------------------------------------------- -->
-                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
-                    <div class="flex items-center gap-2.5 border-b border-slate-800 pb-3">
-                        <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">๑</span>
-                        <h3 class="text-sm sm:text-base font-bold text-white">ข้อมูลส่วนตัวและบัญชีธนาคารของผู้เสียหาย (victimProfile)</h3>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                        <div class="sm:col-span-3">
-                            <label class="block text-xs font-semibold text-slate-300 mb-1">คำนำหน้า <span class="text-rose-500">*</span></label>
-                            <select id="vpPrefix" onchange="autoSaveForm()" required class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                                <option value="นาย">นาย</option>
-                                <option value="นาง">นาง</option>
-                                <option value="นางสาว">นางสาว</option>
-                                <option value="อื่นๆ">อื่นๆ</option>
-                            </select>
-                        </div>
-                        <div class="sm:col-span-4">
-                            <label class="block text-xs font-semibold text-slate-300 mb-1">ชื่อจริง <span class="text-rose-500">*</span></label>
-                            <input type="text" id="vpFirstName" oninput="syncVictimBankToFirstTransferCard(); autoSaveForm()" required placeholder="เช่น ฐิติพร"
-                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                        </div>
-                        <div class="sm:col-span-5">
-                            <label class="block text-xs font-semibold text-slate-300 mb-1">นามสกุล <span class="text-rose-500">*</span></label>
-                            <input type="text" id="vpLastName" oninput="syncVictimBankToFirstTransferCard(); autoSaveForm()" required placeholder="เช่น ชุมชอบ"
-                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                        </div>
-
-                        <div class="sm:col-span-6">
-                            <label class="block text-xs font-semibold text-slate-300 mb-1">เลขประจำตัวประชาชน 13 หลัก <span class="text-rose-500">*</span></label>
-                            <input type="text" id="vpIdCard" oninput="formatIdCardInput(this); autoSaveForm();" maxlength="17" required placeholder="x-xxxx-xxxxx-xx-x"
-                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-mono text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                        </div>
-                        <div class="sm:col-span-3">
-                            <label class="block text-xs font-semibold text-slate-300 mb-1">อายุ (ปี) <span class="text-rose-500">*</span></label>
-                            <input type="number" id="vpAge" oninput="autoSaveForm()" min="1" max="120" required placeholder="เช่น 32"
-                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                        </div>
-                        <div class="sm:col-span-3">
-                            <label class="block text-xs font-semibold text-slate-300 mb-1">อาชีพ <span class="text-rose-500">*</span></label>
-                            <input type="text" id="vpOccupation" oninput="autoSaveForm()" required placeholder="เช่น พนักงานบริษัท"
-                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                        </div>
-
-                        <div class="sm:col-span-12">
-                            <label class="block text-xs font-semibold text-slate-300 mb-1">ที่อยู่ปัจจุบันที่สามารถติดต่อได้ <span class="text-rose-500">*</span></label>
-                            <input type="text" id="vpAddress" oninput="autoSaveForm()" required placeholder="บ้านเลขที่, หมู่, ซอย, ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์"
-                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                        </div>
-
-                        <div class="sm:col-span-6">
-                            <label class="block text-xs font-semibold text-slate-300 mb-1">เบอร์โทรศัพท์ที่ติดต่อได้สะดวก <span class="text-rose-500">*</span></label>
-                            <input type="tel" id="vpPhone" oninput="autoSaveForm()" required placeholder="08xxxxxxxx"
-                                class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white placeholder-slate-600 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                        </div>
-                    </div>
-
-                    <!-- Sub-card: บัญชีธนาคารของผู้เสียหายที่ใช้โอน -->
-                    <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 mt-3">
-                        <div class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-                            <span>💳</span> <span>ข้อมูลบัญชีธนาคารของผู้เสียหาย (ต้นทางที่ใช้โอนเงิน)</span>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div>
-                                <label class="block text-[11px] font-semibold text-slate-400 mb-1">ธนาคารต้นทาง <span class="text-rose-500">*</span></label>
-                                <input type="text" id="vpBank" oninput="syncVictimBankToFirstTransferCard(); autoSaveForm()" required placeholder="เช่น กสิกรไทย, ไทยพาณิชย์"
-                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-semibold text-slate-400 mb-1">เลขบัญชีผู้เสียหาย <span class="text-rose-500">*</span></label>
-                                <input type="text" id="vpAccountNo" oninput="syncVictimBankToFirstTransferCard(); autoSaveForm()" required placeholder="เลขที่บัญชี 10-12 หลัก"
-                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-semibold text-slate-400 mb-1">ชื่อบัญชี <span class="text-rose-500">*</span></label>
-                                <input type="text" id="vpAccountName" oninput="syncVictimBankToFirstTransferCard(); autoSaveForm()" required placeholder="ชื่อ-นามสกุล เจ้าของบัญชี"
-                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                <div class="bg-slate-900 border border-emerald-500/30 rounded-3xl p-5 sm:p-6 shadow-xl space-y-3">
+                    <div class="flex items-start gap-3">
+                        <div class="w-9 h-9 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-lg shrink-0">🛡️</div>
+                        <div class="space-y-1.5">
+                            <h3 class="text-sm sm:text-base font-bold text-white">การคุ้มครองข้อมูลส่วนบุคคล (PDPA Privacy Hardening)</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed sarabun">
+                                เพื่อความปลอดภัยสูงสุดของข้อมูลส่วนบุคคล ระบบหน้าเว็บนี้ <strong>งดเก็บเลขประจำตัวประชาชน 13 หลัก ที่อยู่ อาชีพ และข้อมูลส่วนตัวเชิงลึก</strong>
+                                ขอให้ท่านกรอกเฉพาะ <strong>รายการโอนเงิน</strong> และ <strong>คำตอบเบื้องต้นตามประเภทกลโกง</strong> ด้านล่าง
+                            </p>
+                            <div class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 leading-relaxed sarabun">
+                                📌 <strong>หมายเหตุสำคัญ:</strong> โปรดเตรียม <strong>บัตรประจำตัวประชาชนตัวจริง, สมุดบัญชีธนาคาร (หรือแอปธนาคาร), และสลิปการโอนเงิน/Statement ตัวจริง</strong> มาแสดงต่อหน้าพนักงานสอบสวน สภ.บางพลี ตามวันเวลานัดหมายโดยตรง
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- ----------------------------------------------------------- -->
-                <!-- ส่วนที่ 2: ตารางรายการโอนเงิน (transferRecords)             -->
+                <!-- ส่วนที่ 1: ตารางรายการโอนเงิน (transferRecords)             -->
                 <!-- ----------------------------------------------------------- -->
                 <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
                     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
                         <div class="flex items-center gap-2.5">
-                            <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">๒</span>
+                            <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">๑</span>
                             <div>
                                 <h3 class="text-sm sm:text-base font-bold text-white">ตารางรายการโอนเงินให้คนร้าย (transferRecords)</h3>
                                 <p class="text-[11px] text-slate-400">กรอกรายการโอนเงินแต่ละครั้งตามสลิป เพื่อให้ พงส. ออกหมายเรียก/อายัด</p>
@@ -312,11 +247,11 @@
                 </div>
 
                 <!-- ----------------------------------------------------------- -->
-                <!-- ส่วนที่ 3: คำถามตามประเภทกลโกง (inquiryAnswers)              -->
+                <!-- ส่วนที่ 2: คำถามตามประเภทกลโกง (inquiryAnswers)              -->
                 <!-- ----------------------------------------------------------- -->
                 <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
                     <div class="flex items-center gap-2.5 border-b border-slate-800 pb-3">
-                        <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">๓</span>
+                        <span class="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">๒</span>
                         <div>
                             <h3 class="text-sm sm:text-base font-bold text-white">ประเด็นสอบสวนเฉพาะตามประเภทกลโกง (inquiryAnswers)</h3>
                             <p class="text-[11px] text-slate-400" id="inquiryCategoryLabel">หมวดหมู่กลโกง: -</p>
@@ -336,8 +271,9 @@
 
                 <!-- Submission Confirmation Bar -->
                 <div class="p-5 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
-                    <div class="text-xs text-slate-400 leading-relaxed sarabun">
-                        <span class="font-bold text-amber-400">คำเตือน:</span> เมื่อท่านกดยืนยันส่งข้อมูล ระบบจะทำการเข้ารหัสข้อมูลส่วนบุคคลและส่งมอบเข้าสู่สำนวนการสอบสวนของ สภ.บางพลี ทันที และจะล็อกแบบฟอร์มเพื่อป้องกันการแก้ไขซ้ำ
+                    <div class="text-xs text-slate-300 leading-relaxed sarabun space-y-1">
+                        <div><span class="font-bold text-amber-400">คำเตือน & การนัดหมาย:</span> เมื่อท่านกดยืนยันส่งข้อมูล ระบบจะทำการเข้ารหัสข้อมูลและส่งมอบเข้าสู่สำนวนการสอบสวนของ สภ.บางพลี ทันที และจะล็อกแบบฟอร์มเพื่อป้องกันการแก้ไขซ้ำ</div>
+                        <div class="text-[11px] text-emerald-300">📎 กรุณานำ <strong>บัตรประชาชนตัวจริง, สมุดบัญชีธนาคาร/แอปธนาคาร, และสลิปการโอนเงินฉบับจริง</strong> มาพบพนักงานสอบสวนตามวันเวลานัดหมายเพื่อยืนยันตัวตนและลงลายมือชื่อในคำให้การ</div>
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-3 pt-1">
@@ -403,9 +339,9 @@
                         <span>📌</span> <span>ขั้นตอนถัดไปสำหรับผู้เสียหาย</span>
                     </div>
                     <ol class="list-decimal list-inside space-y-1 text-slate-300 text-[11px] leading-relaxed">
-                        <li>โปรดเตรียม <strong>บัตรประชาชนตัวจริง</strong> และ <strong>สลิปการโอนเงินฉบับจริง</strong></li>
-                        <li>เตรียม <strong>รายการเดินบัญชี (Statement)</strong> จากแอปพลิเคชันธนาคารช่วงวันเกิดเหตุ</li>
-                        <li>เดินทางมาพบพนักงานสอบสวนเจ้าของเรื่อง ณ สภ.บางพลี เพื่อลงลายมือชื่อในคำให้การตามเวลานัดหมาย</li>
+                        <li>โปรดเตรียม <strong>บัตรประจำตัวประชาชนตัวจริง</strong> และ <strong>สมุดบัญชีธนาคาร (หรือหน้าแอปธนาคาร)</strong> เพื่อแจ้งข้อมูลส่วนตัวต่อหน้าพนักงานสอบสวน</li>
+                        <li>เตรียม <strong>สลิปการโอนเงินฉบับจริง</strong> และ <strong>รายการเดินบัญชี (Statement)</strong> จากแอปพลิเคชันธนาคารช่วงวันเกิดเหตุ</li>
+                        <li>เดินทางมาพบพนักงานสอบสวนเจ้าของเรื่อง ณ สภ.บางพลี ตามนัดหมาย เพื่อตรวจสอบความถูกต้องและลงลายมือชื่อในคำให้การ</li>
                     </ol>
                 </div>
 
@@ -816,36 +752,8 @@
             }
         });
 
-        // ฟังก์ชันช่วยเติมข้อมูลบัญชีผู้เสียหายไปยังการ์ดรายการโอนที่ 1 อัตโนมัติ
-        function syncVictimBankToFirstTransferCard() {
-            const container = document.getElementById('transferRecordsContainer');
-            if (!container || container.children.length === 0) return;
-            const firstCard = container.children[0];
-            if (!firstCard) return;
-
-            const vpBank = document.getElementById('vpBank')?.value.trim() || '';
-            const vpAccNo = document.getElementById('vpAccountNo')?.value.trim() || '';
-            let vpAccName = document.getElementById('vpAccountName')?.value.trim() || '';
-            if (!vpAccName) {
-                const fn = document.getElementById('vpFirstName')?.value.trim() || '';
-                const ln = document.getElementById('vpLastName')?.value.trim() || '';
-                if (fn || ln) vpAccName = `${fn} ${ln}`.trim();
-            }
-
-            const fromBankInput = firstCard.querySelector('.tf-fromBank');
-            const fromAccNoInput = firstCard.querySelector('.tf-fromAccNo');
-            const fromAccNameInput = firstCard.querySelector('.tf-fromAccName');
-
-            if (fromBankInput && (!fromBankInput.dataset.manual || !fromBankInput.value)) {
-                if (vpBank) fromBankInput.value = vpBank;
-            }
-            if (fromAccNoInput && (!fromAccNoInput.dataset.manual || !fromAccNoInput.value)) {
-                if (vpAccNo) fromAccNoInput.value = vpAccNo;
-            }
-            if (fromAccNameInput && (!fromAccNameInput.dataset.manual || !fromAccNameInput.value)) {
-                if (vpAccName) fromAccNameInput.value = vpAccName;
-            }
-        }
+        // งดดึงข้อมูลส่วนตัว/บัญชีจาก victimProfile อัตโนมัติ (PDPA Hardening)
+        function syncVictimBankToFirstTransferCard() {}
 
         // ฟังก์ชันดึงชื่อ พงส. เจ้าของเรื่องตามจริงของ สภ.บางพลี (ยึดค่าที่แก้ไขล่าสุดจากฐานข้อมูลเป็นหลัก)
         function getActualInvestigator(caseNo, rawName) {
@@ -1276,6 +1184,7 @@
                 // 1. ตรวจสอบผ่าน Supabase Client โดยตรง (RPC verify_victim_case + ตาราง cyber_details / cases / subjects)
                 const supaVerified = await verifyVictimViaSupabase(caseInput, phoneInput);
                 if (supaVerified && supaVerified.success) {
+                    supaVerified.verifiedPhone = phoneInput;
                     unlockFormWithCase(supaVerified);
                     return;
                 }
@@ -1292,6 +1201,7 @@
                         })
                     });
                     if (localApiRes.ok && localApiRes.data && localApiRes.data.success) {
+                        localApiRes.data.verifiedPhone = phoneInput;
                         unlockFormWithCase(localApiRes.data);
                         return;
                     }
@@ -1300,6 +1210,7 @@
                 // 3. ตรวจสอบจาก LocalStorage / ข้อมูลคดีตั้งต้นของระบบ
                 const localCase = verifyFromLocalStorage(caseInput, phoneInput);
                 if (localCase) {
+                    localCase.verifiedPhone = phoneInput;
                     unlockFormWithCase(localCase);
                     return;
                 }
@@ -1503,9 +1414,9 @@
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            // Focus on first input
+            // Focus on first transfer input
             setTimeout(() => {
-                const el = document.getElementById('vpFirstName');
+                const el = document.querySelector('#transferRecordsContainer .tf-date');
                 if (el) el.focus();
             }, 200);
         }
@@ -1636,23 +1547,10 @@
             
             const rowIndex = container.children.length + 1;
 
-            // ค่าเริ่มต้นสำหรับบัญชีผู้เสียหาย (แถวที่ 2) ในครั้งที่ 1
+            // ค่าเริ่มต้นสำหรับบัญชีผู้เสียหาย (แถวที่ 2) ตามข้อมูลที่มีในรายการโอนเดิม
             let initFromBank = data?.fromBank || '';
             let initFromAccNo = data?.fromAccountNo || '';
             let initFromAccName = data?.fromAccountName || '';
-
-            if (isFirst) {
-                if (!initFromBank) initFromBank = document.getElementById('vpBank')?.value.trim() || '';
-                if (!initFromAccNo) initFromAccNo = document.getElementById('vpAccountNo')?.value.trim() || '';
-                if (!initFromAccName) {
-                    initFromAccName = document.getElementById('vpAccountName')?.value.trim() || '';
-                    if (!initFromAccName) {
-                        const fn = document.getElementById('vpFirstName')?.value.trim() || '';
-                        const ln = document.getElementById('vpLastName')?.value.trim() || '';
-                        if (fn || ln) initFromAccName = `${fn} ${ln}`.trim();
-                    }
-                }
-            }
 
             const initToBank = data?.toBank || '';
             const initToAccNo = data?.toAccountNo || '';
@@ -1816,22 +1714,10 @@
         }
 
         function collectFormData() {
-            // ส่วนที่ ๑: victimProfile
-            const victimProfile = {
-                prefix: document.getElementById('vpPrefix')?.value || 'นาย',
-                firstName: document.getElementById('vpFirstName')?.value.trim() || '',
-                lastName: document.getElementById('vpLastName')?.value.trim() || '',
-                idCard: document.getElementById('vpIdCard')?.value.trim() || '',
-                age: parseInt(document.getElementById('vpAge')?.value, 10) || null,
-                occupation: document.getElementById('vpOccupation')?.value.trim() || '',
-                address: document.getElementById('vpAddress')?.value.trim() || '',
-                phone: document.getElementById('vpPhone')?.value.trim() || '',
-                victimBank: document.getElementById('vpBank')?.value.trim() || '',
-                victimAccountNo: document.getElementById('vpAccountNo')?.value.trim() || '',
-                victimAccountName: document.getElementById('vpAccountName')?.value.trim() || ''
-            };
+            // PDPA Hardening: งดเก็บ victimProfile (เลขบัตร 13 หลัก, ที่อยู่, อาชีพ, ข้อมูลส่วนตัวเชิงลึก) ผ่านหน้าเว็บ
+            const victimProfile = null;
 
-            // ส่วนที่ ๒: transferRecords (ตารางรายการโอนเงิน 3 แถว)
+            // ส่วนที่ ๑: transferRecords (ตารางรายการโอนเงิน 3 แถว)
             const transferCards = document.querySelectorAll('.transfer-record-card');
             const transferRecords = Array.from(transferCards).map(card => ({
                 transferDate: card.querySelector('.tf-date')?.value || '',
@@ -1845,7 +1731,7 @@
                 toAccountName: card.querySelector('.tf-toAccName')?.value.trim() || ''
             }));
 
-            // ส่วนที่ ๓: inquiryAnswers (ประเด็นสอบสวน 14 กลโกง - ไม่บังคับกรอก)
+            // ส่วนที่ ๒: inquiryAnswers (ประเด็นสอบสวน 14 กลโกง - ไม่บังคับกรอก)
             const inquiryAnswers = activeInquiryPoints.map((point, idx) => ({
                 question: point,
                 answer: document.getElementById('inqAnswer_' + idx)?.value.trim() || ''
@@ -1867,23 +1753,7 @@
 
             if (!draft) return;
 
-            // ส่วนที่ ๑
-            if (draft.victimProfile) {
-                const vp = draft.victimProfile;
-                if (vp.prefix) document.getElementById('vpPrefix').value = vp.prefix;
-                if (vp.firstName) document.getElementById('vpFirstName').value = vp.firstName;
-                if (vp.lastName) document.getElementById('vpLastName').value = vp.lastName;
-                if (vp.idCard) document.getElementById('vpIdCard').value = vp.idCard;
-                if (vp.age) document.getElementById('vpAge').value = vp.age;
-                if (vp.occupation) document.getElementById('vpOccupation').value = vp.occupation;
-                if (vp.address) document.getElementById('vpAddress').value = vp.address;
-                if (vp.phone) document.getElementById('vpPhone').value = vp.phone;
-                if (vp.victimBank) document.getElementById('vpBank').value = vp.victimBank;
-                if (vp.victimAccountNo) document.getElementById('vpAccountNo').value = vp.victimAccountNo;
-                if (vp.victimAccountName) document.getElementById('vpAccountName').value = vp.victimAccountName;
-            }
-
-            // ส่วนที่ ๒: ตารางรายการโอน
+            // ส่วนที่ ๑: ตารางรายการโอน
             if (draft.transferRecords && draft.transferRecords.length > 0) {
                 const container = document.getElementById('transferRecordsContainer');
                 container.innerHTML = '';
@@ -1891,11 +1761,15 @@
                 draft.transferRecords.forEach(tr => addTransferRecordRow(tr));
             }
 
-            // ส่วนที่ ๓: ประเด็นสอบสวน
+            // ส่วนที่ ๒: ประเด็นสอบสวน (เทียบชื่อประเด็นก่อน แล้วค่อยเทียบตามลำดับ)
             if (draft.inquiryAnswers && draft.inquiryAnswers.length > 0) {
-                draft.inquiryAnswers.forEach((ansObj, idx) => {
+                activeInquiryPoints.forEach((pt, idx) => {
                     const el = document.getElementById('inqAnswer_' + idx);
-                    if (el && ansObj.answer) el.value = ansObj.answer;
+                    if (!el) return;
+                    const byQuestion = draft.inquiryAnswers.find(a => (a.question || '').trim() === pt.trim());
+                    const byIdx = draft.inquiryAnswers[idx];
+                    const ansVal = (byQuestion && byQuestion.answer) ? byQuestion.answer : ((byIdx && byIdx.answer) ? byIdx.answer : '');
+                    if (ansVal) el.value = ansVal;
                 });
             }
 
@@ -1915,13 +1789,13 @@
             const payload = collectFormData();
             const invName = getActualInvestigator(activeCase.caseNo, activeCase.investigatorName);
             const nowIso = new Date().toISOString();
-            const phoneVal = document.getElementById('inputPhone')?.value.trim().replace(/\D/g, '') || payload.victimProfile.phone || '';
+            const phoneVal = document.getElementById('inputPhone')?.value.trim().replace(/\D/g, '') || activeCase.verifiedPhone || '';
 
             const submitData = {
                 caseNo: activeCase.caseNo,
                 phone: phoneVal,
-                victimProfile: payload.victimProfile,
-                freezeInfo: payload.freezeInfo,
+                victimProfile: null,
+                freezeInfo: null,
                 transferRecords: payload.transferRecords,
                 inquiryAnswers: payload.inquiryAnswers,
                 investigatorName: invName,
@@ -1937,7 +1811,7 @@
                         await supabase.rpc('submit_victim_case', {
                             p_case_id: activeCase.caseNo,
                             p_phone: phoneVal,
-                            p_victim_profile: payload.victimProfile,
+                            p_victim_profile: null,
                             p_transfer_records: payload.transferRecords,
                             p_inquiry_answers: payload.inquiryAnswers,
                             p_investigator_name: invName
@@ -1946,12 +1820,12 @@
                         console.warn('[Supabase RPC submit_victim_case note]', rpcSubErr);
                     }
 
-                    // 1.2 อัปเดตตาราง cases พร้อมเข้ารหัสข้อมูลที่ผู้เสียหายกรอกเก็บใน metadata_enc (รองรับแม้ยังไม่ได้สร้างตาราง cyber_details)
+                    // 1.2 อัปเดตตาราง cases พร้อมทั้งคอลัมน์ transfer_records / inquiry_answers และ metadata_enc
                     try {
                         const encryptedMeta = await encryptZkText({
                             unit: 'สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑',
                             victimDraft: {
-                                victimProfile: payload.victimProfile,
+                                victimProfile: null,
                                 freezeInfo: null,
                                 transferRecords: payload.transferRecords,
                                 inquiryAnswers: payload.inquiryAnswers,
@@ -1962,16 +1836,29 @@
                         const updateCasesPayload = {
                             status: 'ผู้เสียหายกรอกข้อมูลแล้ว',
                             investigator_name: invName,
+                            transfer_records: payload.transferRecords,
+                            inquiry_answers: payload.inquiryAnswers,
+                            victim_submitted_at: nowIso,
                             updated_at: nowIso
                         };
                         if (encryptedMeta) {
                             updateCasesPayload.metadata_enc = encryptedMeta;
                         }
 
-                        await supabase
+                        const { error: updErr } = await supabase
                             .from('cases')
                             .update(updateCasesPayload)
                             .ilike('case_no', activeCase.caseNo);
+                        if (updErr) {
+                            // Fallback เผื่อบางคอลัมน์ยังไม่ถูกสร้างบนตาราง cases
+                            const minimalPayload = {
+                                status: 'ผู้เสียหายกรอกข้อมูลแล้ว',
+                                investigator_name: invName,
+                                updated_at: nowIso
+                            };
+                            if (encryptedMeta) minimalPayload.metadata_enc = encryptedMeta;
+                            await supabase.from('cases').update(minimalPayload).ilike('case_no', activeCase.caseNo);
+                        }
                     } catch (caseUpdErr) {
                         console.warn('[Supabase cases update note]', caseUpdErr);
                     }
@@ -1981,7 +1868,6 @@
                         await supabase
                             .from('cyber_details')
                             .update({
-                                victim_profile: payload.victimProfile,
                                 transfer_records: payload.transferRecords,
                                 inquiry_answers: payload.inquiryAnswers,
                                 status: 'ผู้เสียหายกรอกข้อมูลแล้ว',
@@ -2008,7 +1894,7 @@
                 activeCase.alreadySubmitted = true;
                 activeCase.victimSubmittedAt = nowIso;
                 activeCase.draft = {
-                    victimProfile: payload.victimProfile,
+                    victimProfile: null,
                     freezeInfo: null,
                     transferRecords: payload.transferRecords,
                     inquiryAnswers: payload.inquiryAnswers
@@ -2016,7 +1902,7 @@
 
                 showSubmissionTicket({
                     caseNo: activeCase.caseNo,
-                    maskedName: `${payload.victimProfile.firstName} ${payload.victimProfile.lastName}`.trim() || activeCase.maskedName,
+                    maskedName: activeCase.maskedName || 'ผู้เสียหาย',
                     investigatorName: invName,
                     victimSubmittedAt: nowIso
                 });
@@ -2026,7 +1912,7 @@
                 sessionStorage.removeItem('victim_draft_' + activeCase.caseNo);
                 showSubmissionTicket({
                     caseNo: activeCase.caseNo,
-                    maskedName: `${payload.victimProfile.firstName} ${payload.victimProfile.lastName}`.trim() || activeCase.maskedName,
+                    maskedName: activeCase.maskedName || 'ผู้เสียหาย',
                     investigatorName: invName,
                     victimSubmittedAt: nowIso
                 });
@@ -2045,19 +1931,19 @@
                 if (!target) {
                     target = {
                         caseNo: data.caseNo,
-                        victim: `${data.victimProfile?.firstName || 'ผู้เสียหาย'} ${data.victimProfile?.lastName || ''} ${data.phone || ''}`.trim(),
+                        victim: `${activeCase?.maskedName || 'ผู้เสียหาย'} ${data.phone || ''}`.trim(),
                         type: activeCase?.fraudCategory || 'หลอกลวงซื้อขายสินค้าออนไลน์',
                         amount: activeCase?.damageAmount || 0,
                         investigator: getActualInvestigator(data.caseNo, activeCase?.investigatorName)
                     };
                     cases.push(target);
                 }
-                target.victimProfile = data.victimProfile;
+                if (data.victimProfile) target.victimProfile = data.victimProfile;
                 target.freezeInfo = data.freezeInfo;
                 target.transferRecords = data.transferRecords;
                 target.inquiryAnswers = data.inquiryAnswers;
                 target.status = 'ผู้เสียหายกรอกข้อมูลแล้ว';
-                target.victimSubmittedAt = new Date().toISOString();
+                target.victimSubmittedAt = data.victimSubmittedAt || new Date().toISOString();
                 target.investigator = getActualInvestigator(data.caseNo, target.investigator || activeCase?.investigatorName);
                 localStorage.setItem('cyber_cases', JSON.stringify(cases));
             } catch (e) {}
