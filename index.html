@@ -14813,15 +14813,24 @@ ${currentDocPrintHtml}
                 const timeThai = rawTime ? toThaiNumerals(rawTime) : '-';
                 const timePhrase = rawTime ? ` เวลาประมาณ ${timeThai} น.` : '';
 
+                const formatBankPhrase = (bRaw) => {
+                    const b = (bRaw || '-').trim();
+                    if (!b || b === '-') return 'บัญชี -';
+                    if (b.startsWith('บัญชี')) return b;
+                    if (b.startsWith('ธนาคาร')) return 'บัญชี' + b;
+                    if (/^(max\s*card|qr|prompt\s*pay|true\s*money|wallet|พร้อมเพย์)/i.test(b)) return `บัญชี ${b}`;
+                    return `บัญชีธนาคาร${b}`;
+                };
+
                 const fromBank = (tr.fromBank || '-').trim();
                 const fromAccNo = (tr.fromAccountNo || '-').trim();
                 const fromAccName = (tr.fromAccountName || '-').trim();
-                const fromText = `บัญชีธนาคาร${fromBank} เลขที่ ${toThaiNumerals(fromAccNo)} ชื่อบัญชี ${fromAccName}`;
+                const fromText = `${formatBankPhrase(fromBank)} เลขที่ ${toThaiNumerals(fromAccNo)} ชื่อบัญชี ${fromAccName}`;
 
                 const toBank = (tr.toBank || '-').trim();
                 const toAccNo = (tr.toAccountNo || '-').trim();
                 const toAccName = (tr.toAccountName || '-').trim();
-                const toText = `บัญชีธนาคาร${toBank} เลขที่ ${toThaiNumerals(toAccNo)} ชื่อบัญชี ${toAccName}`;
+                const toText = `${formatBankPhrase(toBank)} เลขที่ ${toThaiNumerals(toAccNo)} ชื่อบัญชี ${toAccName}`;
 
                 const amtFormatted = amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 const amtThai = toThaiNumerals(amtFormatted);
