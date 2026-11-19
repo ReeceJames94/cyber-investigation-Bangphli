@@ -1240,6 +1240,9 @@ const server = http.createServer(async (req, res) => {
                     let pUnrecovered = null;
                     try { if (r.property_unrecovered) pUnrecovered = JSON.parse(r.property_unrecovered); } catch(e) {}
 
+                    let urg = [];
+                    try { urg = JSON.parse(r.urgency || '[]'); } catch(e) {}
+
                     return {
                         id: r.id,
                         caseNo: r.case_no,
@@ -1248,14 +1251,21 @@ const server = http.createServer(async (req, res) => {
                         type: r.fraud_category,
                         amount: Number(r.damage_amount) || 0,
                         status: r.status,
+                        urgency: Array.isArray(urg) ? urg : [],
                         accounts: accs,
                         investigator: r.investigator_name,
                         detective: r.detective_name || r.investigator_name,
                         summons1: !!leg.summons1,
                         summons1Date: leg.summons1Date || '',
+                        summons1Pdf: leg.summons1Pdf || '',
                         summons2: !!leg.summons2,
                         summons2Date: leg.summons2Date || '',
+                        summons2Pdf: leg.summons2Pdf || '',
                         warrant: !!leg.warrant,
+                        warrantPdf: leg.warrantPdf || '',
+                        caseNumberAssigned: Boolean(leg.caseNumberAssigned),
+                        criminalCaseNo: leg.criminalCaseNo ? String(leg.criminalCaseNo) : '',
+                        prosecutorSubmitted: Boolean(leg.prosecutorSubmitted),
                         // โครงสร้างฟิลด์ใหม่จากผู้เสียหาย (Lightweight Mode: ไม่มี Base64 fileData)
                         victimProfile: vProf,
                         victim_profile: vProf,
@@ -1306,13 +1316,35 @@ const server = http.createServer(async (req, res) => {
                 const nowIso = new Date().toISOString();
 
                 try {
-                    const existing = db.prepare('SELECT id FROM cyber_details WHERE UPPER(case_no) = ?;').get(cleanCaseNo);
+                    const existing = db.prepare('SELECT id, legal_actions, urgency FROM cyber_details WHERE UPPER(case_no) = ?;').get(cleanCaseNo);
+                    let prevLeg = {};
+                    try { if (existing && existing.legal_actions) prevLeg = JSON.parse(existing.legal_actions); } catch(_) {}
+                    const nextCriminalCaseNo = body.criminalCaseNo !== undefined ? String(body.criminalCaseNo || '').trim() : (prevLeg.criminalCaseNo || '');
+                    const nextCaseNoAssigned = body.caseNumberAssigned !== undefined ? Boolean(body.caseNumberAssigned) : Boolean(prevLeg.caseNumberAssigned);
+                    const nextLegalActions = {
+                        ...prevLeg,
+                        summons1: body.summons1 !== undefined ? Boolean(body.summons1) : Boolean(prevLeg.summons1),
+                        summons1Date: body.summons1Date !== undefined ? String(body.summons1Date || '') : (prevLeg.summons1Date || ''),
+                        summons1Pdf: body.summons1Pdf !== undefined ? String(body.summons1Pdf || '') : (prevLeg.summons1Pdf || ''),
+                        summons2: body.summons2 !== undefined ? Boolean(body.summons2) : Boolean(prevLeg.summons2),
+                        summons2Date: body.summons2Date !== undefined ? String(body.summons2Date || '') : (prevLeg.summons2Date || ''),
+                        summons2Pdf: body.summons2Pdf !== undefined ? String(body.summons2Pdf || '') : (prevLeg.summons2Pdf || ''),
+                        warrant: body.warrant !== undefined ? Boolean(body.warrant) : Boolean(prevLeg.warrant),
+                        warrantPdf: body.warrantPdf !== undefined ? String(body.warrantPdf || '') : (prevLeg.warrantPdf || ''),
+                        caseNumberAssigned: nextCaseNoAssigned,
+                        criminalCaseNo: nextCriminalCaseNo,
+                        prosecutorSubmitted: body.prosecutorSubmitted !== undefined ? Boolean(body.prosecutorSubmitted) : Boolean(prevLeg.prosecutorSubmitted)
+                    };
+                    const nextUrgencyJson = Array.isArray(body.urgency) ? JSON.stringify(body.urgency) : null;
+
                     if (existing) {
                         db.prepare(`
                             UPDATE cyber_details
                             SET investigator_name = COALESCE(?, investigator_name),
                                 detective_name = COALESCE(?, detective_name),
                                 status = COALESCE(?, status),
+                                urgency = COALESCE(?, urgency),
+                                legal_actions = ?,
                                 damage_amount = COALESCE(?, damage_amount),
                                 fraud_category = COALESCE(?, fraud_category),
                                 victim_name = COALESCE(?, victim_name),
@@ -1325,6 +1357,8 @@ const server = http.createServer(async (req, res) => {
                             body.investigator || body.investigator_name || null,
                             body.detective || body.detective_name || null,
                             body.status || null,
+                            nextUrgencyJson,
+                            JSON.stringify(nextLegalActions),
                             body.amount !== undefined ? Number(body.amount) : null,
                             body.type || body.fraud_category || null,
                             victimCleanName,
@@ -1338,9 +1372,9 @@ const server = http.createServer(async (req, res) => {
                         db.prepare(`
                             INSERT INTO cyber_details (
                                 case_no, incident_date, victim_name, victim_phone, fraud_category,
-                                damage_amount, status, mule_accounts, investigator_name, detective_name,
+                                damage_amount, status, urgency, legal_actions, mule_accounts, investigator_name, detective_name,
                                 station_code, created_at, updated_at
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'POLICE-STN-BANGPHLI-001', ?, ?);
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'POLICE-STN-BANGPHLI-001', ?, ?);
                         `).run(
                             cleanCaseNo,
                             body.date || '',
@@ -1349,6 +1383,8 @@ const server = http.createServer(async (req, res) => {
                             body.type || '1. หลอกลวงซื้อขายสินค้าออนไลน์',
                             Number(body.amount || 0),
                             body.status || 'พบพงส.',
+                            nextUrgencyJson || '[]',
+                            JSON.stringify(nextLegalActions),
                             JSON.stringify(Array.isArray(body.accounts) ? body.accounts : []),
                             body.investigator || 'พ.ต.ต.ธีรเดช สุขเกษม',
                             body.detective || 'ร.ต.ต.ธนกฤต ไทยกมล',

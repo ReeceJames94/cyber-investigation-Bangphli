@@ -481,6 +481,27 @@
                             <input type="file" id="mWarrantFile" accept=".pdf" class="text-xs">
                         </div>
                     </div>
+
+                    <!-- ตัดเลขคดี และเลขคดีต่อท้าย -->
+                    <div class="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 font-semibold text-indigo-600 dark:text-indigo-400 cursor-pointer shrink-0">
+                            <input type="checkbox" id="mCaseNumberAssignedCheck" onchange="if(this.checked){document.getElementById('mCriminalCaseNo')?.focus();}" class="rounded text-indigo-600">
+                            <span>ตัดเลขแล้ว</span>
+                        </label>
+                        <div class="flex items-center gap-2 flex-1 min-w-[180px] justify-end">
+                            <span class="text-[11px] text-slate-500 whitespace-nowrap">เลขคดี:</span>
+                            <input type="text" id="mCriminalCaseNo" placeholder="กรอกเลขคดี เช่น 1234/2569" oninput="if(this.value.trim()){const chk=document.getElementById('mCaseNumberAssignedCheck');if(chk)chk.checked=true;}" class="w-full sm:w-48 p-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- ส่งสำนวนอัยการแล้ว / ยังไม่ส่งสำนวน -->
+                    <div class="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                        <label class="flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400 cursor-pointer">
+                            <input type="checkbox" id="mProsecutorSubmittedCheck" onchange="updateModalProsecutorLabel()" class="rounded text-emerald-600">
+                            <span>ส่งสำนวนอัยการแล้ว</span>
+                        </label>
+                        <span id="mProsecutorStatusBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">ยังไม่ส่งสำนวน</span>
+                    </div>
                 </div>
 
                 <div class="flex justify-end gap-2.5 pt-2">
@@ -1304,9 +1325,9 @@
                             </div>
                         </div>
 
-                        <!-- Lower Filter Row: Status, Urgency, Reset & Filtered Export Buttons -->
-                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center pt-2 border-t border-slate-100 dark:border-slate-800/60">
-                            <div class="md:col-span-3">
+                        <!-- Lower Filter Row: Status, Urgency, Legal Stage, Reset & Filtered Export Buttons -->
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                            <div class="md:col-span-2">
                                 <select id="caseStatusFilter" onchange="renderCases()" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:outline-none">
                                     <option value="">📌 สถานะทั้งหมด</option>
                                     <option value="พบพงส.">พบพงส.</option>
@@ -1316,7 +1337,7 @@
                                     <option value="ติดต่อไม่ได้">ติดต่อไม่ได้</option>
                                 </select>
                             </div>
-                            <div class="md:col-span-3">
+                            <div class="md:col-span-2">
                                 <select id="caseUrgencyFilter" onchange="renderCases()" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:outline-none">
                                     <option value="">⚡ ความเร่งด่วนทั้งหมด</option>
                                     <option value="ภจว.ติดตาม">⚡ 1. ภจว.ติดตาม</option>
@@ -1325,7 +1346,17 @@
                                     <option value="any_urgent">🚨 คดีเร่งด่วนทุกระดับ (1-3)</option>
                                 </select>
                             </div>
-                            <div class="md:col-span-6 flex flex-wrap items-center justify-end gap-2">
+                            <div class="md:col-span-3">
+                                <select id="caseLegalStageFilter" onchange="renderCases()" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:outline-none">
+                                    <option value="">⚖️ ตัดเลข / ส่งสำนวนทั้งหมด</option>
+                                    <option value="case_no_assigned">🔢 ตัดเลขแล้ว</option>
+                                    <option value="case_no_pending">⏳ ยังไม่ตัดเลข</option>
+                                    <option value="prosecutor_submitted">⚖️ ส่งสำนวนอัยการแล้ว</option>
+                                    <option value="prosecutor_pending">📂 ยังไม่ส่งสำนวนอัยการ</option>
+                                    <option value="warrant_issued">📜 ออกหมายจับแล้ว</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-5 flex flex-wrap items-center justify-end gap-2">
                                 <button type="button" onclick="resetFilters()" title="ล้างตัวกรองทั้งหมด" class="px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl text-xs font-semibold transition flex items-center gap-1">
                                     <span>🔄</span> <span>ล้างตัวกรอง</span>
                                 </button>
@@ -4615,6 +4646,10 @@
                 document.getElementById('mSummons2File').value = '';
                 document.getElementById('mWarrantCheck').checked = false;
                 document.getElementById('mWarrantFile').value = '';
+                if (document.getElementById('mCaseNumberAssignedCheck')) document.getElementById('mCaseNumberAssignedCheck').checked = false;
+                if (document.getElementById('mCriminalCaseNo')) document.getElementById('mCriminalCaseNo').value = '';
+                if (document.getElementById('mProsecutorSubmittedCheck')) document.getElementById('mProsecutorSubmittedCheck').checked = false;
+                updateModalProsecutorLabel();
 
                 populateOfficerSelects();
                 const now = new Date();
@@ -4925,6 +4960,10 @@
             document.getElementById('mSummons2Check').checked = !!c.summons2;
             document.getElementById('mSummons2Date').value = c.summons2Date || '';
             document.getElementById('mWarrantCheck').checked = !!c.warrant;
+            if (document.getElementById('mCaseNumberAssignedCheck')) document.getElementById('mCaseNumberAssignedCheck').checked = !!c.caseNumberAssigned;
+            if (document.getElementById('mCriminalCaseNo')) document.getElementById('mCriminalCaseNo').value = c.criminalCaseNo || '';
+            if (document.getElementById('mProsecutorSubmittedCheck')) document.getElementById('mProsecutorSubmittedCheck').checked = !!c.prosecutorSubmitted;
+            updateModalProsecutorLabel();
         }
 
         function handlePreviewCaseSubmit(e) {
@@ -4948,6 +4987,10 @@
             const wCheck = document.getElementById('mWarrantCheck').checked;
             const wFile = document.getElementById('mWarrantFile').files[0];
 
+            const criminalCaseNoVal = (document.getElementById('mCriminalCaseNo')?.value || '').trim();
+            const caseNoAssignedCheck = Boolean(document.getElementById('mCaseNumberAssignedCheck')?.checked || criminalCaseNoVal);
+            const prosecutorSubmittedCheck = Boolean(document.getElementById('mProsecutorSubmittedCheck')?.checked);
+
             const urgList = [];
             if (document.getElementById('mUrgencyPhaJorWor')?.checked) urgList.push('ภจว.ติดตาม');
             if (document.getElementById('mUrgencyPha1')?.checked) urgList.push('คดีเร่งด่วน ภ.1ติดตาม');
@@ -4968,7 +5011,10 @@
                 summons1Date: s1Date,
                 summons2: s2Check,
                 summons2Date: s2Date,
-                warrant: wCheck
+                warrant: wCheck,
+                caseNumberAssigned: caseNoAssignedCheck,
+                criminalCaseNo: criminalCaseNoVal,
+                prosecutorSubmitted: prosecutorSubmittedCheck
             };
 
             if (editingCaseId) {
@@ -5006,17 +5052,94 @@
             renderCases();
         }
 
+        function updateModalProsecutorLabel() {
+            const chk = document.getElementById('mProsecutorSubmittedCheck');
+            const badge = document.getElementById('mProsecutorStatusBadge');
+            if (!badge) return;
+            if (chk && chk.checked) {
+                badge.textContent = '✓ ส่งสำนวนอัยการแล้ว';
+                badge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
+            } else {
+                badge.textContent = 'ยังไม่ส่งสำนวน';
+                badge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700';
+            }
+        }
+
+        function buildCaseLegalActionsPayload(caseItem) {
+            if (!caseItem || typeof caseItem !== 'object') return {};
+            return {
+                summons1: Boolean(caseItem.summons1),
+                summons1Date: caseItem.summons1Date ? String(caseItem.summons1Date) : '',
+                summons1Pdf: caseItem.summons1Pdf ? String(caseItem.summons1Pdf) : '',
+                summons2: Boolean(caseItem.summons2),
+                summons2Date: caseItem.summons2Date ? String(caseItem.summons2Date) : '',
+                summons2Pdf: caseItem.summons2Pdf ? String(caseItem.summons2Pdf) : '',
+                warrant: Boolean(caseItem.warrant),
+                warrantPdf: caseItem.warrantPdf ? String(caseItem.warrantPdf) : '',
+                caseNumberAssigned: Boolean(caseItem.caseNumberAssigned),
+                criminalCaseNo: caseItem.criminalCaseNo ? String(caseItem.criminalCaseNo).trim() : '',
+                prosecutorSubmitted: Boolean(caseItem.prosecutorSubmitted)
+            };
+        }
+
+        function applyLegalActionsToCase(targetCase, rawLeg) {
+            if (!targetCase || !rawLeg) return;
+            let leg = rawLeg;
+            if (typeof leg === 'string') {
+                try { leg = JSON.parse(leg); } catch (_) { return; }
+            }
+            if (!leg || typeof leg !== 'object') return;
+            if ('summons1' in leg) targetCase.summons1 = Boolean(leg.summons1);
+            if ('summons1Date' in leg && leg.summons1Date) targetCase.summons1Date = String(leg.summons1Date);
+            if ('summons1Pdf' in leg && leg.summons1Pdf) targetCase.summons1Pdf = String(leg.summons1Pdf);
+            if ('summons2' in leg) targetCase.summons2 = Boolean(leg.summons2);
+            if ('summons2Date' in leg && leg.summons2Date) targetCase.summons2Date = String(leg.summons2Date);
+            if ('summons2Pdf' in leg && leg.summons2Pdf) targetCase.summons2Pdf = String(leg.summons2Pdf);
+            if ('warrant' in leg) targetCase.warrant = Boolean(leg.warrant);
+            if ('warrantPdf' in leg && leg.warrantPdf) targetCase.warrantPdf = String(leg.warrantPdf);
+            if ('caseNumberAssigned' in leg) targetCase.caseNumberAssigned = Boolean(leg.caseNumberAssigned);
+            if ('criminalCaseNo' in leg) targetCase.criminalCaseNo = String(leg.criminalCaseNo || '');
+            if ('prosecutorSubmitted' in leg) targetCase.prosecutorSubmitted = Boolean(leg.prosecutorSubmitted);
+        }
+
         function toggleDoc(id, field, checked) {
-            const item = mockCases.find(c => c.id === id);
+            const item = mockCases.find(c => String(c.id) === String(id));
             if (item) {
-                item[field] = checked;
+                item[field] = Boolean(checked);
                 if (field === 'warrant' && checked) {
                     syncCaseToWarrants(item);
                 }
                 try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(err) {}
+                if (typeof syncCaseToSupabaseZeroKnowledge === 'function') syncCaseToSupabaseZeroKnowledge(item);
                 renderCases();
-                toast(`อัปเดตสถานะ ${field} เคส ${item.caseNo}`);
+                if (field === 'caseNumberAssigned' && checked && !String(item.criminalCaseNo || '').trim()) {
+                    const domSafeId = String(item.id || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+                    setTimeout(() => { document.getElementById(`inlineCriminalNo_${domSafeId}`)?.focus(); }, 20);
+                }
+                const fieldLabels = {
+                    summons1: 'หมายเรียก 1',
+                    summons2: 'หมายเรียก 2',
+                    warrant: 'ออกหมายจับแล้ว',
+                    caseNumberAssigned: 'ตัดเลขแล้ว',
+                    prosecutorSubmitted: checked ? 'ส่งสำนวนอัยการแล้ว' : 'ยังไม่ส่งสำนวน'
+                };
+                toast(`อัปเดตสถานะ "${fieldLabels[field] || field}" เคส ${item.caseNo}`);
             }
+        }
+
+        function saveInlineCriminalCaseNo(id, value) {
+            const item = mockCases.find(c => String(c.id) === String(id));
+            if (!item) return;
+            const cleanVal = String(value || '').trim();
+            if ((item.criminalCaseNo || '') === cleanVal && (!cleanVal || item.caseNumberAssigned)) return;
+            item.criminalCaseNo = cleanVal;
+            if (cleanVal) {
+                item.caseNumberAssigned = true;
+            }
+            try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(err) {}
+            if (typeof syncCaseToSupabaseZeroKnowledge === 'function') syncCaseToSupabaseZeroKnowledge(item);
+            renderCases();
+            toast(cleanVal ? `บันทึกเลขคดี "${cleanVal}" เคส ${item.caseNo} แล้ว` : `ล้างเลขคดี เคส ${item.caseNo} แล้ว`);
         }
 
         // ฟังก์ชันแปลงข้อมูลบัญชีคนร้ายให้แสดงเป็นข้อความชื่อธนาคารและเลขบัญชีให้ถูกต้อง (ป้องกัน [object Object])
@@ -5189,6 +5312,7 @@
             const q = (document.getElementById('caseFilterInput')?.value || '').toLowerCase().trim();
             const s = document.getElementById('caseStatusFilter')?.value || '';
             const u = document.getElementById('caseUrgencyFilter')?.value || '';
+            const legFilter = document.getElementById('caseLegalStageFilter')?.value || '';
             const inv = document.getElementById('caseInvestigatorFilter')?.value || '';
             const startVal = parseDateToComparable(document.getElementById('caseFilterDateStart')?.value);
             const endVal = parseDateToComparable(document.getElementById('caseFilterDateEnd')?.value);
@@ -5198,6 +5322,17 @@
                 
                 // กรองตามสถานะ
                 if (s && c.status !== s) return false;
+
+                // กรองตามสถานะหมาย / ตัดเลข / ส่งสำนวนอัยการ
+                if (legFilter) {
+                    const hasCaseNo = Boolean(c.caseNumberAssigned);
+                    const hasProsecutor = Boolean(c.prosecutorSubmitted);
+                    if (legFilter === 'case_no_assigned' && !hasCaseNo) return false;
+                    if (legFilter === 'case_no_pending' && hasCaseNo) return false;
+                    if (legFilter === 'prosecutor_submitted' && !hasProsecutor) return false;
+                    if (legFilter === 'prosecutor_pending' && hasProsecutor) return false;
+                    if (legFilter === 'warrant_issued' && !c.warrant) return false;
+                }
 
                 // กรองตาม พงส. ที่รับผิดชอบ
                 if (inv) {
@@ -5229,12 +5364,12 @@
                     if (!urgList.includes(currentCaseQuickFilter)) return false;
                 }
 
-                // ค้นหาข้อความ
+                // ค้นหาข้อความ (รวมเลขคดีอาญาที่ตัดเลขแล้ว)
                 const accStr = (c.accounts || []).map(a => typeof a === 'string' ? a : `${a.bank || ''} ${a.no || a.accNo || ''} ${a.name || ''}`).join(' ');
                 const urgStr = urgList.join(' ');
                 const pongs = c.investigator || c.officerInquiry || '';
                 const sueber = c.detective || c.officerInvestigate || '';
-                if (q && !`${c.caseNo || c.caseId || ''} ${c.victim || ''} ${c.type || ''} ${c.status || ''} ${urgStr} ${accStr} ${pongs} ${sueber}`.toLowerCase().includes(q)) return false;
+                if (q && !`${c.caseNo || c.caseId || ''} ${c.criminalCaseNo || ''} ${c.victim || ''} ${c.type || ''} ${c.status || ''} ${urgStr} ${accStr} ${pongs} ${sueber}`.toLowerCase().includes(q)) return false;
 
                 // กรองตามช่วงวันที่
                 if (startVal || endVal) {
@@ -5306,9 +5441,17 @@
                 const invVal = document.getElementById('caseInvestigatorFilter')?.value;
                 const statusVal = document.getElementById('caseStatusFilter')?.value;
                 const urgVal = document.getElementById('caseUrgencyFilter')?.value;
+                const legVal = document.getElementById('caseLegalStageFilter')?.value;
                 const qVal = document.getElementById('caseFilterInput')?.value?.trim();
                 const dStart = document.getElementById('caseFilterDateStart')?.value?.trim();
                 const dEnd = document.getElementById('caseFilterDateEnd')?.value?.trim();
+                const legLabels = {
+                    case_no_assigned: 'ตัดเลขแล้ว',
+                    case_no_pending: 'ยังไม่ตัดเลข',
+                    prosecutor_submitted: 'ส่งสำนวนอัยการแล้ว',
+                    prosecutor_pending: 'ยังไม่ส่งสำนวนอัยการ',
+                    warrant_issued: 'ออกหมายจับแล้ว'
+                };
 
                 if (currentCaseQuickFilter === 'my_cases') {
                     activeFilters.push(`คดีของฉัน (${currentAuthUser?.rank_name || 'พงส.'})`);
@@ -5318,6 +5461,7 @@
                 if (invVal) activeFilters.push(`พงส.: ${invVal}`);
                 if (statusVal) activeFilters.push(`สถานะ: ${statusVal}`);
                 if (urgVal) activeFilters.push(`เร่งด่วน: ${urgVal === 'any_urgent' ? 'ทุกระดับ' : urgVal}`);
+                if (legVal) activeFilters.push(`หมาย/สำนวน: ${legLabels[legVal] || legVal}`);
                 if (dStart || dEnd) activeFilters.push(`วันที่: ${dStart || '...'} ถึง ${dEnd || '...'}`);
                 if (qVal) activeFilters.push(`ค้นหา: "${qVal}"`);
 
@@ -5379,6 +5523,7 @@
                 const s2Short = c.summons2Date ? `<span class="font-bold text-amber-600 dark:text-amber-400">(${escapeHtml(getShortDate(c.summons2Date))})</span>` : '';
                 const safeCaseId = escapeHtml(String(c.id || '').replace(/'/g, ''));
                 const safeCaseNoJs = escapeHtml(String(c.caseNo || c.id || '').replace(/['"\\]/g, ''));
+                const domSafeId = String(c.id || '').replace(/[^a-zA-Z0-9_-]/g, '_');
                 
                 const warrantLinkBtn = c.warrant ? `
                     <div class="pt-1">
@@ -5474,6 +5619,29 @@
                                 ${wPdfHtml}
                                 ${warrantLinkBtn}
                             </div>
+                            <div class="pt-1.5 border-t border-slate-200/60 dark:border-slate-800/70">
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <label class="flex items-center gap-1.5 cursor-pointer shrink-0">
+                                        <input type="checkbox" ${c.caseNumberAssigned ? 'checked' : ''} onchange="toggleDoc('${safeCaseId}', 'caseNumberAssigned', this.checked)" class="rounded text-indigo-500">
+                                        <span class="${c.caseNumberAssigned ? 'font-bold text-indigo-600 dark:text-indigo-400' : ''}">ตัดเลขแล้ว</span>
+                                    </label>
+                                    <input type="text"
+                                        id="inlineCriminalNo_${domSafeId}"
+                                        value="${escapeHtml(c.criminalCaseNo || '')}"
+                                        placeholder="เลขคดี (เช่น 123/69)"
+                                        onchange="saveInlineCriminalCaseNo('${safeCaseId}', this.value)"
+                                        onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+                                        class="w-28 px-2 py-0.5 text-[11px] rounded-lg border ${c.caseNumberAssigned ? 'border-indigo-400/60 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-semibold' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400'} focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" ${c.prosecutorSubmitted ? 'checked' : ''} onchange="toggleDoc('${safeCaseId}', 'prosecutorSubmitted', this.checked)" class="rounded text-emerald-500">
+                                    <span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold border ${c.prosecutorSubmitted ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'}">
+                                        ${c.prosecutorSubmitted ? '✓ ส่งสำนวนอัยการแล้ว' : 'ยังไม่ส่งสำนวน'}
+                                    </span>
+                                </label>
+                            </div>
                         </td>
                         <td class="p-4 align-top text-center">
                             <div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
@@ -5503,6 +5671,7 @@
             if (document.getElementById('caseFilterInput')) document.getElementById('caseFilterInput').value = '';
             if (document.getElementById('caseStatusFilter')) document.getElementById('caseStatusFilter').value = '';
             if (document.getElementById('caseUrgencyFilter')) document.getElementById('caseUrgencyFilter').value = '';
+            if (document.getElementById('caseLegalStageFilter')) document.getElementById('caseLegalStageFilter').value = '';
             if (document.getElementById('caseInvestigatorFilter')) document.getElementById('caseInvestigatorFilter').value = '';
             if (document.getElementById('caseFilterDateStart')) document.getElementById('caseFilterDateStart').value = '';
             if (document.getElementById('caseFilterDateEnd')) document.getElementById('caseFilterDateEnd').value = '';
@@ -5736,7 +5905,10 @@
                 legal_actions: {
                     summons_1: { issued: !!c.summons1, date: c.summons1Date || '', file: c.summons1Pdf || '' },
                     summons_2: { issued: !!c.summons2, date: c.summons2Date || '', file: c.summons2Pdf || '' },
-                    warrant: { issued: !!c.warrant, file: c.warrantPdf || '' }
+                    warrant: { issued: !!c.warrant, file: c.warrantPdf || '' },
+                    case_number_assigned: Boolean(c.caseNumberAssigned),
+                    criminal_case_no: c.criminalCaseNo || '',
+                    prosecutor_submitted: Boolean(c.prosecutorSubmitted)
                 },
                 // ฟิลด์ข้อมูล 4 ส่วนจากระบบผู้เสียหายกรอกข้อมูลล่วงหน้า (/victim-form) (Lightweight PDPA)
                 victim_profile: c.victim_profile || c.victimProfile || null,
@@ -6092,6 +6264,8 @@
                             if (remoteCase.detective) existing.detective = remoteCase.detective;
                             if (remoteCase.status) existing.status = remoteCase.status;
                             if (remoteCase.amount) existing.amount = remoteCase.amount;
+                            if (Array.isArray(remoteCase.urgency) && remoteCase.urgency.length > 0) existing.urgency = remoteCase.urgency;
+                            applyLegalActionsToCase(existing, remoteCase);
                             if (remoteCase.victim_submitted_at) existing.victim_submitted_at = remoteCase.victim_submitted_at;
                             if (remoteCase.victim_profile) existing.victim_profile = remoteCase.victim_profile;
                             if (remoteCase.freeze_info) existing.freeze_info = remoteCase.freeze_info;
@@ -6099,6 +6273,7 @@
                             if (remoteCase.inquiry_answers) existing.inquiry_answers = remoteCase.inquiry_answers;
                         } else {
                             if (remoteCase.caseNo) remoteCase.investigator = getActualInvestigator(remoteCase.caseNo, remoteCase.investigator);
+                            applyLegalActionsToCase(remoteCase, remoteCase);
                             mockCases.push(remoteCase);
                         }
                     });
@@ -6129,6 +6304,8 @@
                                         if (cd.detective_name) existing.detective = cd.detective_name;
                                         if (cd.status) existing.status = cd.status;
                                         if (cd.damage_amount) existing.amount = Number(cd.damage_amount) || existing.amount;
+                                        if (Array.isArray(cd.urgency) && cd.urgency.length > 0) existing.urgency = cd.urgency;
+                                        if (cd.legal_actions) applyLegalActionsToCase(existing, cd.legal_actions);
                                         if (cd.victim_profile) {
                                             existing.victimProfile = cd.victim_profile;
                                             existing.victim_profile = cd.victim_profile;
@@ -6218,6 +6395,10 @@
                                     }
                                 }
                                 if (decMeta) {
+                                    if (decMeta.legalActions) applyLegalActionsToCase(existing, decMeta.legalActions);
+                                    if (Array.isArray(decMeta.urgency) && decMeta.urgency.length > 0 && (!Array.isArray(existing.urgency) || existing.urgency.length === 0)) {
+                                        existing.urgency = decMeta.urgency;
+                                    }
                                     if (Array.isArray(decMeta.interrogationStatements) && decMeta.interrogationStatements.length > 0 && !existing.interrogationStatements) {
                                         existing.interrogationStatements = decMeta.interrogationStatements;
                                     }
@@ -6231,7 +6412,7 @@
                             } else if (sc.case_no) {
                                 const resolvedInv = sc.investigator_name || (decMeta && decMeta.investigatorName);
                                 const resolvedDet = sc.detective_name || (decMeta && decMeta.detectiveName) || 'ร.ต.ต.ธนกฤต ไทยกมล';
-                                mockCases.push({
+                                const newSupaCase = {
                                     id: sc.id || `supa_${Date.now()}`,
                                     caseNo: sc.case_no,
                                     date: sc.incident_date || (sc.created_at ? new Date(sc.created_at).toLocaleDateString('th-TH') : ''),
@@ -6239,7 +6420,7 @@
                                     type: sc.fraud_category || sc.case_type || 'คดีออนไลน์',
                                     amount: Number(sc.damage_amount) || 0,
                                     status: sc.status || 'พบพงส.',
-                                    urgency: [],
+                                    urgency: (decMeta && Array.isArray(decMeta.urgency)) ? decMeta.urgency : [],
                                     accounts: Array.isArray(sc.mule_accounts) ? sc.mule_accounts : [],
                                     investigator: getActualInvestigator(sc.case_no, resolvedInv),
                                     detective: resolvedDet,
@@ -6259,8 +6440,13 @@
                                     summons2Date: '',
                                     summons2Pdf: '',
                                     warrant: false,
-                                    warrantPdf: ''
-                                });
+                                    warrantPdf: '',
+                                    caseNumberAssigned: false,
+                                    criminalCaseNo: '',
+                                    prosecutorSubmitted: false
+                                };
+                                if (decMeta && decMeta.legalActions) applyLegalActionsToCase(newSupaCase, decMeta.legalActions);
+                                mockCases.push(newSupaCase);
                             }
                         }
                         updated = true;
@@ -6857,9 +7043,17 @@
             const q = (document.getElementById('caseFilterInput')?.value || '').trim();
             const s = document.getElementById('caseStatusFilter')?.value || '';
             const u = document.getElementById('caseUrgencyFilter')?.value || '';
+            const leg = document.getElementById('caseLegalStageFilter')?.value || '';
             const inv = document.getElementById('caseInvestigatorFilter')?.value || '';
             const startStr = document.getElementById('caseFilterDateStart')?.value || '';
             const endStr = document.getElementById('caseFilterDateEnd')?.value || '';
+            const legLabels = {
+                case_no_assigned: 'ตัดเลขแล้ว',
+                case_no_pending: 'ยังไม่ตัดเลข',
+                prosecutor_submitted: 'ส่งสำนวนอัยการแล้ว',
+                prosecutor_pending: 'ยังไม่ส่งสำนวนอัยการ',
+                warrant_issued: 'ออกหมายจับแล้ว'
+            };
 
             // ดึงรายการคดีเฉพาะที่ตรงตามตัวกรองที่เลือก
             const listToExport = [...getFilteredCasesList()];
@@ -6888,47 +7082,48 @@
 
             // สร้างข้อความสรุปเงื่อนไขตัวกรอง
             const filterTags = [];
-            if (inv) filterTags.push(`พนักงานสอบสวน: <strong>${inv}</strong>`);
-            if (s) filterTags.push(`สถานะคดี: <strong>${s}</strong>`);
-            if (u) filterTags.push(`ความเร่งด่วน: <strong>${u === 'any_urgent' ? 'เร่งด่วนทุกระดับ' : u}</strong>`);
-            if (currentCaseQuickFilter !== 'all') filterTags.push(`หมวดติดตาม: <strong>${currentCaseQuickFilter}</strong>`);
-            if (startStr && endStr) filterTags.push(`ช่วงวันที่: <strong>${startStr} - ${endStr}</strong>`);
-            else if (startStr) filterTags.push(`ตั้งแต่วันที่: <strong>${startStr}</strong>`);
-            else if (endStr) filterTags.push(`ถึงวันที่: <strong>${endStr}</strong>`);
-            if (q) filterTags.push(`คำค้นหา: "<strong>${q}</strong>"`);
+            if (inv) filterTags.push(`พนักงานสอบสวน: <strong>${escapeHtml(inv)}</strong>`);
+            if (s) filterTags.push(`สถานะคดี: <strong>${escapeHtml(s)}</strong>`);
+            if (u) filterTags.push(`ความเร่งด่วน: <strong>${escapeHtml(u === 'any_urgent' ? 'เร่งด่วนทุกระดับ' : u)}</strong>`);
+            if (leg) filterTags.push(`หมาย/สำนวน: <strong>${escapeHtml(legLabels[leg] || leg)}</strong>`);
+            if (currentCaseQuickFilter !== 'all') filterTags.push(`หมวดติดตาม: <strong>${escapeHtml(currentCaseQuickFilter)}</strong>`);
+            if (startStr && endStr) filterTags.push(`ช่วงวันที่: <strong>${escapeHtml(startStr)} - ${escapeHtml(endStr)}</strong>`);
+            else if (startStr) filterTags.push(`ตั้งแต่วันที่: <strong>${escapeHtml(startStr)}</strong>`);
+            else if (endStr) filterTags.push(`ถึงวันที่: <strong>${escapeHtml(endStr)}</strong>`);
+            if (q) filterTags.push(`คำค้นหา: "<strong>${escapeHtml(q)}</strong>"`);
 
             const filterLabelHtml = filterTags.length > 0 
                 ? filterTags.join(' &nbsp;|&nbsp; ') 
                 : 'แสดงข้อมูลคดีทั้งหมด (ไม่จำกัดเงื่อนไข)';
 
             const rowsHtml = listToExport.map((c, idx) => {
-                const caseNum = c.caseNo || c.caseId || '-';
-                const dateStr = c.date || '-';
-                const victimStr = c.victim || '-';
-                const typeStr = c.type || '-';
+                const caseNum = escapeHtml(c.caseNo || c.caseId || '-');
+                const dateStr = escapeHtml(c.date || '-');
+                const victimStr = escapeHtml(c.victim || '-');
+                const typeStr = escapeHtml(c.type || '-');
 
                 // Damage amount
                 const rawAmount = c.amount !== undefined ? c.amount : c.damage;
                 const numAmount = Number(rawAmount);
-                const damageStr = !isNaN(numAmount) && rawAmount !== '' && rawAmount !== null ? `${numAmount.toLocaleString()} ฿` : (rawAmount ? `${rawAmount} ฿` : '-');
+                const damageStr = !isNaN(numAmount) && rawAmount !== '' && rawAmount !== null ? `${numAmount.toLocaleString()} ฿` : (rawAmount ? `${escapeHtml(String(rawAmount))} ฿` : '-');
 
                 // Accounts
                 const accList = (c.accounts || []).map(a => {
-                    if (typeof a === 'string') return a;
+                    if (typeof a === 'string') return escapeHtml(a);
                     if (typeof a === 'object' && a !== null) {
                         const bank = a.bank || '';
                         const no = a.no || a.accNo || a.number || '';
                         const name = a.name || a.owner || '';
-                        return `${bank} ${no} ${name ? '(' + name + ')' : ''}`.trim();
+                        return escapeHtml(`${bank} ${no} ${name ? '(' + name + ')' : ''}`.trim());
                     }
-                    return String(a);
+                    return escapeHtml(String(a));
                 });
                 const accHtml = accList.length > 0 ? accList.join('<br>') : '-';
 
                 // Officers
-                const pongs = c.investigator || c.officerInquiry || '-';
-                const sueber = c.detective || c.officerInvestigate || '-';
-                const statusStr = c.status || '-';
+                const pongs = escapeHtml(c.investigator || c.officerInquiry || '-');
+                const sueber = escapeHtml(c.detective || c.officerInvestigate || '-');
+                const statusStr = escapeHtml(c.status || '-');
 
                 // Urgency & Status
                 const urgList = Array.isArray(c.urgency) ? c.urgency : (c.urgency ? [c.urgency] : []);
@@ -6938,12 +7133,19 @@
                     ? `<span style="background: #dc2626; color: #fff; font-weight: bold; padding: 2px 6px; border-radius: 4px; display: inline-block;">🚨 WARROOM</span>`
                     : `<span style="background: #e2e8f0; color: #1e293b; padding: 2px 6px; border-radius: 4px; display: inline-block;">${statusStr}</span>`;
 
-                const urgBadges = urgList.map(u => {
-                    if (u.includes('ภจว')) return `<div style="font-size: 10px; color: #7e22ce; font-weight: bold; margin-top: 2px;">⚡ 1. ภจว.ติดตาม</div>`;
-                    if (u.includes('ภ.1')) return `<div style="font-size: 10px; color: #b45309; font-weight: bold; margin-top: 2px;">🔥 2. คดีเร่งด่วน ภ.1</div>`;
-                    if (u.includes('ตร.')) return `<div style="font-size: 10px; color: #b91c1c; font-weight: bold; margin-top: 2px;">🛡️ 3. ตร.ติดตาม</div>`;
-                    return `<div style="font-size: 10px; color: #475569; margin-top: 2px;">${u}</div>`;
+                const urgBadges = urgList.map(uItem => {
+                    if (uItem.includes('ภจว')) return `<div style="font-size: 10px; color: #7e22ce; font-weight: bold; margin-top: 2px;">⚡ 1. ภจว.ติดตาม</div>`;
+                    if (uItem.includes('ภ.1')) return `<div style="font-size: 10px; color: #b45309; font-weight: bold; margin-top: 2px;">🔥 2. คดีเร่งด่วน ภ.1</div>`;
+                    if (uItem.includes('ตร.')) return `<div style="font-size: 10px; color: #b91c1c; font-weight: bold; margin-top: 2px;">🛡️ 3. ตร.ติดตาม</div>`;
+                    return `<div style="font-size: 10px; color: #475569; margin-top: 2px;">${escapeHtml(uItem)}</div>`;
                 }).join('');
+
+                const cutNoBadge = c.caseNumberAssigned
+                    ? `<div style="font-size: 10px; color: #3730a3; font-weight: bold; margin-top: 3px;">🔢 ตัดเลขแล้ว${c.criminalCaseNo ? `: ${escapeHtml(c.criminalCaseNo)}` : ''}</div>`
+                    : `<div style="font-size: 10px; color: #64748b; margin-top: 3px;">ยังไม่ตัดเลข</div>`;
+                const prosBadge = c.prosecutorSubmitted
+                    ? `<div style="font-size: 10px; color: #047857; font-weight: bold; margin-top: 2px;">✓ ส่งสำนวนอัยการแล้ว</div>`
+                    : `<div style="font-size: 10px; color: #64748b; margin-top: 2px;">ยังไม่ส่งสำนวน</div>`;
 
                 return `
                     <tr>
@@ -6954,7 +7156,7 @@
                         <td style="text-align: right; font-weight: bold; color: #b91c1c;">${damageStr}</td>
                         <td style="font-size: 11px;">${accHtml}</td>
                         <td style="font-size: 11px;">พงส.: ${pongs}<br>สืบสวน: ${sueber}</td>
-                        <td style="text-align: center; font-size: 11px;">${statusBadge}${urgBadges}</td>
+                        <td style="text-align: center; font-size: 11px;">${statusBadge}${urgBadges}${cutNoBadge}${prosBadge}</td>
                     </tr>
                 `;
             }).join('');
@@ -7040,7 +7242,10 @@
                 'เจ้าหน้าที่ฝ่ายสืบสวน',
                 'หมายเรียก 1',
                 'หมายเรียก 2',
-                'หมายจับ'
+                'หมายจับ',
+                'ตัดเลขคดี',
+                'เลขคดี',
+                'สถานะส่งสำนวนอัยการ'
             ];
 
             const escapeCsv = (str) => {
@@ -7069,7 +7274,10 @@
                     escapeCsv(c.detective || c.officerInvestigate || ''),
                     escapeCsv(c.summons1 ? (c.summons1Date ? `ออกแล้ว (${c.summons1Date})` : 'ออกแล้ว') : 'ยังไม่ออก'),
                     escapeCsv(c.summons2 ? (c.summons2Date ? `ออกแล้ว (${c.summons2Date})` : 'ออกแล้ว') : 'ยังไม่ออก'),
-                    escapeCsv(c.warrant ? 'ออกหมายจับแล้ว' : 'ยังไม่ออก')
+                    escapeCsv(c.warrant ? 'ออกหมายจับแล้ว' : 'ยังไม่ออก'),
+                    escapeCsv(c.caseNumberAssigned ? 'ตัดเลขแล้ว' : 'ยังไม่ตัดเลข'),
+                    escapeCsv(c.criminalCaseNo || ''),
+                    escapeCsv(c.prosecutorSubmitted ? 'ส่งสำนวนอัยการแล้ว' : 'ยังไม่ส่งสำนวน')
                 ].join(',');
             });
 
@@ -7083,10 +7291,12 @@
             const inv = document.getElementById('caseInvestigatorFilter')?.value;
             const s = document.getElementById('caseStatusFilter')?.value;
             const u = document.getElementById('caseUrgencyFilter')?.value;
+            const leg = document.getElementById('caseLegalStageFilter')?.value;
             let fileSuffix = 'all';
             if (inv) fileSuffix = `พงส_${inv.replace(/[\s\.]+/g, '_')}`;
             else if (s) fileSuffix = `สถานะ_${s}`;
             else if (u) fileSuffix = `ความเร่งด่วน_${u}`;
+            else if (leg) fileSuffix = `หมายสำนวน_${leg}`;
             else if (currentCaseQuickFilter !== 'all') fileSuffix = `${currentCaseQuickFilter}`;
 
             const dateStr = new Date().toISOString().slice(0, 10);
@@ -14766,6 +14976,9 @@ ${currentDocPrintHtml}
                 const cleanCaseNo = String(caseItem.caseNo || '').trim().toUpperCase();
                 const nowIso = new Date().toISOString();
 
+                const legalActionsPayload = buildCaseLegalActionsPayload(caseItem);
+                const urgencyArr = Array.isArray(caseItem.urgency) ? caseItem.urgency : [];
+                const hasDraftData = Boolean(caseItem.victimProfile || caseItem.freezeInfo || (Array.isArray(caseItem.transferRecords) && caseItem.transferRecords.length) || (Array.isArray(caseItem.inquiryAnswers) && caseItem.inquiryAnswers.length) || caseItem.victimSubmittedAt);
                 const encryptedCase = hasMasterKey
                     ? await ZeroKnowledgeCrypto.encryptCaseForSupabase({
                         id: String(caseItem.id || cleanCaseNo),
@@ -14780,6 +14993,20 @@ ${currentDocPrintHtml}
                         victimPhone: victimPhone,
                         incidentDate: caseItem.date || '',
                         muleAccounts: Array.isArray(caseItem.accounts) ? caseItem.accounts : [],
+                        legalActions: legalActionsPayload,
+                        urgency: urgencyArr,
+                        victimDraft: hasDraftData ? {
+                            victimProfile: caseItem.victimProfile || null,
+                            freezeInfo: caseItem.freezeInfo || null,
+                            transferRecords: Array.isArray(caseItem.transferRecords) ? caseItem.transferRecords : [],
+                            inquiryAnswers: Array.isArray(caseItem.inquiryAnswers) ? caseItem.inquiryAnswers : [],
+                            victimSubmittedAt: caseItem.victimSubmittedAt || null
+                        } : undefined,
+                        interrogationStatements: Array.isArray(caseItem.interrogationStatements) ? caseItem.interrogationStatements : undefined,
+                        statementVariables: caseItem.statementVariables || undefined,
+                        propertyDamaged: caseItem.propertyDamaged || undefined,
+                        propertyRecovered: caseItem.propertyRecovered || undefined,
+                        propertyUnrecovered: caseItem.propertyUnrecovered || undefined,
                         summary: `ผู้เสียหาย: ${caseItem.victim || '-'} | บัญชีคนร้าย: ${(caseItem.accounts || []).join(', ')}`,
                         createdBy: currentAuthUser?.rank_name || caseItem.investigator || 'OFFICER'
                     }, masterKey, stationCode)
@@ -14849,7 +15076,7 @@ ${currentDocPrintHtml}
                 // 3. ซิงค์เข้าตาราง cyber_details ใน Supabase เพื่อให้ชื่อ พงส. และสืบสวนผู้รับผิดชอบ ตรงกันทั้งสองตาราง
                 if (cleanCaseNo && !window._supaCyberDetailsPermissionDenied) {
                     try {
-                        const { error: cdErr, status: cdStatus } = await sb.from('cyber_details').upsert([{
+                        const cdPayload = {
                             case_no: cleanCaseNo,
                             station_code: stationCode,
                             incident_date: caseItem.date || '',
@@ -14861,8 +15088,17 @@ ${currentDocPrintHtml}
                             investigator_name: caseItem.investigator || 'พ.ต.ต.ธีรเดช สุขเกษม',
                             detective_name: caseItem.detective || 'ร.ต.ต.ธนกฤต ไทยกมล',
                             status: caseItem.status || 'พบพงส.',
+                            urgency: urgencyArr,
+                            legal_actions: legalActionsPayload,
                             updated_at: nowIso
-                        }], { onConflict: 'case_no' });
+                        };
+                        let { error: cdErr, status: cdStatus } = await sb.from('cyber_details').upsert([cdPayload], { onConflict: 'case_no' });
+                        if (cdErr && (cdErr.code === '42703' || cdErr.code === 'PGRST204')) {
+                            const { legal_actions, urgency, ...fallbackCd } = cdPayload;
+                            const fallbackRes = await sb.from('cyber_details').upsert([fallbackCd], { onConflict: 'case_no' });
+                            cdErr = fallbackRes.error;
+                            cdStatus = fallbackRes.status;
+                        }
                         if (cdErr && (cdErr.code === '42501' || cdStatus === 401 || cdStatus === 403)) {
                             window._supaCyberDetailsPermissionDenied = true;
                         }
@@ -16483,6 +16719,7 @@ ${currentDocPrintHtml}
                                                 c.victim_submitted_at = vd.victimSubmittedAt;
                                             }
                                         }
+                                        if (decMeta && decMeta.legalActions) applyLegalActionsToCase(c, decMeta.legalActions);
                                         if (decMeta && Array.isArray(decMeta.interrogationStatements) && decMeta.interrogationStatements.length > 0) {
                                             c.interrogationStatements = decMeta.interrogationStatements;
                                         }
@@ -16519,6 +16756,7 @@ ${currentDocPrintHtml}
                         c.interrogationStatements = remote.interrogationStatements;
                     }
                     if (remote.investigator) c.investigator = getActualInvestigator(c.caseNo, remote.investigator);
+                    applyLegalActionsToCase(c, remote);
                     if (remote.statementVariables) c.statementVariables = remote.statementVariables;
                 }
             } catch (e) {}
@@ -16880,6 +17118,8 @@ ${currentDocPrintHtml}
                         unit: stationCode,
                         investigatorName: currentVars.officerFullName || c.investigator || '',
                         detectiveName: c.detective || '',
+                        legalActions: buildCaseLegalActionsPayload(c),
+                        urgency: Array.isArray(c.urgency) ? c.urgency : [],
                         victimDraft: {
                             victimProfile: c.victimProfile || null,
                             freezeInfo: c.freezeInfo || null,

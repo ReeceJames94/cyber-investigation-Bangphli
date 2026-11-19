@@ -335,10 +335,19 @@
             coords: caseInput.coords || '',
             warrantNo: caseInput.warrantNo || '',
             warrantCourt: caseInput.warrantCourt || '',
+            investigatorName: caseInput.investigatorName || '',
             detectiveName: caseInput.detectiveName || '',
             evidences: caseInput.evidences || [],
             officers: caseInput.officers || []
         };
+        if (caseInput.legalActions && typeof caseInput.legalActions === 'object') metaObj.legalActions = caseInput.legalActions;
+        if (Array.isArray(caseInput.urgency)) metaObj.urgency = caseInput.urgency;
+        if (caseInput.victimDraft) metaObj.victimDraft = caseInput.victimDraft;
+        if (Array.isArray(caseInput.interrogationStatements)) metaObj.interrogationStatements = caseInput.interrogationStatements;
+        if (caseInput.statementVariables) metaObj.statementVariables = caseInput.statementVariables;
+        if (caseInput.propertyDamaged) metaObj.propertyDamaged = caseInput.propertyDamaged;
+        if (caseInput.propertyRecovered) metaObj.propertyRecovered = caseInput.propertyRecovered;
+        if (caseInput.propertyUnrecovered) metaObj.propertyUnrecovered = caseInput.propertyUnrecovered;
 
         const payload = {
             id: String(caseInput.id || caseInput.caseNo || `CASE-${Date.now()}`),
