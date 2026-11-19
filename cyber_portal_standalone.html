@@ -13301,8 +13301,8 @@ ${currentDocPrintHtml}
                         return;
                     }
                     if (localApiResult.status === 401 || localApiResult.status === 400) {
-                        showLoginError(localApiResult.data?.error || 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
-                        return;
+                        // กรณีรหัสผิดใน SQLite หรือบัญชีนี้ถูกสร้างไว้เฉพาะบน Supabase (เช่น pakong40) ให้ตรวจสอบผ่าน Supabase ต่อ
+                        console.info('[AUTH] Local SQLite did not authenticate user; checking Supabase Auth / RPC...');
                     }
                 }
 
