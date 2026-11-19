@@ -20,13 +20,38 @@ window.CyberConfig = (function() {
     };
 
     let supabaseClient = null;
+
+    function createPublishableKeySafeFetch(apiKey) {
+        return async function(input, init = {}) {
+            const headers = new Headers(init.headers || {});
+            if (apiKey && !headers.has('apikey')) {
+                headers.set('apikey', apiKey);
+            }
+            if (headers.has('Authorization')) {
+                const authVal = (headers.get('Authorization') || '').trim();
+                // หากใช้ Key รูปแบบใหม่ (sb_publishable_ / sb_secret_) ห้ามส่งใน Authorization: Bearer (ส่งเฉพาะ apikey ยกเว้นมี User Session JWT จริง)
+                if (/^Bearer\s+sb_(publishable|secret)_/i.test(authVal) || (apiKey && apiKey.startsWith('sb_publishable_') && authVal === `Bearer ${apiKey}`)) {
+                    headers.delete('Authorization');
+                }
+            }
+            return fetch(input, { ...init, headers });
+        };
+    }
+
     function getSupabase(customUrl, customKey) {
         const targetUrl = (customUrl || localStorage.getItem('cyber_zk_supabase_url') || supabaseConfig.url).trim();
         const targetKey = (customKey || localStorage.getItem('cyber_zk_supabase_key') || supabaseConfig.anonKey).trim();
         if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
             if (!supabaseClient || supabaseClient._currentUrl !== targetUrl || supabaseClient._currentKey !== targetKey) {
                 supabaseClient = window.supabase.createClient(targetUrl, targetKey, {
-                    auth: { persistSession: false }
+                    auth: {
+                        persistSession: false,
+                        autoRefreshToken: false,
+                        detectSessionInUrl: false
+                    },
+                    global: {
+                        fetch: createPublishableKeySafeFetch(targetKey)
+                    }
                 });
                 supabaseClient._currentUrl = targetUrl;
                 supabaseClient._currentKey = targetKey;

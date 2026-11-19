@@ -31,7 +31,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Supabase JS Client & Zero-Knowledge Crypto Engine -->
-    <script src="/assets/supabase.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';document.head.appendChild(s);"></script>
+    <script src="/assets/supabase.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js';document.head.appendChild(s);"></script>
     <script src="/js/zk-crypto.js"></script>
     <style>
         body { font-family: 'Kanit', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -471,6 +471,26 @@
         let _victimSupabaseClient = null;
 
         /**
+         * สร้าง Custom Fetch ที่ตรวจสอบว่าหากใช้ Key แบบใหม่ (sb_publishable_...)
+         * จะส่งเฉพาะ Header 'apikey' เท่านั้น (ไม่ส่ง Authorization: Bearer sb_publishable_...)
+         */
+        function createPublishableKeySafeFetch(apiKey) {
+            return async function(input, init = {}) {
+                const headers = new Headers(init.headers || {});
+                if (apiKey && !headers.has('apikey')) {
+                    headers.set('apikey', apiKey);
+                }
+                if (headers.has('Authorization')) {
+                    const authVal = (headers.get('Authorization') || '').trim();
+                    if (/^Bearer\s+sb_(publishable|secret)_/i.test(authVal) || (apiKey && apiKey.startsWith('sb_publishable_') && authVal === `Bearer ${apiKey}`)) {
+                        headers.delete('Authorization');
+                    }
+                }
+                return fetch(input, { ...init, headers });
+            };
+        }
+
+        /**
          * สร้างและคืนค่า Supabase Client สำหรับเชื่อมต่อฐานข้อมูลโดยตรง (รองรับทั้ง Vercel, มือถือ iOS/Android และ Incognito)
          */
         function getVictimSupabaseClient() {
@@ -496,6 +516,9 @@
                         persistSession: false,
                         autoRefreshToken: false,
                         detectSessionInUrl: false
+                    },
+                    global: {
+                        fetch: createPublishableKeySafeFetch(key)
                     }
                 });
                 return _victimSupabaseClient;
@@ -824,20 +847,20 @@
             }
         }
 
-        // ฟังก์ชันดึงชื่อ พงส. เจ้าของเรื่องตามจริงของ สภ.บางพลี
+        // ฟังก์ชันดึงชื่อ พงส. เจ้าของเรื่องตามจริงของ สภ.บางพลี (ยึดค่าที่แก้ไขล่าสุดจากฐานข้อมูลเป็นหลัก)
         function getActualInvestigator(caseNo, rawName) {
-            const cleanNo = (caseNo || '').trim().toUpperCase();
-            if (cleanNo === 'T6911087326' || cleanNo === 'T6911087748' || cleanNo === 'T6911087788') {
-                return 'พ.ต.ต.ธีรเดช สุขเกษม';
+            if (rawName && typeof rawName === 'string') {
+                const trimmed = rawName.trim();
+                if (trimmed !== '' && trimmed !== '-' && trimmed !== 'เจ้าหน้าที่สืบสวน สภ.บางพลี') {
+                    return trimmed;
+                }
             }
+            const cleanNo = (caseNo || '').trim().toUpperCase();
             if (cleanNo === 'T6911088120') {
                 return 'พ.ต.ท.ประเสริฐ กุลบุตร';
             }
             if (cleanNo === 'T6911087999') {
                 return 'ร.ต.อ.ธนากร พิศุจน์';
-            }
-            if (rawName && rawName.trim() !== '' && rawName.trim() !== '-') {
-                return rawName.trim();
             }
             return 'พ.ต.ต.ธีรเดช สุขเกษม';
         }
@@ -878,7 +901,7 @@
          * ตรวจสอบข้อมูลคดีและเบอร์โทรศัพท์ผ่าน Supabase Client โดยตรง:
          * 1. เรียก Supabase RPC Function `verify_victim_case(p_case_id, p_phone)` (SECURITY DEFINER)
          * 2. หากยังไม่ได้สร้าง RPC หรือเป็นเคสที่เข้ารหัส Zero-Knowledge (summary_enc / subjects)
-         *    จะดึงผ่าน Supabase Client (`cyber_details`, `cases`, `subjects`) และถอดรหัสตรวจสอบเบอร์โทรให้โดยอัตโนมัติ
+         *    จะดึงผ่าน Supabase Client (`cases`, `subjects`) และถอดรหัสตรวจสอบเบอร์โทรให้โดยอัตโนมัติ
          */
         async function verifyVictimViaSupabase(caseInput, phoneInput) {
             const supabase = getVictimSupabaseClient();
@@ -886,6 +909,7 @@
 
             let caseExistsInCloud = false;
             let foundPhoneCandidatesInCloud = [];
+            let rpcHandledCyberDetails = false;
 
             // 1. เรียกใช้ Supabase RPC: verify_victim_case(p_case_id, p_phone)
             try {
@@ -900,16 +924,15 @@
                     if (errCode === '42501' || /row-level security|permission denied/i.test(errMsg)) {
                         throw { code: 'RLS_DENIED', message: 'ไม่สามารถเข้าถึงข้อมูลคดีได้เนื่องจากติดสิทธิ์ความปลอดภัยของฐานข้อมูล (RLS Policy)' };
                     }
-                    // หากเป็น PGRST202 (ยังไม่ได้รันสคริปต์สร้างฟังก์ชัน RPC ใน Supabase) ให้ข้ามไปค้นหาจากตารางโดยตรงในขั้นที่ 2
                 } else if (rpcData) {
+                    rpcHandledCyberDetails = true;
                     const parsedRpc = typeof rpcData === 'string' ? safeJsonParse(rpcData, null) : rpcData;
                     if (parsedRpc) {
                         if (parsedRpc.success === false) {
                             if (parsedRpc.error_code === 'PHONE_MISMATCH') {
-                                throw { code: 'PHONE_MISMATCH', message: parsedRpc.error || 'หมายเลขโทรศัพท์ไม่ตรงกับข้อมูลผู้เสียหายที่ได้แจ้งความไว้ในระบบ สภ.บางพลี' };
-                            }
-                            if (parsedRpc.error_code === 'CASE_NOT_FOUND') {
-                                // ตรวจสอบในตาราง cases/subjects ต่อเผื่อเคสเพิ่งถูกเพิ่มแบบ Zero-Knowledge
+                                // บันทึกว่าพบเคสในระบบแล้ว แต่ตรวจสอบในตาราง cases/subjects ต่อเผื่อมีแถวอื่นที่ใช้เบอร์โทรนี้
+                                caseExistsInCloud = true;
+                                foundPhoneCandidatesInCloud.push('0000000000');
                             }
                         } else if (parsedRpc.needs_client_zk_verify) {
                             // ถอดรหัส Zero-Knowledge Ciphertext ที่ได้จาก RPC เพื่อตรวจสอบเบอร์โทรฝั่ง Client
@@ -985,51 +1008,51 @@
                 console.warn('[Supabase RPC verify_victim_case note]', rpcThrown);
             }
 
-            // 2. ค้นหาจากตาราง public.cyber_details โดยตรงผ่าน Supabase Client (ถ้ามีตารางนี้)
-            try {
-                const { data: cdRows, error: cdErr } = await supabase
-                    .from('cyber_details')
-                    .select('*')
-                    .ilike('case_no', caseInput);
+            // 2. ค้นหาจากตาราง public.cyber_details เฉพาะกรณีที่ RPC ยังไม่ได้ทำงาน
+            if (!rpcHandledCyberDetails) {
+                try {
+                    const { data: cdRows, error: cdErr } = await supabase
+                        .from('cyber_details')
+                        .select('*')
+                        .ilike('case_no', caseInput);
 
-                if (!cdErr && Array.isArray(cdRows) && cdRows.length > 0) {
-                    caseExistsInCloud = true;
-                    for (const row of cdRows) {
-                        const cands = [row.victim_phone || '', row.victim_name || ''];
-                        foundPhoneCandidatesInCloud.push(...cands);
-                        if (isPhoneNumberMatching(cands, phoneInput)) {
-                            const muleAccs = Array.isArray(row.mule_accounts) ? row.mule_accounts : (safeJsonParse(row.mule_accounts, []) || []);
-                            const vProf = typeof row.victim_profile === 'object' ? row.victim_profile : safeJsonParse(row.victim_profile, null);
-                            const tRecs = Array.isArray(row.transfer_records) ? row.transfer_records : (safeJsonParse(row.transfer_records, []) || []);
-                            const iAns = Array.isArray(row.inquiry_answers) ? row.inquiry_answers : (safeJsonParse(row.inquiry_answers, []) || []);
+                    if (!cdErr && Array.isArray(cdRows) && cdRows.length > 0) {
+                        caseExistsInCloud = true;
+                        for (const row of cdRows) {
+                            const cands = [row.victim_phone || '', row.victim_name || ''];
+                            foundPhoneCandidatesInCloud.push(...cands);
+                            if (isPhoneNumberMatching(cands, phoneInput)) {
+                                const muleAccs = Array.isArray(row.mule_accounts) ? row.mule_accounts : (safeJsonParse(row.mule_accounts, []) || []);
+                                const vProf = typeof row.victim_profile === 'object' ? row.victim_profile : safeJsonParse(row.victim_profile, null);
+                                const tRecs = Array.isArray(row.transfer_records) ? row.transfer_records : (safeJsonParse(row.transfer_records, []) || []);
+                                const iAns = Array.isArray(row.inquiry_answers) ? row.inquiry_answers : (safeJsonParse(row.inquiry_answers, []) || []);
 
-                            return {
-                                success: true,
-                                verified: true,
-                                caseNo: row.case_no,
-                                incidentDate: row.incident_date || '08/11/2569',
-                                fraudCategory: row.fraud_category || '1. หลอกลวงซื้อขายสินค้าออนไลน์',
-                                damageAmount: Number(row.damage_amount || 0),
-                                investigatorName: getActualInvestigator(row.case_no, row.investigator_name),
-                                maskedPhone: maskVictimPhonePDPA(phoneInput),
-                                maskedName: maskVictimNamePDPA(row.victim_name),
-                                accounts: muleAccs,
-                                status: row.status || 'พบพงส.',
-                                alreadySubmitted: row.status === 'ผู้เสียหายกรอกข้อมูลแล้ว' || !!row.victim_submitted_at,
-                                victimSubmittedAt: row.victim_submitted_at || null,
-                                inquiryTemplates: currentInquiryTemplates,
-                                draft: {
-                                    victimProfile: vProf,
-                                    freezeInfo: null,
-                                    transferRecords: tRecs,
-                                    inquiryAnswers: iAns
-                                }
-                            };
+                                return {
+                                    success: true,
+                                    verified: true,
+                                    caseNo: row.case_no,
+                                    incidentDate: row.incident_date || '08/11/2569',
+                                    fraudCategory: row.fraud_category || '1. หลอกลวงซื้อขายสินค้าออนไลน์',
+                                    damageAmount: Number(row.damage_amount || 0),
+                                    investigatorName: getActualInvestigator(row.case_no, row.investigator_name),
+                                    maskedPhone: maskVictimPhonePDPA(phoneInput),
+                                    maskedName: maskVictimNamePDPA(row.victim_name),
+                                    accounts: muleAccs,
+                                    status: row.status || 'พบพงส.',
+                                    alreadySubmitted: row.status === 'ผู้เสียหายกรอกข้อมูลแล้ว' || !!row.victim_submitted_at,
+                                    victimSubmittedAt: row.victim_submitted_at || null,
+                                    inquiryTemplates: currentInquiryTemplates,
+                                    draft: {
+                                        victimProfile: vProf,
+                                        freezeInfo: null,
+                                        transferRecords: tRecs,
+                                        inquiryAnswers: iAns
+                                    }
+                                };
+                            }
                         }
                     }
-                }
-            } catch (cdEx) {
-                console.warn('[Supabase cyber_details query note]', cdEx);
+                } catch (cdEx) {}
             }
 
             // 3. ค้นหาจากตาราง public.cases และ public.subjects โดยตรงผ่าน Supabase Client (รองรับโหมด Zero-Knowledge 100%)

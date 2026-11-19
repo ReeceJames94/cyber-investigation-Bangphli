@@ -633,6 +633,19 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.verify_victim_case(TEXT, TEXT) TO anon, authenticated;
 
+-- เพิ่มคอลัมน์ detective_name ในตาราง public.cases และ GRANT สิทธิ์ระดับตารางให้ anon, authenticated ครบทุกตาราง
+ALTER TABLE public.cases ADD COLUMN IF NOT EXISTS detective_name TEXT;
+
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT ALL PRIVILEGES ON TABLE public.cases TO anon, authenticated;
+GRANT ALL PRIVILEGES ON TABLE public.subjects TO anon, authenticated;
+GRANT ALL PRIVILEGES ON TABLE public.cyber_details TO anon, authenticated;
+GRANT ALL PRIVILEGES ON TABLE public.inquiry_templates TO anon, authenticated;
+GRANT ALL PRIVILEGES ON TABLE public.newpolice_user_requests TO anon, authenticated;
+GRANT SELECT, INSERT ON TABLE public.audit_logs TO anon, authenticated;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+
+
 
 
 

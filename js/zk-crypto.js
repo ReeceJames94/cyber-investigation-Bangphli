@@ -294,11 +294,12 @@
             coords: caseInput.coords || '',
             warrantNo: caseInput.warrantNo || '',
             warrantCourt: caseInput.warrantCourt || '',
+            detectiveName: caseInput.detectiveName || '',
             evidences: caseInput.evidences || [],
             officers: caseInput.officers || []
         };
 
-        return {
+        const payload = {
             id: String(caseInput.id || caseInput.caseNo || `CASE-${Date.now()}`),
             case_no: String(caseInput.caseNo || caseInput.id || `ตช-0016.36-${Date.now()}`),
             station_code: station,
@@ -308,12 +309,18 @@
             damage_amount: Number(caseInput.damageAmount || 0),
             investigator_name: caseInput.investigatorName || (caseInput.officers && caseInput.officers[0]?.name) || 'เจ้าหน้าที่สืบสวน สภ.บางพลี',
             investigator_badge: caseInput.investigatorBadge || '20001',
+            detective_name: caseInput.detectiveName || null,
             summary_enc: summaryText ? await encryptField(summaryText, masterPassphrase, station) : null,
             metadata_enc: await encryptField(JSON.stringify(metaObj), masterPassphrase, station),
             encryption_algo: 'AES-256-GCM-WebCrypto',
             key_fingerprint: fp,
             created_by: caseInput.createdBy || 'POLICE-OFFICER'
         };
+        if (caseInput.victimName !== undefined) payload.victim_name = caseInput.victimName;
+        if (caseInput.victimPhone !== undefined) payload.victim_phone = caseInput.victimPhone;
+        if (caseInput.incidentDate !== undefined) payload.incident_date = caseInput.incidentDate;
+        if (caseInput.muleAccounts !== undefined) payload.mule_accounts = caseInput.muleAccounts;
+        return payload;
     }
 
     return {

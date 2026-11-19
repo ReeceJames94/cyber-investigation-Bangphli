@@ -4,10 +4,11 @@
 -- วิธีใช้: คัดลอกสคริปต์นี้ไปรันใน Supabase SQL Editor แล้วกด Run
 -- =========================================================================================
 
--- 1. เพิ่มคอลัมน์รองรับข้อมูลฟอร์มผู้เสียหายในตาราง public.cases (เผื่อกรณีใช้ตาราง cases เป็นหลัก)
+-- 1. เพิ่มคอลัมน์รองรับข้อมูลฟอร์มผู้เสียหายและสืบสวนผู้รับผิดชอบในตาราง public.cases
 ALTER TABLE public.cases ADD COLUMN IF NOT EXISTS incident_date TEXT;
 ALTER TABLE public.cases ADD COLUMN IF NOT EXISTS victim_name TEXT;
 ALTER TABLE public.cases ADD COLUMN IF NOT EXISTS victim_phone TEXT;
+ALTER TABLE public.cases ADD COLUMN IF NOT EXISTS detective_name TEXT;
 ALTER TABLE public.cases ADD COLUMN IF NOT EXISTS mule_accounts JSONB DEFAULT '[]'::jsonb;
 ALTER TABLE public.cases ADD COLUMN IF NOT EXISTS victim_profile JSONB;
 ALTER TABLE public.cases ADD COLUMN IF NOT EXISTS freeze_info JSONB;
@@ -533,3 +534,59 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.reset_victim_case(TEXT, TEXT) TO anon, authenticated;
+
+-- =========================================================================================
+-- 7. สร้างตาราง public.newpolice_user_requests (หากยังไม่มี) และเปิดสิทธิ์ GRANT ครบทุกตาราง
+-- (สำคัญมาก: PostgREST จะคืนค่า 401 code 42501 หากไม่ได้รัน GRANT สิทธิ์ระดับตารางให้ anon, authenticated)
+-- =========================================================================================
+CREATE TABLE IF NOT EXISTS public.newpolice_user_requests (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    station_code TEXT NOT NULL DEFAULT 'POLICE-STN-BANGPHLI-001',
+    request_code TEXT UNIQUE NOT NULL,
+    badge_no TEXT NOT NULL,
+    rank_name TEXT NOT NULL,
+    position TEXT NOT NULL,
+    agency TEXT NOT NULL,
+    phone TEXT,
+    purpose TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    access_token TEXT,
+    ip_address TEXT DEFAULT '10.220.14.88',
+    requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    reviewed_by TEXT,
+    reviewed_by_name TEXT,
+    reviewed_at TIMESTAMPTZ,
+    notes TEXT
+);
+
+ALTER TABLE public.newpolice_user_requests ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "newpolice_requests_select_bangphli" ON public.newpolice_user_requests;
+CREATE POLICY "newpolice_requests_select_bangphli"
+ON public.newpolice_user_requests FOR SELECT
+TO anon, authenticated
+USING (true);
+
+DROP POLICY IF EXISTS "newpolice_requests_insert_bangphli" ON public.newpolice_user_requests;
+CREATE POLICY "newpolice_requests_insert_bangphli"
+ON public.newpolice_user_requests FOR INSERT
+TO anon, authenticated
+WITH CHECK (true);
+
+DROP POLICY IF EXISTS "newpolice_requests_update_bangphli" ON public.newpolice_user_requests;
+CREATE POLICY "newpolice_requests_update_bangphli"
+ON public.newpolice_user_requests FOR UPDATE
+TO anon, authenticated
+USING (true)
+WITH CHECK (true);
+
+-- GRANT สิทธิ์ระดับตารางให้ anon และ authenticated เพื่อแก้ปัญหา 401 (code 42501: permission denied)
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT ALL PRIVILEGES ON TABLE public.cases TO anon, authenticated;
+GRANT ALL PRIVILEGES ON TABLE public.subjects TO anon, authenticated;
+GRANT ALL PRIVILEGES ON TABLE public.cyber_details TO anon, authenticated;
+GRANT ALL PRIVILEGES ON TABLE public.inquiry_templates TO anon, authenticated;
+GRANT ALL PRIVILEGES ON TABLE public.newpolice_user_requests TO anon, authenticated;
+GRANT SELECT, INSERT ON TABLE public.audit_logs TO anon, authenticated;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+

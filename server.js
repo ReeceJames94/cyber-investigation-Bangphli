@@ -1204,6 +1204,75 @@ const server = http.createServer(async (req, res) => {
                 });
             }
 
+            if (pathname === '/api/external/newpolice/cases' && req.method === 'POST') {
+                const body = await readBody(req);
+                const cleanCaseNo = String(body.caseNo || body.case_no || '').trim().toUpperCase();
+                if (!cleanCaseNo) {
+                    return sendJson(res, 400, { success: false, error: 'Missing caseNo' });
+                }
+                const rawVictim = String(body.victim || body.victim_name || '');
+                const phoneMatch = rawVictim.match(/0\d{8,9}/);
+                const victimPhone = phoneMatch ? phoneMatch[0] : (body.victim_phone || '');
+                const victimCleanName = rawVictim.replace(/0\d{8,9}/g, '').replace(/[-\s]+$/g, '').trim() || 'ผู้เสียหาย';
+                const nowIso = new Date().toISOString();
+
+                try {
+                    const existing = db.prepare('SELECT id FROM cyber_details WHERE UPPER(case_no) = ?;').get(cleanCaseNo);
+                    if (existing) {
+                        db.prepare(`
+                            UPDATE cyber_details
+                            SET investigator_name = COALESCE(?, investigator_name),
+                                detective_name = COALESCE(?, detective_name),
+                                status = COALESCE(?, status),
+                                damage_amount = COALESCE(?, damage_amount),
+                                fraud_category = COALESCE(?, fraud_category),
+                                victim_name = COALESCE(?, victim_name),
+                                victim_phone = COALESCE(?, victim_phone),
+                                incident_date = COALESCE(?, incident_date),
+                                mule_accounts = COALESCE(?, mule_accounts),
+                                updated_at = ?
+                            WHERE UPPER(case_no) = ?;
+                        `).run(
+                            body.investigator || body.investigator_name || null,
+                            body.detective || body.detective_name || null,
+                            body.status || null,
+                            body.amount !== undefined ? Number(body.amount) : null,
+                            body.type || body.fraud_category || null,
+                            victimCleanName,
+                            victimPhone || null,
+                            body.date || body.incident_date || null,
+                            Array.isArray(body.accounts) ? JSON.stringify(body.accounts) : null,
+                            nowIso,
+                            cleanCaseNo
+                        );
+                    } else {
+                        db.prepare(`
+                            INSERT INTO cyber_details (
+                                case_no, incident_date, victim_name, victim_phone, fraud_category,
+                                damage_amount, status, mule_accounts, investigator_name, detective_name,
+                                station_code, created_at, updated_at
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'POLICE-STN-BANGPHLI-001', ?, ?);
+                        `).run(
+                            cleanCaseNo,
+                            body.date || '',
+                            victimCleanName,
+                            victimPhone,
+                            body.type || '1. หลอกลวงซื้อขายสินค้าออนไลน์',
+                            Number(body.amount || 0),
+                            body.status || 'พบพงส.',
+                            JSON.stringify(Array.isArray(body.accounts) ? body.accounts : []),
+                            body.investigator || 'พ.ต.ต.ธีรเดช สุขเกษม',
+                            body.detective || 'ร.ต.ต.ธนกฤต ไทยกมล',
+                            nowIso,
+                            nowIso
+                        );
+                    }
+                    return sendJson(res, 200, { success: true, caseNo: cleanCaseNo });
+                } catch (dbErr) {
+                    return sendJson(res, 500, { success: false, error: dbErr.message });
+                }
+            }
+
             // 4e. VICTIM PRE-FILL INQUIRY SUBMISSIONS (NEWPOLICE INTEGRATION)
             if (pathname === '/api/external/newpolice/victim-inquiry' && req.method === 'POST') {
                 const body = await readBody(req);
@@ -1674,13 +1743,16 @@ const server = http.createServer(async (req, res) => {
                 try {
                     const SUPA_URL = process.env.VITE_SUPABASE_URL || 'https://yofvfkfjyndjctoyvgpe.supabase.co';
                     const SUPA_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MC3Z6VYA-wFAhAZLfikxDA_DM1W_J4K';
+                    const supaHeaders = {
+                        'apikey': SUPA_KEY,
+                        'Content-Type': 'application/json'
+                    };
+                    if (!SUPA_KEY.startsWith('sb_publishable_')) {
+                        supaHeaders['Authorization'] = `Bearer ${SUPA_KEY}`;
+                    }
                     fetch(`${SUPA_URL}/rest/v1/cases?case_no=eq.${encodeURIComponent(cleanCaseNo)}`, {
                         method: 'PATCH',
-                        headers: {
-                            'apikey': SUPA_KEY,
-                            'Authorization': `Bearer ${SUPA_KEY}`,
-                            'Content-Type': 'application/json'
-                        },
+                        headers: supaHeaders,
                         body: JSON.stringify({
                             status: 'ผู้เสียหายกรอกข้อมูลแล้ว',
                             updated_at: nowIso
