@@ -6,16 +6,267 @@
     <title>Cyber Investigation Portal - Live Preview</title>
     <link rel="icon" type="image/png" href="assets/police_logo_transparent.png">
     <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+    <script>
+        try {
+            window.tailwind = window.tailwind || {};
+            tailwind.config = { darkMode: 'class' };
+        } catch (_) {}
+        // Pre-paint theme & color palette restore (no FOUC)
+        (function() {
+            try {
+                const savedMode = localStorage.getItem('cyber_theme_mode') || 'dark';
+                const savedPalette = localStorage.getItem('cyber_color_theme') || 'gold';
+                const html = document.documentElement;
+                html.classList.remove('light', 'dark');
+                html.classList.add(savedMode === 'light' ? 'light' : 'dark');
+                html.setAttribute('data-color-theme', savedPalette);
+            } catch (_) {}
+        })();
+    </script>
     <script src="assets/docx.umd.js"></script>
     <script src="assets/jszip.min.js"></script>
     <script src="assets/docx-templates-data.js"></script>
     <script src="assets/supabase.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js';"></script>
     <script src="js/config.js"></script>
     <script src="js/zk-crypto.js"></script>
-    <style>
+    <style id="cyberThemeStyles">
+        :root {
+            --theme-accent: #f59e0b;
+            --theme-accent-strong: #d97706;
+            --theme-accent-text: #fbbf24;
+            --theme-accent-contrast: #0f172a;
+            --theme-accent-soft: rgba(245, 158, 11, 0.14);
+            --theme-accent-border: rgba(245, 158, 11, 0.38);
+            --theme-sidebar-from: #0f172a;
+            --theme-sidebar-to: #0b1120;
+            --theme-sidebar-border: #1e293b;
+            --theme-main-light: #f1f5f9;
+            --theme-main-dark: #020617;
+            --theme-card-dark: #0f172a;
+            --theme-card-border-dark: #1e293b;
+        }
+        html[data-color-theme="gold"] {
+            --theme-accent: #f59e0b;
+            --theme-accent-strong: #d97706;
+            --theme-accent-text: #fbbf24;
+            --theme-accent-contrast: #0f172a;
+            --theme-accent-soft: rgba(245, 158, 11, 0.14);
+            --theme-accent-border: rgba(245, 158, 11, 0.38);
+            --theme-sidebar-from: #0f172a;
+            --theme-sidebar-to: #090f1d;
+            --theme-sidebar-border: #1e293b;
+            --theme-main-light: #f5f3ee;
+            --theme-main-dark: #030712;
+            --theme-card-dark: #0f172a;
+            --theme-card-border-dark: #1e293b;
+        }
+        html[data-color-theme="blue"] {
+            --theme-accent: #0ea5e9;
+            --theme-accent-strong: #0284c7;
+            --theme-accent-text: #38bdf8;
+            --theme-accent-contrast: #ffffff;
+            --theme-accent-soft: rgba(14, 165, 233, 0.15);
+            --theme-accent-border: rgba(56, 189, 248, 0.38);
+            --theme-sidebar-from: #0b1b33;
+            --theme-sidebar-to: #071224;
+            --theme-sidebar-border: #163156;
+            --theme-main-light: #eff6ff;
+            --theme-main-dark: #040b18;
+            --theme-card-dark: #0b162a;
+            --theme-card-border-dark: #172b4d;
+        }
+        html[data-color-theme="emerald"] {
+            --theme-accent: #10b981;
+            --theme-accent-strong: #059669;
+            --theme-accent-text: #34d399;
+            --theme-accent-contrast: #052e16;
+            --theme-accent-soft: rgba(16, 185, 129, 0.15);
+            --theme-accent-border: rgba(52, 211, 153, 0.38);
+            --theme-sidebar-from: #07221d;
+            --theme-sidebar-to: #041613;
+            --theme-sidebar-border: #114037;
+            --theme-main-light: #ecfdf5;
+            --theme-main-dark: #02120f;
+            --theme-card-dark: #081e1a;
+            --theme-card-border-dark: #113a32;
+        }
+        html[data-color-theme="crimson"] {
+            --theme-accent: #e11d48;
+            --theme-accent-strong: #be123c;
+            --theme-accent-text: #fb7185;
+            --theme-accent-contrast: #ffffff;
+            --theme-accent-soft: rgba(225, 29, 72, 0.15);
+            --theme-accent-border: rgba(251, 113, 133, 0.38);
+            --theme-sidebar-from: #220b15;
+            --theme-sidebar-to: #14060c;
+            --theme-sidebar-border: #441629;
+            --theme-main-light: #fff1f2;
+            --theme-main-dark: #11050b;
+            --theme-card-dark: #1d0b14;
+            --theme-card-border-dark: #3d1527;
+        }
+        html[data-color-theme="violet"] {
+            --theme-accent: #8b5cf6;
+            --theme-accent-strong: #7c3aed;
+            --theme-accent-text: #a78bfa;
+            --theme-accent-contrast: #ffffff;
+            --theme-accent-soft: rgba(139, 92, 246, 0.16);
+            --theme-accent-border: rgba(167, 139, 250, 0.38);
+            --theme-sidebar-from: #170e2e;
+            --theme-sidebar-to: #0e081f;
+            --theme-sidebar-border: #2e1d57;
+            --theme-main-light: #f5f3ff;
+            --theme-main-dark: #090517;
+            --theme-card-dark: #140d29;
+            --theme-card-border-dark: #2c1c54;
+        }
+
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.4); border-radius: 9999px; }
+
+        /* Sidebar & Canvas Dynamic Theme Application */
+        html.dark body, html.dark #app-wrapper > main {
+            background-color: var(--theme-main-dark) !important;
+        }
+        html.light body, html.light #app-wrapper > main {
+            background-color: var(--theme-main-light) !important;
+        }
+        #mainSidebar {
+            background: linear-gradient(180deg, var(--theme-sidebar-from) 0%, var(--theme-sidebar-to) 100%) !important;
+            border-color: var(--theme-sidebar-border) !important;
+        }
+        #mainSidebar .nav-btn.active {
+            background: linear-gradient(135deg, var(--theme-accent), var(--theme-accent-strong)) !important;
+            color: var(--theme-accent-contrast) !important;
+            box-shadow: 0 8px 20px -6px var(--theme-accent-border) !important;
+        }
+        #mainSidebar .nav-btn:not(.active):hover {
+            background-color: var(--theme-accent-soft) !important;
+        }
+        .theme-accent-text { color: var(--theme-accent-text) !important; }
+        .theme-accent-bg { background-color: var(--theme-accent) !important; color: var(--theme-accent-contrast) !important; }
+        .theme-accent-border { border-color: var(--theme-accent-border) !important; }
+        html.dark main .bg-slate-900, html.dark main .dark\:bg-slate-900 {
+            background-color: var(--theme-card-dark);
+            border-color: var(--theme-card-border-dark);
+        }
+        html.light #mainTopHeader {
+            background-color: rgba(255, 255, 255, 0.92) !important;
+            backdrop-filter: blur(8px);
+            border-bottom-color: var(--theme-accent-border) !important;
+        }
+        html.dark #mainTopHeader {
+            background-color: color-mix(in srgb, var(--theme-card-dark) 92%, black) !important;
+            border-bottom-color: var(--theme-card-border-dark) !important;
+        }
+
+        /* Native <select> popup palette fix */
+        html.dark select, html.dark select option {
+            color-scheme: dark;
+            background-color: #020617;
+            color: #f1f5f9;
+        }
+        html.light select, html.light select option {
+            color-scheme: light;
+            background-color: #ffffff;
+            color: #0f172a;
+        }
+
+        /* Custom Stylish Dropdown Component (Fixes bright white OS dropdown on ฝ่าย/งาน etc.) */
+        .cyber-select-wrap { position: relative; width: 100%; }
+        .cyber-select-trigger {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: 0.75rem;
+            border: 1px solid #334155;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.98));
+            color: #f8fafc;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+        html.light .cyber-select-wrap.cyber-select-adaptive .cyber-select-trigger {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+        .cyber-select-trigger:hover, .cyber-select-wrap.open .cyber-select-trigger {
+            border-color: var(--theme-accent) !important;
+            box-shadow: 0 0 0 2px var(--theme-accent-soft);
+        }
+        .cyber-select-chevron {
+            transition: transform 0.2s ease;
+            opacity: 0.75;
+            font-size: 0.7rem;
+        }
+        .cyber-select-wrap.open .cyber-select-chevron { transform: rotate(180deg); color: var(--theme-accent-text); opacity: 1; }
+        .cyber-select-menu {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 6px);
+            z-index: 120;
+            background: rgba(10, 15, 30, 0.98);
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--theme-accent-border);
+            border-radius: 0.95rem;
+            padding: 0.35rem;
+            box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255,255,255,0.06) inset;
+            max-height: 240px;
+            overflow-y: auto;
+            display: none;
+            animation: cyberDropdownIn 0.14s ease-out;
+        }
+        html.light .cyber-select-wrap.cyber-select-adaptive .cyber-select-menu {
+            background: rgba(255, 255, 255, 0.98);
+            border-color: #cbd5e1;
+            box-shadow: 0 18px 36px -8px rgba(15, 23, 42, 0.18);
+        }
+        .cyber-select-wrap.open .cyber-select-menu { display: block; }
+        @keyframes cyberDropdownIn {
+            from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .cyber-select-option {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.5rem 0.65rem;
+            border-radius: 0.65rem;
+            color: #e2e8f0;
+            font-size: 0.75rem;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.14s ease, color 0.14s ease;
+        }
+        html.light .cyber-select-wrap.cyber-select-adaptive .cyber-select-option {
+            color: #1e293b;
+        }
+        .cyber-select-option:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+        }
+        html.light .cyber-select-wrap.cyber-select-adaptive .cyber-select-option:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+        .cyber-select-option.selected {
+            background: var(--theme-accent-soft);
+            color: var(--theme-accent-text);
+            font-weight: 700;
+        }
+        html.light .cyber-select-wrap.cyber-select-adaptive .cyber-select-option.selected {
+            color: var(--theme-accent-strong);
+        }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased min-h-screen">
@@ -123,30 +374,35 @@
                     </div>
                 </div>
 
-                <!-- พงส. และ สืบสวน แบบคลิกเลือกและเพิ่มชื่อใหม่ได้ -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <label class="block font-semibold text-slate-700 dark:text-slate-300">พนักงานสอบสวนผู้รับผิดชอบ (พงส.)</label>
-                            <button type="button" onclick="openAddOfficer('investigator')" class="text-[11px] text-amber-500 font-bold hover:underline">
-                                + เพิ่มชื่อใหม่
-                            </button>
+                <!-- พงส. และ สืบสวน ดึงรายชื่อจากจัดการบัญชีผู้ใช้งานระบบ ตามฝ่าย/งาน -->
+                <div class="space-y-1.5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                        <div>
+                            <div class="flex justify-between items-center gap-2 min-h-[22px] mb-1">
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 truncate" title="พนักงานสอบสวนผู้รับผิดชอบ (พงส.) — ดึงจากฝ่าย งานสอบสวน">พงส. ผู้รับผิดชอบ</label>
+                                <button type="button" onclick="openAddOfficer('investigator')" class="text-[11px] text-amber-500 font-bold hover:underline whitespace-nowrap shrink-0">
+                                    + เพิ่มชื่อใหม่
+                                </button>
+                            </div>
+                            <select id="mCaseInvestigator" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                <!-- Populated from User Management (งานสอบสวน) -->
+                            </select>
                         </div>
-                        <select id="mCaseInvestigator" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
-                            <!-- Populated -->
-                        </select>
-                    </div>
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <label class="block font-semibold text-slate-700 dark:text-slate-300">สืบสวนผู้รับผิดชอบ (ชุดสืบสวน)</label>
-                            <button type="button" onclick="openAddOfficer('detective')" class="text-[11px] text-amber-500 font-bold hover:underline">
-                                + เพิ่มชื่อใหม่
-                            </button>
+                        <div>
+                            <div class="flex justify-between items-center gap-2 min-h-[22px] mb-1">
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 truncate" title="สืบสวนผู้รับผิดชอบ (ชุดสืบสวน) — ดึงจากฝ่าย ฝ่ายสืบสวน">สืบสวนผู้รับผิดชอบ (ชุดสืบสวน)</label>
+                                <button type="button" onclick="openAddOfficer('detective')" class="text-[11px] text-amber-500 font-bold hover:underline whitespace-nowrap shrink-0">
+                                    + เพิ่มชื่อใหม่
+                                </button>
+                            </div>
+                            <select id="mCaseDetective" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                <!-- Populated from User Management (ฝ่ายสืบสวน) -->
+                            </select>
                         </div>
-                        <select id="mCaseDetective" required class="w-full p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
-                            <!-- Populated -->
-                        </select>
                     </div>
+                    <p class="text-[10px] text-slate-400">
+                        👥 รายชื่ออัปเดตอัตโนมัติจาก <span class="text-amber-500 font-semibold">จัดการบัญชีผู้ใช้งานระบบ สภ.บางพลี</span> ตาม ฝ่าย/งาน (<span class="text-sky-400">งานสอบสวน</span> / <span class="text-amber-400">ฝ่ายสืบสวน</span>)
+                    </p>
                 </div>
 
                 <!-- บัญชีธนาคารคนร้าย -->
@@ -818,19 +1074,49 @@
     <!-- MAIN APP WRAPPER -->
     <div id="app-wrapper" class="min-h-screen flex flex-col lg:flex-row">
         <!-- LEFT SIDEBAR -->
-        <aside class="w-full lg:w-72 bg-slate-900 text-white flex flex-col shrink-0 border-r border-slate-800 shadow-2xl">
+        <aside id="mainSidebar" class="w-full lg:w-72 bg-slate-900 text-white flex flex-col shrink-0 border-r border-slate-800 shadow-2xl">
             <!-- Header -->
-            <div class="p-5 border-b border-slate-800 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-xl bg-slate-800/80 p-1 flex items-center justify-center shadow-lg border border-amber-500/30 shrink-0">
+            <div class="p-5 border-b border-white/10 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-11 h-11 rounded-xl bg-slate-800/80 p-1 flex items-center justify-center shadow-lg border theme-accent-border shrink-0">
                         <img src="assets/police_logo_transparent.png" alt="ตราพระแสงดาบเขนและโล่ สำนักงานตำรวจแห่งชาติ" class="w-full h-full object-contain">
                     </div>
-                    <div>
-                        <h1 class="font-bold text-sm tracking-wide text-white leading-tight">CYBER PORTAL</h1>
-                        <p class="text-[11px] text-amber-400 font-medium">สภ.บางพลี • งานสืบสวน</p>
+                    <div class="min-w-0">
+                        <h1 class="font-bold text-sm tracking-wide text-white leading-tight truncate">CYBER PORTAL</h1>
+                        <p class="text-[11px] theme-accent-text font-medium truncate">สภ.บางพลี • งานสืบสวน</p>
                     </div>
                 </div>
-                <button onclick="toggleTheme()" class="p-2 rounded-lg bg-slate-800 text-amber-400 hover:bg-slate-700 text-xs">🌓</button>
+                <button type="button" onclick="toggleTheme()" id="sidebarThemeToggleBtn" class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-[11px] font-bold flex items-center gap-1 transition shrink-0" title="สลับโหมดสว่าง / มืด">
+                    <span id="sidebarThemeIcon">🌙</span>
+                    <span id="sidebarThemeLabel">มืด</span>
+                </button>
+            </div>
+
+            <!-- Theme & 5-Color Tone Switcher (ในเมนูหลัก) -->
+            <div class="px-4 py-3 border-b border-white/10 bg-black/20 space-y-2.5">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1">
+                        <span>🎨</span> <span>โหมด & โทนสีระบบ</span>
+                    </span>
+                    <div class="inline-flex rounded-lg p-0.5 bg-black/35 border border-white/10 text-[10px] font-bold">
+                        <button type="button" id="themeModeBtnLight" onclick="setThemeMode('light')" class="px-2 py-1 rounded-md transition flex items-center gap-1 text-slate-300 hover:text-white">
+                            <span>☀️</span><span>สว่าง</span>
+                        </button>
+                        <button type="button" id="themeModeBtnDark" onclick="setThemeMode('dark')" class="px-2 py-1 rounded-md transition flex items-center gap-1 bg-white/15 text-white shadow-sm">
+                            <span>🌙</span><span>มืด</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between gap-1.5">
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="setColorTheme('gold')" data-theme-swatch="gold" title="1. ทอง-กรมท่า (Police Gold)" class="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 border-2 border-white ring-2 ring-amber-400/60 transition transform hover:scale-110 shadow"></button>
+                        <button type="button" onclick="setColorTheme('blue')" data-theme-swatch="blue" title="2. ไซเบอร์ บลู (Cyber Blue)" class="w-6 h-6 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 border-2 border-white/30 transition transform hover:scale-110 shadow"></button>
+                        <button type="button" onclick="setColorTheme('emerald')" data-theme-swatch="emerald" title="3. มรกต ยุทธการ (Tactical Emerald)" class="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 border-2 border-white/30 transition transform hover:scale-110 shadow"></button>
+                        <button type="button" onclick="setColorTheme('crimson')" data-theme-swatch="crimson" title="4. แดงทับทิม (Crimson Shield)" class="w-6 h-6 rounded-full bg-gradient-to-br from-rose-400 to-rose-700 border-2 border-white/30 transition transform hover:scale-110 shadow"></button>
+                        <button type="button" onclick="setColorTheme('violet')" data-theme-swatch="violet" title="5. ม่วงอำนวยการ (Imperial Violet)" class="w-6 h-6 rounded-full bg-gradient-to-br from-violet-400 to-indigo-600 border-2 border-white/30 transition transform hover:scale-110 shadow"></button>
+                    </div>
+                    <span id="activeColorThemeName" class="text-[10px] font-semibold theme-accent-text truncate">ทอง-กรมท่า</span>
+                </div>
             </div>
 
             <!-- Navigation -->
@@ -872,14 +1158,14 @@
             </nav>
 
             <!-- User Info Footer -->
-            <div class="p-3 border-t border-slate-800 bg-slate-950/50 flex items-center justify-between text-xs">
+            <div class="p-3 border-t border-white/10 bg-black/30 flex items-center justify-between text-xs">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-blue-900 border border-blue-700 text-amber-400 flex items-center justify-center font-bold">
+                    <div class="w-8 h-8 rounded-lg bg-slate-800 border theme-accent-border theme-accent-text flex items-center justify-center font-bold">
                         👮
                     </div>
                     <div>
                         <p class="font-bold text-white text-[11px]" id="currentUserNameDisplay">ร.ต.ต.ธนกฤต ไทยกมล</p>
-                        <p class="text-[10px] text-amber-400" id="currentUserRoleDisplay">Admin สูงสุด (สืบสวน)</p>
+                        <p class="text-[10px] theme-accent-text" id="currentUserRoleDisplay">Admin สูงสุด (สืบสวน)</p>
                     </div>
                 </div>
                 <button onclick="handleOfficerLogout()" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/15 rounded-xl transition" title="ออกจากระบบ">
@@ -891,7 +1177,7 @@
         <!-- MAIN CONTENT AREA -->
         <main class="flex-1 flex flex-col min-w-0 bg-slate-100 dark:bg-slate-950">
             <!-- Top Status Bar -->
-            <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3 flex justify-between items-center text-xs gap-3 flex-wrap">
+            <header id="mainTopHeader" class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3 flex justify-between items-center text-xs gap-3 flex-wrap">
                 <div class="flex items-center gap-2 flex-wrap">
                     <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -2650,26 +2936,28 @@
                                     <input type="text" id="newPosition" placeholder="เช่น สว.สส.สภ.บางพลี" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
                                 </div>
                                 <div>
-                                    <label class="block font-bold text-slate-300 mb-1">ฝ่าย / งาน</label>
-                                    <select id="newDepartment" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
-                                        <option value="ฝ่ายสืบสวน">ฝ่ายสืบสวน</option>
-                                        <option value="งานสอบสวน">งานสอบสวน</option>
-                                        <option value="งานป้องกันปราบปราม">งานป้องกันปราบปราม</option>
-                                        <option value="งานสารบรรณ / ส่งหมาย">งานสารบรรณ / ส่งหมาย</option>
-                                        <option value="ฝ่ายบริหารและอำนวยการ">ฝ่ายบริหารและอำนวยการ</option>
+                                    <label class="block font-bold text-slate-300 mb-1">ฝ่าย / งาน <span class="text-[10px] font-normal text-amber-400">(กำหนดรายชื่อ พงส./สืบสวน)</span></label>
+                                    <select id="newDepartment" class="hidden cyber-enhance-select">
+                                        <option value="ฝ่ายสืบสวน" data-icon="🔍" data-badge="สืบสวนผู้รับผิดชอบ">ฝ่ายสืบสวน</option>
+                                        <option value="งานสอบสวน" data-icon="⚖️" data-badge="พงส.ผู้รับผิดชอบ">งานสอบสวน</option>
+                                        <option value="งานป้องกันปราบปราม" data-icon="🛡️" data-badge="ป้องกันปราบปราม">งานป้องกันปราบปราม</option>
+                                        <option value="งานสารบรรณ / ส่งหมาย" data-icon="📋" data-badge="สารบรรณ/ส่งหมาย">งานสารบรรณ / ส่งหมาย</option>
+                                        <option value="ฝ่ายบริหารและอำนวยการ" data-icon="🏛️" data-badge="อำนวยการ">ฝ่ายบริหารและอำนวยการ</option>
                                     </select>
+                                    <div class="cyber-select-wrap" data-for="newDepartment"></div>
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label class="block font-bold text-slate-300 mb-1">บทบาทสิทธิ์ (Role) <span class="text-rose-400">*</span></label>
-                                    <select id="newRole" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
-                                        <option value="detective">ฝ่ายสืบสวน (Detective) - ทำบันทึกจับกุม/สืบสวน</option>
-                                        <option value="inquiry">พนักงานสอบสวน (Inquiry) - รับตัว/จัดการสำนวน</option>
-                                        <option value="clerk">งานสารบรรณ (Clerk) - ออกเลขหนังสือส่ง/รับ</option>
-                                        <option value="admin">ผู้บังคับบัญชา / ผู้ดูแลระบบ (Admin) - สิทธิ์เต็ม</option>
+                                    <select id="newRole" class="hidden cyber-enhance-select">
+                                        <option value="detective" data-icon="🔍">ฝ่ายสืบสวน (Detective) - ทำบันทึกจับกุม/สืบสวน</option>
+                                        <option value="inquiry" data-icon="⚖️">พนักงานสอบสวน (Inquiry) - รับตัว/จัดการสำนวน</option>
+                                        <option value="clerk" data-icon="📋">งานสารบรรณ (Clerk) - ออกเลขหนังสือส่ง/รับ</option>
+                                        <option value="admin" data-icon="👑">ผู้บังคับบัญชา / ผู้ดูแลระบบ (Admin) - สิทธิ์เต็ม</option>
                                     </select>
+                                    <div class="cyber-select-wrap" data-for="newRole"></div>
                                 </div>
                                 <div>
                                     <label class="block font-bold text-slate-300 mb-1">รหัสผ่านเริ่มต้น <span class="text-rose-400">*</span></label>
@@ -2719,33 +3007,36 @@
                                     <input type="text" id="editPosition" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
                                 </div>
                                 <div>
-                                    <label class="block font-bold text-slate-300 mb-1">ฝ่าย / งาน</label>
-                                    <select id="editDepartment" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white">
-                                        <option value="ฝ่ายสืบสวน">ฝ่ายสืบสวน</option>
-                                        <option value="งานสอบสวน">งานสอบสวน</option>
-                                        <option value="งานป้องกันปราบปราม">งานป้องกันปราบปราม</option>
-                                        <option value="งานสารบรรณ / ส่งหมาย">งานสารบรรณ / ส่งหมาย</option>
-                                        <option value="ฝ่ายบริหารและอำนวยการ">ฝ่ายบริหารและอำนวยการ</option>
+                                    <label class="block font-bold text-slate-300 mb-1">ฝ่าย / งาน <span class="text-[10px] font-normal text-amber-400">(กำหนดรายชื่อ พงส./สืบสวน)</span></label>
+                                    <select id="editDepartment" class="hidden cyber-enhance-select">
+                                        <option value="ฝ่ายสืบสวน" data-icon="🔍" data-badge="สืบสวนผู้รับผิดชอบ">ฝ่ายสืบสวน</option>
+                                        <option value="งานสอบสวน" data-icon="⚖️" data-badge="พงส.ผู้รับผิดชอบ">งานสอบสวน</option>
+                                        <option value="งานป้องกันปราบปราม" data-icon="🛡️" data-badge="ป้องกันปราบปราม">งานป้องกันปราบปราม</option>
+                                        <option value="งานสารบรรณ / ส่งหมาย" data-icon="📋" data-badge="สารบรรณ/ส่งหมาย">งานสารบรรณ / ส่งหมาย</option>
+                                        <option value="ฝ่ายบริหารและอำนวยการ" data-icon="🏛️" data-badge="อำนวยการ">ฝ่ายบริหารและอำนวยการ</option>
                                     </select>
+                                    <div class="cyber-select-wrap" data-for="editDepartment"></div>
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label class="block font-bold text-slate-300 mb-1">บทบาทสิทธิ์ (Role)</label>
-                                    <select id="editRole" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white">
-                                        <option value="detective">ฝ่ายสืบสวน (Detective)</option>
-                                        <option value="inquiry">พนักงานสอบสวน (Inquiry)</option>
-                                        <option value="clerk">งานสารบรรณ (Clerk)</option>
-                                        <option value="admin">ผู้บังคับบัญชา / Admin</option>
+                                    <select id="editRole" class="hidden cyber-enhance-select">
+                                        <option value="detective" data-icon="🔍">ฝ่ายสืบสวน (Detective)</option>
+                                        <option value="inquiry" data-icon="⚖️">พนักงานสอบสวน (Inquiry)</option>
+                                        <option value="clerk" data-icon="📋">งานสารบรรณ (Clerk)</option>
+                                        <option value="admin" data-icon="👑">ผู้บังคับบัญชา / Admin</option>
                                     </select>
+                                    <div class="cyber-select-wrap" data-for="editRole"></div>
                                 </div>
                                 <div>
                                     <label class="block font-bold text-slate-300 mb-1">สถานะบัญชี</label>
-                                    <select id="editStatus" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white">
-                                        <option value="active">🟢 ปกติ (Active)</option>
-                                        <option value="suspended">🔴 ระงับชั่วคราว (Suspended)</option>
+                                    <select id="editStatus" class="hidden cyber-enhance-select">
+                                        <option value="active" data-icon="🟢">ปกติ (Active)</option>
+                                        <option value="suspended" data-icon="🔴">ระงับชั่วคราว (Suspended)</option>
                                     </select>
+                                    <div class="cyber-select-wrap" data-for="editStatus"></div>
                                 </div>
                             </div>
 
@@ -3666,9 +3957,9 @@
     </div>
 
     <script>
-        // Officers Database
-        let investigatorsList = ['พ.ต.ต.ธีรเดช สุขเกษม', 'พ.ต.ท.ประเสริฐ กุลบุตร', 'ร.ต.อ.ธนากร พิศุจน์', 'ร.ต.ต.ธนกฤต ไทยกมล', 'ร.ต.ท.สมชาย ใจมั่น', 'พ.ต.ต.เกรียงไกร สืบสร้าง'];
-        let detectivesList = ['ร.ต.ต.ธนกฤต ไทยกมล', 'พ.ต.ต.ธีรเดช สุขเกษม', 'ร.ต.อ.ธนากร พิศุจน์', 'ด.ต.สมศักดิ์ มุ่งมั่น', 'ส.ต.อ.วิชาญ ชำนาญสืบ'];
+        // Officers Database (เชื่อมจากจัดการบัญชีผู้ใช้งานระบบ สภ.บางพลี ตามฝ่าย/งาน: งานสอบสวน -> พงส., ฝ่ายสืบสวน -> สืบสวน)
+        let investigatorsList = [];
+        let detectivesList = [];
         window.investigatorsList = investigatorsList;
         window.detectivesList = detectivesList;
         window.mockInvestigators = investigatorsList;
@@ -4083,9 +4374,211 @@
             if (name === 'users' && typeof loadUsersFromApi === 'function') loadUsersFromApi();
         }
 
+        const CYBER_COLOR_THEMES = {
+            gold:    { name: 'ทอง-กรมท่า', ring: '#fbbf24' },
+            blue:    { name: 'ไซเบอร์ บลู', ring: '#38bdf8' },
+            emerald: { name: 'มรกต ยุทธการ', ring: '#34d399' },
+            crimson: { name: 'แดงทับทิม', ring: '#fb7185' },
+            violet:  { name: 'ม่วงอำนวยการ', ring: '#a78bfa' }
+        };
+
+        function applyThemeUIState() {
+            const html = document.documentElement;
+            const isDark = html.classList.contains('dark');
+            const palette = html.getAttribute('data-color-theme') || 'gold';
+            const meta = CYBER_COLOR_THEMES[palette] || CYBER_COLOR_THEMES.gold;
+
+            const iconEl = document.getElementById('sidebarThemeIcon');
+            const labelEl = document.getElementById('sidebarThemeLabel');
+            if (iconEl) iconEl.textContent = isDark ? '🌙' : '☀️';
+            if (labelEl) labelEl.textContent = isDark ? 'มืด' : 'สว่าง';
+
+            const btnLight = document.getElementById('themeModeBtnLight');
+            const btnDark = document.getElementById('themeModeBtnDark');
+            if (btnLight && btnDark) {
+                btnLight.className = !isDark
+                    ? 'px-2 py-1 rounded-md transition flex items-center gap-1 bg-amber-400 text-slate-950 shadow-sm'
+                    : 'px-2 py-1 rounded-md transition flex items-center gap-1 text-slate-300 hover:text-white';
+                btnDark.className = isDark
+                    ? 'px-2 py-1 rounded-md transition flex items-center gap-1 bg-white/15 text-white shadow-sm'
+                    : 'px-2 py-1 rounded-md transition flex items-center gap-1 text-slate-300 hover:text-white';
+            }
+
+            const nameEl = document.getElementById('activeColorThemeName');
+            if (nameEl) nameEl.textContent = meta.name;
+
+            document.querySelectorAll('[data-theme-swatch]').forEach(sw => {
+                const key = sw.getAttribute('data-theme-swatch');
+                if (key === palette) {
+                    sw.classList.add('border-white', 'ring-2', 'scale-110');
+                    sw.classList.remove('border-white/30');
+                    sw.style.boxShadow = `0 0 0 2px ${meta.ring}`;
+                } else {
+                    sw.classList.remove('border-white', 'ring-2', 'scale-110');
+                    sw.classList.add('border-white/30');
+                    sw.style.boxShadow = '';
+                }
+            });
+        }
+
+        function setThemeMode(mode) {
+            const html = document.documentElement;
+            const targetDark = (mode === 'dark');
+            html.classList.remove('light', 'dark');
+            html.classList.add(targetDark ? 'dark' : 'light');
+            try { localStorage.setItem('cyber_theme_mode', targetDark ? 'dark' : 'light'); } catch (_) {}
+            applyThemeUIState();
+            toast(targetDark ? '🌙 เปลี่ยนเป็นโหมดมืดแล้ว' : '☀️ เปลี่ยนเป็นโหมดสว่างแล้ว');
+        }
+
+        function setColorTheme(themeKey) {
+            const safeKey = CYBER_COLOR_THEMES[themeKey] ? themeKey : 'gold';
+            document.documentElement.setAttribute('data-color-theme', safeKey);
+            try { localStorage.setItem('cyber_color_theme', safeKey); } catch (_) {}
+            applyThemeUIState();
+            toast(`🎨 เปลี่ยนโทนสีระบบเป็น "${CYBER_COLOR_THEMES[safeKey].name}" แล้ว`);
+        }
+
         function toggleTheme() {
-            document.documentElement.classList.toggle('dark');
-            toast('สลับโหมดการแสดงผล');
+            const isDark = document.documentElement.classList.contains('dark');
+            setThemeMode(isDark ? 'light' : 'dark');
+        }
+
+        function initThemePreferences() {
+            try {
+                const savedMode = localStorage.getItem('cyber_theme_mode') || 'dark';
+                const savedPalette = localStorage.getItem('cyber_color_theme') || 'gold';
+                const html = document.documentElement;
+                html.classList.remove('light', 'dark');
+                html.classList.add(savedMode === 'light' ? 'light' : 'dark');
+                html.setAttribute('data-color-theme', CYBER_COLOR_THEMES[savedPalette] ? savedPalette : 'gold');
+            } catch (_) {}
+            applyThemeUIState();
+        }
+
+        // =========================================================================
+        // CUSTOM STYLISH DROPDOWN ENGINE (สำหรับฝ่าย/งาน, บทบาทสิทธิ์, สถานะ)
+        // =========================================================================
+        let customSelectGlobalBound = false;
+        function syncCustomSelectUI(selectId) {
+            const sel = document.getElementById(selectId);
+            const wrap = document.querySelector(`.cyber-select-wrap[data-for="${selectId}"]`);
+            if (!sel || !wrap) return;
+
+            const activeOpt = sel.options[sel.selectedIndex] || sel.options[0];
+            const val = sel.value;
+            const triggerLabel = wrap.querySelector('.cyber-select-label');
+            const triggerIcon = wrap.querySelector('.cyber-select-icon');
+            const triggerBadge = wrap.querySelector('.cyber-select-badge');
+
+            if (activeOpt && triggerLabel) {
+                triggerLabel.textContent = activeOpt.textContent.trim();
+                const icon = activeOpt.getAttribute('data-icon') || '';
+                const badge = activeOpt.getAttribute('data-badge') || '';
+                if (triggerIcon) triggerIcon.textContent = icon;
+                if (triggerBadge) {
+                    if (badge) {
+                        triggerBadge.textContent = badge;
+                        triggerBadge.classList.remove('hidden');
+                    } else {
+                        triggerBadge.classList.add('hidden');
+                    }
+                }
+            }
+
+            wrap.querySelectorAll('.cyber-select-option').forEach(btn => {
+                const isSel = btn.getAttribute('data-value') === val;
+                btn.classList.toggle('selected', isSel);
+                const chk = btn.querySelector('.cyber-opt-check');
+                if (chk) chk.style.opacity = isSel ? '1' : '0';
+            });
+        }
+
+        function initCustomSelects() {
+            document.querySelectorAll('.cyber-select-wrap[data-for]').forEach(wrap => {
+                const selectId = wrap.getAttribute('data-for');
+                const sel = document.getElementById(selectId);
+                if (!sel) return;
+
+                const options = Array.from(sel.options);
+                wrap.innerHTML = `
+                    <button type="button" class="cyber-select-trigger" aria-haspopup="listbox" aria-expanded="false">
+                        <span class="flex items-center gap-2 min-w-0 flex-1">
+                            <span class="cyber-select-icon shrink-0"></span>
+                            <span class="cyber-select-label truncate"></span>
+                        </span>
+                        <span class="cyber-select-badge hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 shrink-0"></span>
+                        <span class="cyber-select-chevron shrink-0">▼</span>
+                    </button>
+                    <div class="cyber-select-menu" role="listbox">
+                        ${options.map(opt => {
+                            const icon = opt.getAttribute('data-icon') || '';
+                            const badge = opt.getAttribute('data-badge') || '';
+                            const safeVal = String(opt.value).replace(/"/g, '&quot;');
+                            return `
+                                <button type="button" class="cyber-select-option" data-value="${safeVal}">
+                                    <span class="flex items-center gap-2 min-w-0 flex-1">
+                                        ${icon ? `<span class="shrink-0">${icon}</span>` : ''}
+                                        <span class="truncate">${opt.textContent.trim()}</span>
+                                    </span>
+                                    <span class="flex items-center gap-1.5 shrink-0">
+                                        ${badge ? `<span class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-white/10 text-slate-300">${badge}</span>` : ''}
+                                        <span class="cyber-opt-check text-[11px] font-bold" style="opacity:0;">✓</span>
+                                    </span>
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+
+                const trigger = wrap.querySelector('.cyber-select-trigger');
+                trigger.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    const wasOpen = wrap.classList.contains('open');
+                    document.querySelectorAll('.cyber-select-wrap.open').forEach(w => {
+                        w.classList.remove('open');
+                        const t = w.querySelector('.cyber-select-trigger');
+                        if (t) t.setAttribute('aria-expanded', 'false');
+                    });
+                    if (!wasOpen) {
+                        wrap.classList.add('open');
+                        trigger.setAttribute('aria-expanded', 'true');
+                    }
+                });
+
+                wrap.querySelectorAll('.cyber-select-option').forEach(optBtn => {
+                    optBtn.addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                        sel.value = optBtn.getAttribute('data-value');
+                        sel.dispatchEvent(new Event('change', { bubbles: true }));
+                        syncCustomSelectUI(selectId);
+                        wrap.classList.remove('open');
+                        trigger.setAttribute('aria-expanded', 'false');
+                    });
+                });
+
+                syncCustomSelectUI(selectId);
+            });
+
+            if (!customSelectGlobalBound) {
+                customSelectGlobalBound = true;
+                document.addEventListener('click', () => {
+                    document.querySelectorAll('.cyber-select-wrap.open').forEach(w => {
+                        w.classList.remove('open');
+                        const t = w.querySelector('.cyber-select-trigger');
+                        if (t) t.setAttribute('aria-expanded', 'false');
+                    });
+                });
+                document.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Escape') {
+                        document.querySelectorAll('.cyber-select-wrap.open').forEach(w => {
+                            w.classList.remove('open');
+                            const t = w.querySelector('.cyber-select-trigger');
+                            if (t) t.setAttribute('aria-expanded', 'false');
+                        });
+                    }
+                });
+            }
         }
 
         function openModal(id) {
@@ -4204,15 +4697,23 @@
             const detSel = document.getElementById('mCaseDetective');
             if (!invSel || !detSel) return;
 
-            if (selectedInv && !investigatorsList.includes(selectedInv)) {
-                investigatorsList.push(selectedInv);
-            }
-            if (selectedDet && !detectivesList.includes(selectedDet)) {
-                detectivesList.push(selectedDet);
+            if (typeof syncOfficersFromUserAccounts === 'function' && investigatorsList.length === 0 && detectivesList.length === 0) {
+                syncOfficersFromUserAccounts();
             }
 
-            invSel.innerHTML = '<option value="">-- เลือกพนักงานสอบสวน --</option>';
-            investigatorsList.forEach(name => {
+            const invOptions = [...investigatorsList];
+            if (selectedInv && !invOptions.includes(selectedInv)) {
+                invOptions.unshift(selectedInv);
+            }
+            const detOptions = [...detectivesList];
+            if (selectedDet && !detOptions.includes(selectedDet)) {
+                detOptions.unshift(selectedDet);
+            }
+
+            invSel.innerHTML = invOptions.length > 0
+                ? '<option value="">-- เลือก พงส.ผู้รับผิดชอบ (งานสอบสวน) --</option>'
+                : '<option value="">-- ยังไม่มีรายชื่อในฝ่าย งานสอบสวน --</option>';
+            invOptions.forEach(name => {
                 const opt = document.createElement('option');
                 opt.value = name;
                 opt.textContent = name;
@@ -4220,8 +4721,10 @@
                 invSel.appendChild(opt);
             });
 
-            detSel.innerHTML = '<option value="">-- เลือกชุดสืบสวน --</option>';
-            detectivesList.forEach(name => {
+            detSel.innerHTML = detOptions.length > 0
+                ? '<option value="">-- เลือกสืบสวนผู้รับผิดชอบ (ฝ่ายสืบสวน) --</option>'
+                : '<option value="">-- ยังไม่มีรายชื่อในฝ่าย ฝ่ายสืบสวน --</option>';
+            detOptions.forEach(name => {
                 const opt = document.createElement('option');
                 opt.value = name;
                 opt.textContent = name;
@@ -4241,6 +4744,21 @@
             const role = document.getElementById('officerRoleType').value;
             const name = document.getElementById('officerNameInput').value.trim();
             if (!name) return;
+
+            try {
+                const raw = localStorage.getItem('cyber_custom_officers_v1');
+                const store = raw ? JSON.parse(raw) : { investigators: [], detectives: [] };
+                if (role === 'investigator') {
+                    if (!Array.isArray(store.investigators)) store.investigators = [];
+                    if (!store.investigators.includes(name)) store.investigators.push(name);
+                } else {
+                    if (!Array.isArray(store.detectives)) store.detectives = [];
+                    if (!store.detectives.includes(name)) store.detectives.push(name);
+                }
+                localStorage.setItem('cyber_custom_officers_v1', JSON.stringify(store));
+            } catch (_) {}
+
+            if (typeof syncOfficersFromUserAccounts === 'function') syncOfficersFromUserAccounts();
 
             if (role === 'investigator') {
                 if (!investigatorsList.includes(name)) investigatorsList.push(name);
@@ -5745,14 +6263,7 @@
                 if (typeof isCaseDeleted === 'function') {
                     mockCases = mockCases.filter(c => !isCaseDeleted(c.caseNo, c.id));
                 }
-                mockCases.forEach(c => {
-                    if (c.investigator && typeof investigatorsList !== 'undefined' && !investigatorsList.includes(c.investigator)) {
-                        investigatorsList.push(c.investigator);
-                    }
-                    if (c.detective && typeof detectivesList !== 'undefined' && !detectivesList.includes(c.detective)) {
-                        detectivesList.push(c.detective);
-                    }
-                });
+                if (typeof syncOfficersFromUserAccounts === 'function') syncOfficersFromUserAccounts();
                 if (typeof populateCaseInvestigatorFilter === 'function') populateCaseInvestigatorFilter(true);
                 try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(_) {}
                 renderCases();
@@ -8563,18 +9074,11 @@ ${currentDocPrintHtml}
         let currentOfficerFilter = 'all';
 
         function syncOfficersToLegacyArrays() {
-            const invs = policeOfficersDB.filter(o => o.role === 'investigator').map(o => `${o.rank}${o.fullName}`);
-            const dets = policeOfficersDB.filter(o => o.role === 'detective' || o.role === 'commander').map(o => `${o.rank}${o.fullName}`);
-            if (invs.length > 0) {
-                investigatorsList = Array.from(new Set([...invs, ...investigatorsList]));
-                window.investigatorsList = investigatorsList;
-            }
-            if (dets.length > 0) {
-                detectivesList = Array.from(new Set([...dets, ...detectivesList]));
-                window.detectivesList = detectivesList;
+            // รายชื่อ พงส.ผู้รับผิดชอบ และ สืบสวนผู้รับผิดชอบ ใช้ฐานข้อมูลจากจัดการบัญชีผู้ใช้งานระบบ สภ.บางพลี ตามฝ่าย/งาน เป็นหลัก
+            if (typeof syncOfficersFromUserAccounts === 'function') {
+                syncOfficersFromUserAccounts();
             }
         }
-        syncOfficersToLegacyArrays();
 
         function setOfficerFilter(role, btnEl) {
             currentOfficerFilter = role;
@@ -12699,6 +13203,7 @@ ${currentDocPrintHtml}
             // ตั้งค่ามุมมองเริ่มต้นเป็น "คดีของฉัน" ทันทีที่เข้าสู่ระบบ
             setCaseFilterQuick('my_cases');
             syncCyberCasesFromBackend();
+            if (typeof loadUsersFromApi === 'function') loadUsersFromApi({ silent: true });
         }
 
         async function checkBackendStatus() {
@@ -13253,31 +13758,152 @@ ${currentDocPrintHtml}
         // =========================================================================
         // SECTION: POLICE USER MANAGEMENT & ZERO-KNOWLEDGE CLOUD (SUPABASE public.users)
         // =========================================================================
-        let loadedUsersList = [];
+        var loadedUsersList = [];
 
-        async function loadUsersFromApi() {
-            const token = getAuthToken();
-            if (!token) return;
+        function getUserMetaOverridesMap() {
+            try {
+                const raw = localStorage.getItem('cyber_user_meta_overrides_v1');
+                const parsed = raw ? JSON.parse(raw) : {};
+                return (parsed && typeof parsed === 'object') ? parsed : {};
+            } catch (_) {
+                return {};
+            }
+        }
+
+        function saveUserMetaOverride(user) {
+            if (!user) return;
+            try {
+                const map = getUserMetaOverridesMap();
+                const meta = {
+                    department: user.department || '',
+                    position: user.position || '',
+                    status: user.status || 'active',
+                    rank_name: user.rank_name || user.full_name || '',
+                    role: user.role || ''
+                };
+                if (user.username) map['u:' + String(user.username).toLowerCase().trim()] = meta;
+                if (user.id) map['id:' + String(user.id)] = meta;
+                if (user.badge_no) map['b:' + String(user.badge_no).trim()] = meta;
+                localStorage.setItem('cyber_user_meta_overrides_v1', JSON.stringify(map));
+            } catch (_) {}
+        }
+
+        function lookupUserMetaOverride(u, map) {
+            if (!u || !map) return null;
+            const byUser = u.username ? map['u:' + String(u.username).toLowerCase().trim()] : null;
+            const byId = u.id ? map['id:' + String(u.id)] : null;
+            const byBadge = u.badge_no ? map['b:' + String(u.badge_no).trim()] : null;
+            return byUser || byId || byBadge || null;
+        }
+
+        function isInquiryDepartmentUser(dept, role) {
+            const d = String(dept || '').trim();
+            if (d) {
+                return d.includes('สอบสวน') && !d.includes('สืบสวน');
+            }
+            return role === 'inquiry';
+        }
+
+        function isDetectiveDepartmentUser(dept, role) {
+            const d = String(dept || '').trim();
+            if (d) {
+                return d.includes('สืบสวน');
+            }
+            return role === 'detective';
+        }
+
+        function syncOfficersFromUserAccounts(usersSource) {
+            let users = Array.isArray(usersSource) && usersSource.length > 0
+                ? usersSource
+                : (Array.isArray(loadedUsersList) && loadedUsersList.length > 0 ? loadedUsersList : getLocalUsersStore());
+
+            const overrides = getUserMetaOverridesMap();
+            const invSet = new Set();
+            const detSet = new Set();
+
+            (users || []).forEach(u => {
+                const ov = lookupUserMetaOverride(u, overrides);
+                const status = u.status || ov?.status || 'active';
+                if (status === 'suspended') return;
+
+                const dept = (u.department || ov?.department || '').trim();
+                const displayName = String(u.rank_name || ov?.rank_name || u.full_name || '').trim();
+                if (!displayName) return;
+
+                if (isInquiryDepartmentUser(dept, u.role)) {
+                    invSet.add(displayName);
+                }
+                if (isDetectiveDepartmentUser(dept, u.role)) {
+                    detSet.add(displayName);
+                }
+            });
+
+            // รวมรายชื่อที่ผู้ใช้กด "+ เพิ่มชื่อใหม่" เพิ่มเติม (ถ้ามี)
+            try {
+                const customRaw = localStorage.getItem('cyber_custom_officers_v1');
+                if (customRaw) {
+                    const customStore = JSON.parse(customRaw);
+                    (customStore.investigators || []).forEach(n => { if (n && String(n).trim()) invSet.add(String(n).trim()); });
+                    (customStore.detectives || []).forEach(n => { if (n && String(n).trim()) detSet.add(String(n).trim()); });
+                }
+            } catch (_) {}
+
+            investigatorsList = Array.from(invSet);
+            detectivesList = Array.from(detSet);
+            window.investigatorsList = investigatorsList;
+            window.detectivesList = detectivesList;
+            window.mockInvestigators = investigatorsList;
+            window.mockDetectives = detectivesList;
+
+            if (typeof populateCaseInvestigatorFilter === 'function') populateCaseInvestigatorFilter(true);
+            if (typeof populateRegistryDropdowns === 'function') populateRegistryDropdowns();
+            const invSel = document.getElementById('mCaseInvestigator');
+            const detSel = document.getElementById('mCaseDetective');
+            if (invSel && detSel && typeof populateOfficerSelects === 'function') {
+                populateOfficerSelects(invSel.value || '', detSel.value || '');
+            }
+        }
+
+        async function loadUsersFromApi(options = {}) {
+            const silent = Boolean(options && options.silent);
+            const token = (typeof getAuthToken === 'function') ? getAuthToken() : '';
 
             const tbody = document.getElementById('usersTableBody');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">⏳ กำลังเรียกข้อมูลเจ้าหน้าที่ตำรวจ...</td></tr>';
+            if (tbody && !silent) tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">⏳ กำลังเรียกข้อมูลเจ้าหน้าที่ตำรวจ...</td></tr>';
+
+            const overrides = getUserMetaOverridesMap();
 
             // 1. ดึงข้อมูลจากตาราง public.users บน Supabase Cloud เป็นหลัก
             try {
                 const supabase = getActiveSupabaseClient();
                 if (supabase) {
-                    const { data: supaUsers, error: sErr } = await supabase
+                    let supaRes = await supabase
                         .from('users')
-                        .select('id, username, password_hash, salt, full_name, rank, badge_no, role, created_at')
+                        .select('id, username, password_hash, salt, full_name, rank, badge_no, role, department, position, status, created_at')
                         .order('created_at', { ascending: true });
+
+                    if (supaRes.error && (supaRes.error.code === '42703' || supaRes.error.code === 'PGRST204' || String(supaRes.error.message || '').includes('does not exist'))) {
+                        supaRes = await supabase
+                            .from('users')
+                            .select('id, username, password_hash, salt, full_name, rank, badge_no, role, created_at')
+                            .order('created_at', { ascending: true });
+                    }
+
+                    const { data: supaUsers, error: sErr } = supaRes;
 
                     if (!sErr && Array.isArray(supaUsers) && supaUsers.length > 0) {
                         const localUsers = getLocalUsersStore();
                         const localMap = new Map(localUsers.map(u => [(u.username || '').toLowerCase(), u]));
+                        const defaultMap = new Map((typeof DEFAULT_CLIENT_POLICE_USERS !== 'undefined' ? DEFAULT_CLIENT_POLICE_USERS : []).map(u => [(u.username || '').toLowerCase(), u]));
 
                         loadedUsersList = supaUsers.map(su => {
-                            const localMatch = localMap.get((su.username || '').toLowerCase());
+                            const key = (su.username || '').toLowerCase();
+                            const localMatch = localMap.get(key) || defaultMap.get(key);
+                            const ov = lookupUserMetaOverride(su, overrides);
                             const rankDisplay = su.rank ? (su.full_name.startsWith(su.rank) ? su.full_name : `${su.rank} ${su.full_name}`) : su.full_name;
+                            const fallbackDept = su.role === 'inquiry' ? 'งานสอบสวน' : (su.role === 'clerk' ? 'งานสารบรรณ / ส่งหมาย' : 'ฝ่ายสืบสวน');
+                            const fallbackPos = su.role === 'admin' ? 'ผู้ดูแลระบบสูงสุด (Super Admin)' : (su.role === 'inquiry' ? 'พนักงานสอบสวน สภ.บางพลี' : (su.role === 'clerk' ? 'งานสารบรรณ สภ.บางพลี' : 'ฝ่ายสืบสวน สภ.บางพลี'));
+
                             return {
                                 id: su.id,
                                 username: su.username,
@@ -13285,15 +13911,16 @@ ${currentDocPrintHtml}
                                 rank_name: rankDisplay,
                                 full_name: su.full_name,
                                 rank: su.rank,
-                                position: localMatch?.position || (su.role === 'admin' ? 'ผู้ดูแลระบบสูงสุด (Super Admin)' : (su.role === 'inquiry' ? 'พนักงานสอบสวน สภ.บางพลี' : 'ฝ่ายสืบสวน สภ.บางพลี')),
-                                department: localMatch?.department || (su.role === 'inquiry' ? 'งานสอบสวน' : 'ฝ่ายสืบสวน'),
+                                position: su.position || ov?.position || localMatch?.position || fallbackPos,
+                                department: su.department || ov?.department || localMatch?.department || fallbackDept,
                                 role: su.role || 'detective',
-                                status: 'active',
+                                status: su.status || ov?.status || localMatch?.status || 'active',
                                 source: 'supabase'
                             };
                         });
 
                         saveLocalUsersStore(loadedUsersList);
+                        syncOfficersFromUserAccounts(loadedUsersList);
                         renderUsersTable(loadedUsersList);
                         updateUserStats(loadedUsersList);
                         return;
@@ -13303,21 +13930,36 @@ ${currentDocPrintHtml}
                 console.warn('[LOAD SUPABASE USERS ERR]', err);
             }
 
-            // 2. ดึงจากเซิร์ฟเวอร์ Backend API (ถ้ามี server.js รันอยู่)
-            const result = await safeApiFetch('/api/users', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
+            // 2. ดึงจากเซิร์ฟเวอร์ Backend API (ถ้ามี server.js รันอยู่ และมี token)
+            if (token) {
+                const result = await safeApiFetch('/api/users', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
 
-            if (!result._staticCloudMode && result.data && result.data.success && Array.isArray(result.data.users)) {
-                loadedUsersList = result.data.users;
-                saveLocalUsersStore(loadedUsersList);
-                renderUsersTable(loadedUsersList);
-                updateUserStats(loadedUsersList);
-                return;
+                if (!result._staticCloudMode && result.data && result.data.success && Array.isArray(result.data.users)) {
+                    loadedUsersList = result.data.users.map(u => {
+                        const ov = lookupUserMetaOverride(u, overrides);
+                        return {
+                            ...u,
+                            department: u.department || ov?.department || (u.role === 'inquiry' ? 'งานสอบสวน' : 'ฝ่ายสืบสวน'),
+                            position: u.position || ov?.position || '',
+                            status: u.status || ov?.status || 'active'
+                        };
+                    });
+                    saveLocalUsersStore(loadedUsersList);
+                    syncOfficersFromUserAccounts(loadedUsersList);
+                    renderUsersTable(loadedUsersList);
+                    updateUserStats(loadedUsersList);
+                    return;
+                }
             }
 
             // 3. โหมด Cloud / Static Host (LocalStorage Fallback)
-            loadedUsersList = getLocalUsersStore();
+            loadedUsersList = getLocalUsersStore().map(u => {
+                const ov = lookupUserMetaOverride(u, overrides);
+                return ov ? { ...u, department: u.department || ov.department, position: u.position || ov.position, status: u.status || ov.status } : u;
+            });
+            syncOfficersFromUserAccounts(loadedUsersList);
             renderUsersTable(loadedUsersList);
             updateUserStats(loadedUsersList);
         }
@@ -13415,9 +14057,15 @@ ${currentDocPrintHtml}
             document.getElementById('newUsername').value = '';
             document.getElementById('newRankName').value = '';
             document.getElementById('newPosition').value = '';
+            document.getElementById('newDepartment').value = 'ฝ่ายสืบสวน';
+            document.getElementById('newRole').value = 'detective';
             document.getElementById('newPassword').value = 'Police@2569';
             const errEl = document.getElementById('addUserErrorMsg');
             if (errEl) errEl.classList.add('hidden');
+            if (typeof syncCustomSelectUI === 'function') {
+                syncCustomSelectUI('newDepartment');
+                syncCustomSelectUI('newRole');
+            }
 
             openModal('addUserModal');
         }
@@ -13481,10 +14129,18 @@ ${currentDocPrintHtml}
                         full_name: rank_name,
                         rank: rank || 'ร.ต.ต.',
                         badge_no,
-                        role
+                        role,
+                        position: position || 'เจ้าหน้าที่ตำรวจ สภ.บางพลี',
+                        department: department || 'ฝ่ายสืบสวน',
+                        status: 'active'
                     };
 
-                    const { data: insData, error: insErr } = await supabase.from('users').insert([supaPayload]).select();
+                    let insRes = await supabase.from('users').insert([supaPayload]).select();
+                    if (insRes.error && (insRes.error.code === '42703' || insRes.error.code === 'PGRST204' || String(insRes.error.message || '').includes('column'))) {
+                        const { position: _p, department: _d, status: _s, ...corePayload } = supaPayload;
+                        insRes = await supabase.from('users').insert([corePayload]).select();
+                    }
+                    const { data: insData, error: insErr } = insRes;
                     if (!insErr && insData && insData.length > 0) {
                         supaSaved = true;
                     } else if (insErr) {
@@ -13499,7 +14155,7 @@ ${currentDocPrintHtml}
                     body: JSON.stringify({ badge_no, username, rank_name, position, department, role, password })
                 }).catch(() => {});
 
-                // 3. บันทึกลง LocalStorage
+                // 3. บันทึกลง LocalStorage + Meta Overrides แล้วอัปเดตรายชื่อ พงส./สืบสวน ทันที
                 const users = getLocalUsersStore();
                 const newUser = {
                     id: Date.now(),
@@ -13516,6 +14172,8 @@ ${currentDocPrintHtml}
                 };
                 users.push(newUser);
                 saveLocalUsersStore(users);
+                if (typeof saveUserMetaOverride === 'function') saveUserMetaOverride(newUser);
+                if (typeof syncOfficersFromUserAccounts === 'function') syncOfficersFromUserAccounts(users);
 
                 recordClientAuditLog('CREATE_USER', 'USER', username, `เพิ่มบัญชีเจ้าหน้าที่ใหม่: ${rank_name} (${newUser.position}) [Supabase: ${supaSaved ? 'สำเร็จ' : 'Local'}]`);
                 closeModal('addUserModal');
@@ -13546,6 +14204,11 @@ ${currentDocPrintHtml}
             document.getElementById('editStatus').value = u.status || 'active';
             document.getElementById('editPassword').value = '';
             document.getElementById('editUserSubTitle').textContent = `ผู้ใช้งาน: ${u.username} (รหัส ${u.badge_no})`;
+            if (typeof syncCustomSelectUI === 'function') {
+                syncCustomSelectUI('editDepartment');
+                syncCustomSelectUI('editRole');
+                syncCustomSelectUI('editStatus');
+            }
 
             openModal('editUserModal');
         }
@@ -13563,6 +14226,8 @@ ${currentDocPrintHtml}
             const status = document.getElementById('editStatus').value;
             const password = document.getElementById('editPassword').value.trim();
 
+            const targetMatch = (loadedUsersList || []).find(u => String(u.id) === String(id) || u.username === id);
+
             // 1. อัปเดตไปยัง Supabase public.users
             try {
                 const supabase = getActiveSupabaseClient();
@@ -13578,7 +14243,10 @@ ${currentDocPrintHtml}
 
                     const supaUpdate = {
                         full_name: rank_name,
-                        role: role
+                        role: role,
+                        position: position,
+                        department: department,
+                        status: status
                     };
                     if (rank) supaUpdate.rank = rank;
 
@@ -13588,7 +14256,11 @@ ${currentDocPrintHtml}
                         supaUpdate.salt = salt;
                     }
 
-                    await supabase.from('users').update(supaUpdate).eq('id', id);
+                    let updRes = await supabase.from('users').update(supaUpdate).eq('id', id);
+                    if (updRes.error && (updRes.error.code === '42703' || updRes.error.code === 'PGRST204' || String(updRes.error.message || '').includes('column'))) {
+                        const { position: _p, department: _d, status: _s, ...coreUpdate } = supaUpdate;
+                        await supabase.from('users').update(coreUpdate).eq('id', id);
+                    }
                 }
             } catch (sEx) {
                 console.warn('[SUPABASE UPDATE ERROR]', sEx);
@@ -13601,22 +14273,33 @@ ${currentDocPrintHtml}
                 body: JSON.stringify({ rank_name, position, department, role, status, password })
             }).catch(() => {});
 
-            // 3. อัปเดตใน LocalStorage
+            // 3. อัปเดตใน LocalStorage + Meta Overrides + อัปเดตสิทธิ์ พงส./สืบสวน ตามฝ่าย/งาน
             const users = getLocalUsersStore();
-            const idx = users.findIndex(u => String(u.id) === String(id) || u.username === id);
+            const idx = users.findIndex(u => String(u.id) === String(id) || u.username === id || (targetMatch && u.username === targetMatch.username));
             if (idx !== -1) {
                 users[idx].rank_name = rank_name || users[idx].rank_name;
+                users[idx].full_name = rank_name || users[idx].full_name;
                 users[idx].position = position || users[idx].position;
                 users[idx].department = department || users[idx].department;
                 users[idx].role = role || users[idx].role;
                 users[idx].status = status || users[idx].status;
                 if (password) users[idx].pass = password;
                 saveLocalUsersStore(users);
-                recordClientAuditLog('UPDATE_USER', 'USER', users[idx].username, `แก้ไขข้อมูลผู้ใช้งาน: ${rank_name}`);
+                if (typeof saveUserMetaOverride === 'function') saveUserMetaOverride(users[idx]);
+                recordClientAuditLog('UPDATE_USER', 'USER', users[idx].username, `แก้ไขข้อมูลผู้ใช้งาน: ${rank_name} (ฝ่าย: ${department})`);
+            } else if (targetMatch) {
+                const updatedMeta = { ...targetMatch, rank_name, full_name: rank_name, position, department, role, status };
+                if (typeof saveUserMetaOverride === 'function') saveUserMetaOverride(updatedMeta);
+                users.push(updatedMeta);
+                saveLocalUsersStore(users);
             }
+            if (typeof saveUserMetaOverride === 'function') {
+                saveUserMetaOverride({ id, username: targetMatch?.username, badge_no: targetMatch?.badge_no, rank_name, position, department, role, status });
+            }
+            if (typeof syncOfficersFromUserAccounts === 'function') syncOfficersFromUserAccounts(users);
 
             closeModal('editUserModal');
-            toast('✅ ปรับปรุงข้อมูลเจ้าหน้าที่เรียบร้อยแล้ว (อัปเดตบน Supabase)');
+            toast('✅ ปรับปรุงข้อมูลเจ้าหน้าที่และฝ่าย/งานเรียบร้อยแล้ว (อัปเดตรายชื่อ พงส./สืบสวน)');
             await loadUsersFromApi();
         }
 
@@ -13645,6 +14328,7 @@ ${currentDocPrintHtml}
             // 3. ลบจาก LocalStorage
             const users = getLocalUsersStore().filter(u => String(u.id) !== String(id) && u.rank_name !== name);
             saveLocalUsersStore(users);
+            if (typeof syncOfficersFromUserAccounts === 'function') syncOfficersFromUserAccounts(users);
             recordClientAuditLog('DELETE_USER', 'USER', String(id), `ลบบัญชีผู้ใช้งาน: ${name}`);
             toast(`🗑️ ลบบัญชีผู้ใช้งาน ${name} เรียบร้อยแล้ว (ลบออกจาก Supabase)`);
             await loadUsersFromApi();
@@ -16904,6 +17588,9 @@ ${currentDocPrintHtml}
         }
 
         // Initialize Live Preview
+        initThemePreferences();
+        initCustomSelects();
+        syncOfficersFromUserAccounts();
         renderCases();
         renderWarrants();
         renderInquiry();
@@ -16915,6 +17602,7 @@ ${currentDocPrintHtml}
         initAuthAndSecurity();
         initSupabaseZkConfig();
         initNewPoliceIntegration();
+        loadUsersFromApi({ silent: true });
         syncCyberCasesFromBackend();
         loadInquiryTemplatesFromBackend();
     </script>

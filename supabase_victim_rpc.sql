@@ -586,6 +586,11 @@ TO anon, authenticated
 USING (true)
 WITH CHECK (true);
 
+-- เพิ่มคอลัมน์ position / department / status บนตาราง public.users (เพื่อเก็บ ฝ่าย/งาน สำหรับกำหนด พงส./สืบสวน)
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS position TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS department TEXT DEFAULT 'ฝ่ายสืบสวน';
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
+
 -- GRANT สิทธิ์ระดับตารางให้ anon และ authenticated เพื่อแก้ปัญหา 401 (code 42501: permission denied)
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL PRIVILEGES ON TABLE public.cases TO anon, authenticated;

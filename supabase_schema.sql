@@ -19,9 +19,17 @@ CREATE TABLE IF NOT EXISTS public.users (
     full_name TEXT NOT NULL,
     rank TEXT,
     badge_no TEXT NOT NULL,
+    position TEXT,
+    department TEXT DEFAULT 'ฝ่ายสืบสวน',
     role TEXT NOT NULL DEFAULT 'detective' CHECK (role IN ('admin', 'detective', 'inquiry', 'clerk')),
+    status TEXT DEFAULT 'active',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- เพิ่มคอลัมน์ position / department / status สำหรับเก็บ ฝ่าย/งาน (กำหนดสิทธิ์ พงส./สืบสวน) บนฐานข้อมูลเดิม
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS position TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS department TEXT DEFAULT 'ฝ่ายสืบสวน';
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
 
 CREATE INDEX IF NOT EXISTS idx_users_username ON public.users(username);
 CREATE INDEX IF NOT EXISTS idx_users_badge_no ON public.users(badge_no);
