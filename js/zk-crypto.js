@@ -21,9 +21,10 @@
     'use strict';
 
     const DEFAULT_STATION_CODE = 'POLICE-STN-BANGPHLI-001';
-    const DEFAULT_MASTER_PASSPHRASE = 'BANGPHLI-ZK-MASTER-KEY-2569';
+    const LEGACY_INSECURE_DEFAULTS = ['BANGPHLI-ZK-MASTER-KEY-2569'];
     const PBKDF2_ITERATIONS = 100000;
     const ZK_PREFIX = 'zk:v1:';
+    let _inMemoryMasterKey = '';
 
     // รองรับทั้ง Browser (window.crypto) และ Node.js (crypto.webcrypto)
     function getWebCrypto() {
@@ -71,7 +72,12 @@
      * ด้วยอัลกอริทึม PBKDF2-SHA256 (100,000 รอบ)
      */
     async function deriveStationKey(masterPassphrase, stationCode) {
-        const pass = (masterPassphrase || getSavedMasterKey()).trim();
+        const pass = String(masterPassphrase || getSavedMasterKey() || '').trim();
+        if (!pass) {
+            const err = new Error('ยังไม่ได้ตั้งค่ารหัสผ่านหลักของสถานี (Station Master Key) สำหรับเข้ารหัส/ถอดรหัส Zero-Knowledge');
+            err.code = 'MASTER_KEY_NOT_CONFIGURED';
+            throw err;
+        }
         const station = (stationCode || DEFAULT_STATION_CODE).trim();
         const cacheKey = `${station}::${pass}`;
 
@@ -112,7 +118,8 @@
      * โดยไม่เปิดเผยรหัสผ่านหลัก (Zero-Knowledge Fingerprint)
      */
     async function getKeyFingerprint(masterPassphrase, stationCode) {
-        const pass = (masterPassphrase || getSavedMasterKey()).trim();
+        const pass = String(masterPassphrase || getSavedMasterKey() || '').trim();
+        if (!pass) return 'fp_unset';
         const station = (stationCode || DEFAULT_STATION_CODE).trim();
         const webCrypto = getWebCrypto();
         const encoder = new TextEncoder();
@@ -124,24 +131,58 @@
     }
 
     /**
-     * ดึง Station Master Key ที่ตั้งค่าไว้ในเครื่องผู้ใช้ (ไม่เคยส่งออกนอกเครื่อง)
+     * ดึง Station Master Key จาก session/memory (หรือ localStorage เฉพาะเมื่อตั้งใจจำไว้บนเครื่องสถานีที่ปลอดภัย)
+     * ไม่คืนค่ารหัสผ่าน Hardcoded จากซอร์สโค้ดอีกต่อไป
      */
     function getSavedMasterKey() {
+        if (_inMemoryMasterKey) return _inMemoryMasterKey;
         try {
+            if (typeof sessionStorage !== 'undefined') {
+                const sKey = sessionStorage.getItem('cyber_zk_station_master_key');
+                if (sKey && sKey.trim()) return sKey.trim();
+            }
             if (typeof localStorage !== 'undefined') {
-                return localStorage.getItem('cyber_zk_station_master_key') || DEFAULT_MASTER_PASSPHRASE;
+                const lKey = localStorage.getItem('cyber_zk_station_master_key');
+                if (lKey && lKey.trim()) return lKey.trim();
             }
         } catch (_) {}
-        return DEFAULT_MASTER_PASSPHRASE;
+        return '';
     }
 
-    function setSavedMasterKey(newPassphrase) {
-        if (!newPassphrase || !newPassphrase.trim()) return;
+    function hasConfiguredMasterKey() {
+        return Boolean(getSavedMasterKey());
+    }
+
+    function isLegacyDefaultKey(passphrase) {
+        const p = String(passphrase !== undefined ? passphrase : getSavedMasterKey()).trim();
+        return Boolean(p && LEGACY_INSECURE_DEFAULTS.includes(p));
+    }
+
+    function setSavedMasterKey(newPassphrase, persistLocal = false) {
+        if (!newPassphrase || !String(newPassphrase).trim()) return;
+        const clean = String(newPassphrase).trim();
         keyCache.clear();
+        _inMemoryMasterKey = clean;
         try {
-            if (typeof localStorage !== 'undefined') {
-                localStorage.setItem('cyber_zk_station_master_key', newPassphrase.trim());
+            if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.setItem('cyber_zk_station_master_key', clean);
             }
+            if (typeof localStorage !== 'undefined') {
+                if (persistLocal) {
+                    localStorage.setItem('cyber_zk_station_master_key', clean);
+                } else {
+                    localStorage.removeItem('cyber_zk_station_master_key');
+                }
+            }
+        } catch (_) {}
+    }
+
+    function clearSavedMasterKey() {
+        keyCache.clear();
+        _inMemoryMasterKey = '';
+        try {
+            if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('cyber_zk_station_master_key');
+            if (typeof localStorage !== 'undefined') localStorage.removeItem('cyber_zk_station_master_key');
         } catch (_) {}
     }
 
@@ -325,12 +366,14 @@
 
     return {
         DEFAULT_STATION_CODE,
-        DEFAULT_MASTER_PASSPHRASE,
         ZK_PREFIX,
         deriveStationKey,
         getKeyFingerprint,
         getSavedMasterKey,
+        hasConfiguredMasterKey,
+        isLegacyDefaultKey,
         setSavedMasterKey,
+        clearSavedMasterKey,
         encryptField,
         decryptField,
         encryptSubjectForSupabase,

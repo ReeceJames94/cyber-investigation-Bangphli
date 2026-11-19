@@ -2960,8 +2960,11 @@
                                     <div class="cyber-select-wrap" data-for="newRole"></div>
                                 </div>
                                 <div>
-                                    <label class="block font-bold text-slate-300 mb-1">รหัสผ่านเริ่มต้น <span class="text-rose-400">*</span></label>
-                                    <input type="password" id="newPassword" value="Police@2569" required placeholder="อย่างน้อย 6 ตัวอักษร" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block font-bold text-slate-300">รหัสผ่านเริ่มต้น <span class="text-rose-400">*</span></label>
+                                        <button type="button" onclick="generateRandomNewUserPassword()" class="text-[10px] font-bold text-amber-400 hover:underline">🎲 สุ่มรหัสผ่านปลอดภัย</button>
+                                    </div>
+                                    <input type="password" id="newPassword" value="" required minlength="8" autocomplete="new-password" placeholder="อย่างน้อย 8 ตัวอักษร (ตัวพิมพ์ใหญ่/เล็ก/ตัวเลข/สัญลักษณ์)" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
                                 </div>
                             </div>
 
@@ -3113,12 +3116,16 @@
                                     <label class="font-bold text-amber-400 flex items-center gap-1.5" for="zkMasterKeyInput">
                                         <span>🔑</span> <span>รหัสผ่านหลักของสถานี (Station Master Key - ใช้สร้างกุญแจ AES-256-GCM ฝั่ง Client):</span>
                                     </label>
-                                    <span id="zkKeyFingerprintBadge" class="text-emerald-400 font-mono font-bold text-[10px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">● AES-256-GCM Active (fp_325ca62b7904)</span>
+                                    <span id="zkKeyFingerprintBadge" class="text-amber-400 font-mono font-bold text-[10px] bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">● ยังไม่ตั้งค่า Master Key</span>
                                 </div>
                                 <div class="flex gap-2">
-                                    <input type="password" id="zkMasterKeyInput" value="BANGPHLI-ZK-MASTER-KEY-2569" oninput="updateZkFingerprintDisplay()" placeholder="กรอกรหัสผ่านหลักของสถานี (ไม่ถูกส่งขึ้น Cloud)" class="flex-1 p-2 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <input type="password" id="zkMasterKeyInput" value="" oninput="updateZkFingerprintDisplay()" autocomplete="off" placeholder="ตั้งหรือกรอก Station Master Key ของสถานี (อย่างน้อย 12 ตัวอักษร ไม่ส่งขึ้น Cloud)" class="flex-1 p-2 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
                                     <button type="button" onclick="toggleZkMasterKeyVisibility()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">👁️ แสดง/ซ่อน</button>
                                 </div>
+                                <label class="inline-flex items-center gap-2 text-[10px] text-slate-400 cursor-pointer pt-0.5">
+                                    <input type="checkbox" id="zkRememberMasterKeyChk" class="rounded text-amber-500">
+                                    <span>จำ Master Key บนเบราว์เซอร์เครื่องนี้ (หากไม่ติ๊ก จะเก็บเฉพาะใน Session ปัจจุบันและล้างเมื่อปิดแท็บ — แนะนำสำหรับเครื่องที่ใช้ร่วมกัน)</span>
+                                </label>
                                 <div class="text-[10px] text-slate-500">
                                     กุญแจนี้ใช้แปลงผ่าน PBKDF2-SHA256 (100,000 รอบ) ในเบราว์เซอร์ด้วย <code>window.crypto.subtle</code> และจะไม่ถูกส่งไปยัง Supabase เด็ดขาด
                                 </div>
@@ -5359,21 +5366,23 @@
                     const label = formatAccountDisplay(acc);
                     return `
                         <div class="text-[11px] bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 mb-1 text-slate-700 dark:text-slate-300 font-sans">
-                            ${label}
+                            ${escapeHtml(label)}
                         </div>
                     `;
                 }).join('');
 
-                const s1PdfHtml = c.summons1Pdf ? `<div class="pl-4 text-[10px] text-blue-500 font-medium">📄 ${c.summons1Pdf}</div>` : '';
-                const s2PdfHtml = c.summons2Pdf ? `<div class="pl-4 text-[10px] text-blue-500 font-medium">📄 ${c.summons2Pdf}</div>` : '';
-                const wPdfHtml = c.warrantPdf ? `<div class="pl-4 text-[10px] text-rose-500 font-medium">📄 ${c.warrantPdf}</div>` : '';
+                const s1PdfHtml = c.summons1Pdf ? `<div class="pl-4 text-[10px] text-blue-500 font-medium">📄 ${escapeHtml(c.summons1Pdf)}</div>` : '';
+                const s2PdfHtml = c.summons2Pdf ? `<div class="pl-4 text-[10px] text-blue-500 font-medium">📄 ${escapeHtml(c.summons2Pdf)}</div>` : '';
+                const wPdfHtml = c.warrantPdf ? `<div class="pl-4 text-[10px] text-rose-500 font-medium">📄 ${escapeHtml(c.warrantPdf)}</div>` : '';
 
-                const s1Short = c.summons1Date ? `<span class="font-bold text-amber-600 dark:text-amber-400">(${getShortDate(c.summons1Date)})</span>` : '';
-                const s2Short = c.summons2Date ? `<span class="font-bold text-amber-600 dark:text-amber-400">(${getShortDate(c.summons2Date)})</span>` : '';
+                const s1Short = c.summons1Date ? `<span class="font-bold text-amber-600 dark:text-amber-400">(${escapeHtml(getShortDate(c.summons1Date))})</span>` : '';
+                const s2Short = c.summons2Date ? `<span class="font-bold text-amber-600 dark:text-amber-400">(${escapeHtml(getShortDate(c.summons2Date))})</span>` : '';
+                const safeCaseId = escapeHtml(String(c.id || '').replace(/'/g, ''));
+                const safeCaseNoJs = escapeHtml(String(c.caseNo || c.id || '').replace(/['"\\]/g, ''));
                 
                 const warrantLinkBtn = c.warrant ? `
                     <div class="pt-1">
-                        <button type="button" onclick="goToWarrantPage('${c.caseNo}')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-500 hover:text-white transition shadow-sm">
+                        <button type="button" onclick="goToWarrantPage('${safeCaseNoJs}')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-500 hover:text-white transition shadow-sm">
                             👉 ไปที่ลิสต์หมายจับ
                         </button>
                     </div>
@@ -5382,13 +5391,13 @@
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                         <td class="p-4 align-top">
-                            <a href="javascript:void(0)" onclick="openEditPreviewModal('${c.id}')" class="font-bold text-slate-900 dark:text-white hover:text-amber-500 text-xs transition">${c.caseNo}</a>
-                            <div class="text-[11px] text-slate-400 mt-0.5">${c.date}</div>
+                            <a href="javascript:void(0)" onclick="openEditPreviewModal('${safeCaseId}')" class="font-bold text-slate-900 dark:text-white hover:text-amber-500 text-xs transition">${escapeHtml(c.caseNo)}</a>
+                            <div class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(c.date)}</div>
                         </td>
-                        <td class="p-4 align-top font-medium text-slate-800 dark:text-slate-200">${c.victim}</td>
-                        <td class="p-4 align-top text-slate-600 dark:text-slate-300">${c.type}</td>
+                        <td class="p-4 align-top font-medium text-slate-800 dark:text-slate-200">${escapeHtml(c.victim)}</td>
+                        <td class="p-4 align-top text-slate-600 dark:text-slate-300">${escapeHtml(c.type)}</td>
                         <td class="p-4 align-top">
-                            <div class="font-bold text-rose-500 dark:text-rose-400 mb-1">${c.amount.toLocaleString()} ฿</div>
+                            <div class="font-bold text-rose-500 dark:text-rose-400 mb-1">${Number(c.amount || 0).toLocaleString()} ฿</div>
                             <div class="flex flex-col gap-1 items-start">
                                 ${isSubmitted ? `
                                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm" title="ผู้เสียหายส่งมอบข้อมูลและหลักฐานล่วงหน้าแล้ว">
@@ -5399,9 +5408,9 @@
                                         <span>🚨</span> <span>WARROOM</span>
                                     </span>
                                 ` : `
-                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-300/40">${c.status || 'พบพงส.'}</span>
+                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-300/40">${escapeHtml(c.status || 'พบพงส.')}</span>
                                 `)}
-                                <button type="button" onclick="toggleCaseWarroomDirect('${c.id}')" class="text-[9px] font-semibold px-2 py-0.5 rounded-lg border transition ${isWarroom ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 hover:bg-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:text-rose-400'}" title="คลิกสลับสถานะ Warroom">
+                                <button type="button" onclick="toggleCaseWarroomDirect('${safeCaseId}')" class="text-[9px] font-semibold px-2 py-0.5 rounded-lg border transition ${isWarroom ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 hover:bg-rose-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:text-rose-400'}" title="คลิกสลับสถานะ Warroom">
                                     ${isWarroom ? '✓ ถอดจาก Warroom' : '+ เข้า Warroom'}
                                 </button>
                             </div>
@@ -5426,40 +5435,40 @@
                                 ${(!isPhaJorWor && !isPha1 && !isTorRor) ? `<span class="text-[11px] text-slate-400">ปกติ (ไม่มีหน่วยติดตาม)</span>` : ''}
                             </div>
                             <div class="pt-1.5 flex flex-wrap gap-1">
-                                <button type="button" onclick="toggleCaseUrgencyDirect('${c.id}', 'ภจว.ติดตาม')" class="px-1.5 py-0.5 rounded text-[9px] font-semibold border transition ${isPhaJorWor ? 'bg-purple-600 text-white border-purple-600 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:text-purple-400'}" title="คลิกติ๊ก 1.ภจว.ติดตาม">
+                                <button type="button" onclick="toggleCaseUrgencyDirect('${safeCaseId}', 'ภจว.ติดตาม')" class="px-1.5 py-0.5 rounded text-[9px] font-semibold border transition ${isPhaJorWor ? 'bg-purple-600 text-white border-purple-600 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:text-purple-400'}" title="คลิกติ๊ก 1.ภจว.ติดตาม">
                                     ${isPhaJorWor ? '☑' : '☐'} 1.ภจว.
                                 </button>
-                                <button type="button" onclick="toggleCaseUrgencyDirect('${c.id}', 'คดีเร่งด่วน ภ.1ติดตาม')" class="px-1.5 py-0.5 rounded text-[9px] font-semibold border transition ${isPha1 ? 'bg-amber-600 text-white border-amber-600 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:text-amber-400'}" title="คลิกติ๊ก 2.คดีเร่งด่วน ภ.1ติดตาม">
+                                <button type="button" onclick="toggleCaseUrgencyDirect('${safeCaseId}', 'คดีเร่งด่วน ภ.1ติดตาม')" class="px-1.5 py-0.5 rounded text-[9px] font-semibold border transition ${isPha1 ? 'bg-amber-600 text-white border-amber-600 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:text-amber-400'}" title="คลิกติ๊ก 2.คดีเร่งด่วน ภ.1ติดตาม">
                                     ${isPha1 ? '☑' : '☐'} 2.ภ.1
                                 </button>
-                                <button type="button" onclick="toggleCaseUrgencyDirect('${c.id}', 'ตร.ติดตาม')" class="px-1.5 py-0.5 rounded text-[9px] font-semibold border transition ${isTorRor ? 'bg-rose-600 text-white border-rose-600 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:text-rose-400'}" title="คลิกติ๊ก 3.ตร.ติดตาม">
+                                <button type="button" onclick="toggleCaseUrgencyDirect('${safeCaseId}', 'ตร.ติดตาม')" class="px-1.5 py-0.5 rounded text-[9px] font-semibold border transition ${isTorRor ? 'bg-rose-600 text-white border-rose-600 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:text-rose-400'}" title="คลิกติ๊ก 3.ตร.ติดตาม">
                                     ${isTorRor ? '☑' : '☐'} 3.ตร.
                                 </button>
                             </div>
                         </td>
                         <td class="p-4 align-top max-w-xs">${accountsHtml}</td>
                         <td class="p-4 align-top space-y-1 text-[11px]">
-                            <div><span class="font-bold text-blue-900 dark:text-blue-400">พงส.:</span> ${c.investigator || '-'}</div>
-                            <div><span class="font-bold text-amber-600 dark:text-amber-400">สืบสวน:</span> ${c.detective || '-'}</div>
+                            <div><span class="font-bold text-blue-900 dark:text-blue-400">พงส.:</span> ${escapeHtml(c.investigator || '-')}</div>
+                            <div><span class="font-bold text-amber-600 dark:text-amber-400">สืบสวน:</span> ${escapeHtml(c.detective || '-')}</div>
                         </td>
                         <td class="p-4 align-top space-y-1.5 text-[11px] text-slate-500">
                             <div>
                                 <label class="flex items-center gap-1.5 cursor-pointer">
-                                    <input type="checkbox" ${c.summons1 ? 'checked' : ''} onchange="toggleDoc('${c.id}', 'summons1', this.checked)" class="rounded text-amber-500">
+                                    <input type="checkbox" ${c.summons1 ? 'checked' : ''} onchange="toggleDoc('${safeCaseId}', 'summons1', this.checked)" class="rounded text-amber-500">
                                     <span>หมายเรียก 1 ${s1Short}</span>
                                 </label>
                                 ${s1PdfHtml}
                             </div>
                             <div>
                                 <label class="flex items-center gap-1.5 cursor-pointer">
-                                    <input type="checkbox" ${c.summons2 ? 'checked' : ''} onchange="toggleDoc('${c.id}', 'summons2', this.checked)" class="rounded text-amber-500">
+                                    <input type="checkbox" ${c.summons2 ? 'checked' : ''} onchange="toggleDoc('${safeCaseId}', 'summons2', this.checked)" class="rounded text-amber-500">
                                     <span>หมายเรียก 2 ${s2Short}</span>
                                 </label>
                                 ${s2PdfHtml}
                             </div>
                             <div>
                                 <label class="flex items-center gap-1.5 cursor-pointer">
-                                    <input type="checkbox" ${c.warrant ? 'checked' : ''} onchange="toggleDoc('${c.id}', 'warrant', this.checked)" class="rounded text-rose-600">
+                                    <input type="checkbox" ${c.warrant ? 'checked' : ''} onchange="toggleDoc('${safeCaseId}', 'warrant', this.checked)" class="rounded text-rose-600">
                                     <span>ออกหมายจับแล้ว</span>
                                 </label>
                                 ${wPdfHtml}
@@ -5468,19 +5477,19 @@
                         </td>
                         <td class="p-4 align-top text-center">
                             <div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
-                                <button type="button" onclick="openInterrogationModal('${c.caseNo || c.id}')" class="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/30 text-[11px] font-bold transition flex items-center gap-1" title="โหมดสอบปากคำ / พิมพ์คำให้การ">
+                                <button type="button" onclick="openInterrogationModal('${safeCaseNoJs}')" class="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/30 text-[11px] font-bold transition flex items-center gap-1" title="โหมดสอบปากคำ / พิมพ์คำให้การ">
                                     <span>🎙️</span> <span class="hidden xl:inline">สอบปากคำ</span>
                                 </button>
-                                <button type="button" onclick="openShareVictimLinkModal('${c.caseNo || c.id}')" class="text-emerald-400 hover:text-emerald-300 p-1.5 rounded-lg hover:bg-emerald-500/10 transition" title="แชร์ลิงก์ / QR Code ให้ผู้เสียหายกรอกข้อมูลล่วงหน้า">
+                                <button type="button" onclick="openShareVictimLinkModal('${safeCaseNoJs}')" class="text-emerald-400 hover:text-emerald-300 p-1.5 rounded-lg hover:bg-emerald-500/10 transition" title="แชร์ลิงก์ / QR Code ให้ผู้เสียหายกรอกข้อมูลล่วงหน้า">
                                     🔗
                                 </button>
-                                <button type="button" onclick="exportSingleCaseInquiryJson('${c.id}')" class="text-indigo-400 hover:text-indigo-300 p-1.5 rounded-lg hover:bg-indigo-500/10 transition" title="Export JSON สำนวนคดีนี้">
+                                <button type="button" onclick="exportSingleCaseInquiryJson('${safeCaseId}')" class="text-indigo-400 hover:text-indigo-300 p-1.5 rounded-lg hover:bg-indigo-500/10 transition" title="Export JSON สำนวนคดีนี้">
                                     📥
                                 </button>
-                                <button onclick="openEditPreviewModal('${c.id}')" class="text-amber-500 hover:text-amber-600 p-1.5 rounded-lg hover:bg-amber-500/10 transition" title="แก้ไขเคสนี้">
+                                <button onclick="openEditPreviewModal('${safeCaseId}')" class="text-amber-500 hover:text-amber-600 p-1.5 rounded-lg hover:bg-amber-500/10 transition" title="แก้ไขเคสนี้">
                                     ✏️
                                 </button>
-                                <button type="button" onclick="deleteMockCase('${String(c.id || '').replace(/'/g, "\\'")}', '${String(c.caseNo || '').replace(/'/g, "\\'")}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-500/10 transition" title="ลบเคส">
+                                <button type="button" onclick="deleteMockCase('${safeCaseId}', '${safeCaseNoJs}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-500/10 transition" title="ลบเคส">
                                     🗑️
                                 </button>
                             </div>
@@ -6064,6 +6073,8 @@
 
         // ฟังก์ชันดึงและซิงก์ข้อมูล Cyber Cases ล่าสุดจาก Backend และฐานข้อมูลกลาง Supabase (พงส. ตามจริง)
         async function syncCyberCasesFromBackend() {
+            const authToken = (typeof getAuthToken === 'function') ? getAuthToken() : '';
+            if (!authToken) return;
             let updated = false;
 
             // 1. ซิงก์จาก Local Backend API (SQLite cyber_details)
@@ -7519,13 +7530,8 @@
             toast('คัดลอกร่างรายงานเรียบร้อยแล้ว');
         }
 
-        // Authentication & Session Management
-        const validUsers = [
-            { username: 'thanakrit', password: 'Police@2569', name: 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล', role: 'Admin สูงสุด (สืบสวน)', isAdmin: true },
-            { username: 'investigator', password: 'Police@2569', name: 'ร.ต.อ.ธนากร พิศุจน์', role: 'พนักงานสอบสวน', isAdmin: false }
-        ];
-
-        let currentLoggedInUser = validUsers[0];
+        // Legacy Preview Auth Removed (All authentication uses server /api/auth/login or Supabase Auth + PBKDF2 RPC)
+        let currentLoggedInUser = null;
 
         function togglePasswordVisibility() {
             const input = document.getElementById('loginPassword');
@@ -7540,30 +7546,9 @@
             }
         }
 
-        function quickLogin(username, password) {
-            document.getElementById('loginUsername').value = username;
-            document.getElementById('loginPassword').value = password;
-            handlePreviewLogin();
-        }
-
         function handlePreviewLogin(e) {
             if (e) e.preventDefault();
-            const u = (document.getElementById('loginUsername').value || '').trim().toLowerCase();
-            const p = (document.getElementById('loginPassword').value || '').trim();
-
-            const found = validUsers.find(item => item.username.toLowerCase() === u && item.password === p);
-
-            if (found) {
-                currentLoggedInUser = found;
-                document.getElementById('auth-screen').classList.add('hidden');
-                document.getElementById('app-wrapper').classList.remove('hidden');
-                document.getElementById('currentUserNameDisplay').textContent = found.name;
-                document.getElementById('currentUserRoleDisplay').textContent = found.role;
-                toast(`ยินดีต้อนรับ ${found.name} เข้าสู่ระบบ`);
-                renderInquiry();
-            } else {
-                toast('❌ ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
-            }
+            openModal('policeLoginModal');
         }
 
         function handlePreviewLogout() {
@@ -12831,6 +12816,7 @@ ${currentDocPrintHtml}
         let currentAuthUser = null;
         let loadedAuditLogs = [];
 
+        // รายชื่อบัญชีตั้งต้นภายในระบบ (ไม่เก็บรหัสผ่าน Plaintext ใน Client Source Code)
         const DEFAULT_CLIENT_POLICE_USERS = [
             {
                 id: 1,
@@ -12840,8 +12826,7 @@ ${currentDocPrintHtml}
                 position: 'รอง สว.(สส.) สภ.บางพลี (Admin)',
                 department: 'ฝ่ายสืบสวน',
                 role: 'admin',
-                status: 'active',
-                pass: 'Police@2569'
+                status: 'active'
             },
             {
                 id: 2,
@@ -12851,8 +12836,7 @@ ${currentDocPrintHtml}
                 position: 'ผกก.สภ.บางพลี',
                 department: 'ฝ่ายบริหารและอำนวยการ',
                 role: 'admin',
-                status: 'active',
-                pass: 'Police@2569'
+                status: 'active'
             },
             {
                 id: 3,
@@ -12862,8 +12846,7 @@ ${currentDocPrintHtml}
                 position: 'รอง ผกก.สส.สภ.บางพลี',
                 department: 'ฝ่ายสืบสวน',
                 role: 'detective',
-                status: 'active',
-                pass: 'Police@2569'
+                status: 'active'
             },
             {
                 id: 4,
@@ -12873,8 +12856,7 @@ ${currentDocPrintHtml}
                 position: 'รอง สว.สส.สภ.บางพลี',
                 department: 'ฝ่ายสืบสวน (ชุดปฏิบัติการ 1)',
                 role: 'detective',
-                status: 'active',
-                pass: 'Police@2569'
+                status: 'active'
             },
             {
                 id: 5,
@@ -12884,8 +12866,7 @@ ${currentDocPrintHtml}
                 position: 'รอง ผกก.(สอบสวน) สภ.บางพลี',
                 department: 'งานสอบสวน',
                 role: 'inquiry',
-                status: 'active',
-                pass: 'Police@2569'
+                status: 'active'
             },
             {
                 id: 6,
@@ -12895,8 +12876,7 @@ ${currentDocPrintHtml}
                 position: 'ผบ.หมู่ (ป.) สภ.บางพลี',
                 department: 'งานสารบรรณ / ส่งหมาย',
                 role: 'clerk',
-                status: 'active',
-                pass: 'Police@2569'
+                status: 'active'
             },
             {
                 id: 7,
@@ -12906,8 +12886,7 @@ ${currentDocPrintHtml}
                 position: 'สารวัตร (สอบสวน) สภ.บางพลี',
                 department: 'งานสอบสวน',
                 role: 'inquiry',
-                status: 'active',
-                pass: 'Police@2569'
+                status: 'active'
             }
         ];
 
@@ -12983,9 +12962,11 @@ ${currentDocPrintHtml}
                         continue; // มีใน Supabase อยู่แล้ว ข้าม
                     }
 
-                    // สร้าง Hash ด้วย PBKDF2-SHA512 100,000 รอบ
-                    const rawPass = u.pass || (u.username === 'thanakrit' ? 'Police@2569' : 'Police@2569');
-                    const { hash, salt } = await hashPasswordPBKDF2_SHA512(rawPass);
+                    // สร้างรหัสผ่านเฉพาะเมื่อผู้ใช้กำหนดมาชัดเจนเท่านั้น (ห้ามใช้ Hardcoded Default Password)
+                    if (!u.pass || String(u.pass).trim().length < 6) {
+                        continue;
+                    }
+                    const { hash, salt } = await hashPasswordPBKDF2_SHA512(String(u.pass).trim());
 
                     let rank = u.rank || '';
                     let fullName = u.full_name || u.rank_name || u.username;
@@ -13108,7 +13089,15 @@ ${currentDocPrintHtml}
          */
         async function safeApiFetch(url, options = {}) {
             try {
-                const res = await fetch(url, options);
+                const reqOpts = { ...options };
+                const headers = new Headers(reqOpts.headers || {});
+                const token = getAuthToken();
+                if (token && String(url || '').startsWith('/api/') && !headers.has('Authorization')) {
+                    headers.set('Authorization', 'Bearer ' + token);
+                }
+                reqOpts.headers = headers;
+
+                const res = await fetch(url, reqOpts);
                 const contentType = res.headers.get('content-type') || '';
                 if (res.status === 404 || res.status === 405 || !contentType.includes('application/json')) {
                     return { _staticCloudMode: true, status: res.status };
@@ -13144,9 +13133,6 @@ ${currentDocPrintHtml}
         }
 
         async function initAuthAndSecurity() {
-            // เรียก Auto-sync บัญชีผู้ใช้จาก LocalStorage ขึ้น Supabase ตาราง users อัตโนมัติ
-            setTimeout(autoSyncLocalUsersToSupabase, 800);
-
             const token = getAuthToken();
             if (!token) {
                 openModal('policeLoginModal');
@@ -13157,8 +13143,8 @@ ${currentDocPrintHtml}
                 headers: { 'Authorization': 'Bearer ' + token }
             });
 
-            if (!result._staticCloudMode && result.data) {
-                if (result.data.success && result.data.user) {
+            if (!result._staticCloudMode) {
+                if (result.status === 200 && result.data && result.data.success && result.data.user) {
                     currentAuthUser = result.data.user;
                     updateAuthUI();
                     await syncArrestRecordsFromSecureBackend();
@@ -13166,12 +13152,37 @@ ${currentDocPrintHtml}
                     resetSessionIdleTimer();
                     return;
                 }
+                // หากเซิร์ฟเวอร์ Node ปฏิเสธ (401 Unauthorized) ห้ามใช้ localStorage ข้ามสิทธิ์เด็ดขาด!
+                if (result.status === 401) {
+                    setAuthToken('');
+                    openModal('policeLoginModal');
+                    return;
+                }
             }
 
-            // โหมด Cloud / Vercel / GitHub Pages (Zero-Knowledge Client + Supabase)
+            // โหมด Cloud / Vercel / Static Host: ตรวจสอบ Supabase Auth Session จริงก่อนเสมอ
+            try {
+                const sb = typeof getActiveSupabaseClient === 'function' ? getActiveSupabaseClient() : null;
+                if (sb && sb.auth && typeof sb.auth.getSession === 'function') {
+                    const { data: sessionData } = await sb.auth.getSession();
+                    if (sessionData && sessionData.session && sessionData.session.user) {
+                        const savedUser = JSON.parse(localStorage.getItem('police_auth_user') || 'null');
+                        if (savedUser && savedUser.username) {
+                            currentAuthUser = savedUser;
+                            currentAuthUser._supabaseAuthActive = true;
+                            updateAuthUI();
+                            checkBackendStatus();
+                            resetSessionIdleTimer();
+                            return;
+                        }
+                    }
+                }
+            } catch (_) {}
+
+            // Transition fallback เฉพาะบน Static Cloud Host ที่ยืนยัน Token ของ Session นี้แล้ว (ไม่ใช่ Localhost Server 401)
             try {
                 const savedUser = JSON.parse(localStorage.getItem('police_auth_user') || 'null');
-                if (savedUser && savedUser.username) {
+                if (savedUser && savedUser.username && result._staticCloudMode && token) {
                     currentAuthUser = savedUser;
                     updateAuthUI();
                     checkBackendStatus();
@@ -13204,6 +13215,7 @@ ${currentDocPrintHtml}
             setCaseFilterQuick('my_cases');
             syncCyberCasesFromBackend();
             if (typeof loadUsersFromApi === 'function') loadUsersFromApi({ silent: true });
+            if (typeof refreshNewPoliceRequestsData === 'function') refreshNewPoliceRequestsData(false);
         }
 
         async function checkBackendStatus() {
@@ -13239,10 +13251,153 @@ ${currentDocPrintHtml}
                 submitBtn.innerHTML = `<span>⏳</span> <span>กำลังตรวจสอบข้อมูลและยืนยันตัวตน...</span>`;
             }
 
+            const showLoginError = (msg) => {
+                if (errEl) {
+                    errEl.textContent = msg;
+                    errEl.classList.remove('hidden');
+                } else {
+                    toast('⚠️ ' + msg);
+                }
+            };
+
+            const warnWeakDefaultPasswordIfUsed = () => {
+                if (password === 'Police@2569') {
+                    setTimeout(() => {
+                        toast('⚠️ คำแนะนำความปลอดภัย: กรุณาเปลี่ยนรหัสผ่านเริ่มต้นของคุณในเมนู "จัดการบัญชีผู้ใช้" ทันที');
+                    }, 1200);
+                }
+            };
+
             try {
-                // 1. ตรวจสอบการเข้าสู่ระบบผ่านตาราง public.users บน Supabase (PBKDF2-SHA512 100,000 รอบ)
                 const supabase = getActiveSupabaseClient();
+
+                // 1. ตรวจสอบกับ Backend API /api/auth/login ก่อน (กรณีรันบน Node server.js จะได้ SQLite Session Token จริง)
+                const localApiResult = await safeApiFetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!localApiResult._staticCloudMode) {
+                    if (localApiResult.status === 429) {
+                        showLoginError(localApiResult.data?.error || 'พยายามเข้าสู่ระบบผิดเกินกำหนด กรุณารอสักครู่');
+                        return;
+                    }
+                    if (localApiResult.status === 200 && localApiResult.data?.success && localApiResult.data?.token) {
+                        setAuthToken(localApiResult.data.token, localApiResult.data.user);
+                        currentAuthUser = localApiResult.data.user;
+                        // พยายาม Sign-in Supabase Auth ควบคู่กัน (ถ้าตั้งค่าไว้) เพื่อรับ JWT สำหรับ Strict RLS
+                        if (supabase && supabase.auth && typeof supabase.auth.signInWithPassword === 'function') {
+                            const emailGuess = username.includes('@') ? username : `${localApiResult.data.user.username}@bangphli.police.local`;
+                            supabase.auth.signInWithPassword({ email: emailGuess, password }).catch(() => {});
+                        }
+                        closeModal('policeLoginModal');
+                        updateAuthUI();
+                        await syncArrestRecordsFromSecureBackend();
+                        checkBackendStatus();
+                        resetSessionIdleTimer();
+                        toast(`🔐 ยินดีต้อนรับ ${localApiResult.data.user.rank_name} เข้าสู่ระบบ สภ.บางพลี`);
+                        warnWeakDefaultPasswordIfUsed();
+                        return;
+                    }
+                    if (localApiResult.status === 401 || localApiResult.status === 400) {
+                        showLoginError(localApiResult.data?.error || 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+                        return;
+                    }
+                }
+
+                // 2. โหมด Static Cloud (Vercel): ใช้ Supabase Auth (signInWithPassword) เพื่อให้ได้ auth.uid() JWT จริง
+                if (supabase && supabase.auth && typeof supabase.auth.signInWithPassword === 'function') {
+                    try {
+                        const emailCandidates = username.includes('@')
+                            ? [username]
+                            : [`${username}@bangphli.police.local`];
+                        for (const emailCand of emailCandidates) {
+                            const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
+                                email: emailCand,
+                                password
+                            });
+                            if (!authErr && authData && authData.session && authData.user) {
+                                const meta = authData.user.user_metadata || {};
+                                const loggedUser = {
+                                    id: authData.user.id,
+                                    username: meta.username || username.split('@')[0],
+                                    badge_no: meta.badge_no || '-',
+                                    full_name: meta.full_name || meta.rank_name || username,
+                                    rank: meta.rank || '',
+                                    rank_name: meta.rank_name || meta.full_name || username,
+                                    role: meta.role || 'detective',
+                                    position: meta.position || 'เจ้าหน้าที่ตำรวจ สภ.บางพลี',
+                                    department: meta.department || 'ฝ่ายสืบสวน',
+                                    status: 'active',
+                                    _supabaseAuthActive: true,
+                                    source: 'supabase_auth'
+                                };
+                                setAuthToken(authData.session.access_token, loggedUser);
+                                currentAuthUser = loggedUser;
+                                appendLocalAuditLog(loggedUser, 'LOGIN_SUCCESS', 'AUTH', loggedUser.badge_no, `เข้าสู่ระบบผ่าน Supabase Auth สำเร็จ (${loggedUser.rank_name})`);
+                                closeModal('policeLoginModal');
+                                updateAuthUI();
+                                checkBackendStatus();
+                                resetSessionIdleTimer();
+                                toast(`🔐 ยินดีต้อนรับ ${loggedUser.rank_name} (Supabase Auth Secured)`);
+                                warnWeakDefaultPasswordIfUsed();
+                                return;
+                            }
+                        }
+                    } catch (_) {}
+                }
+
+                // 3. Fallback ช่วงเปลี่ยนผ่าน: ใช้ RPC get_officer_login_challenge + verify_officer_login (ไม่ดึง password_hash ตรงจาก anon)
                 if (supabase) {
+                    try {
+                        const { data: chData, error: chErr } = await supabase.rpc('get_officer_login_challenge', { p_identifier: username });
+                        if (!chErr && chData) {
+                            if (!chData.found || !chData.salt) {
+                                appendLocalAuditLog({ badge_no: username, rank_name: username, role: 'guest' }, 'LOGIN_FAILED', 'AUTH', username, 'ไม่พบบัญชีหรือรหัสผ่านไม่ถูกต้อง (RPC Auth)');
+                                showLoginError('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+                                return;
+                            }
+                            const { hash: computedHash } = await hashPasswordPBKDF2_SHA512(password, chData.salt);
+                            const { data: vData, error: vErr } = await supabase.rpc('verify_officer_login', {
+                                p_identifier: username,
+                                p_password_hash: computedHash
+                            });
+                            if (!vErr && vData && vData.success && vData.user) {
+                                const su = vData.user;
+                                const rankDisplay = su.rank ? (su.full_name.startsWith(su.rank) ? su.full_name : `${su.rank} ${su.full_name}`) : su.full_name;
+                                const loggedUser = {
+                                    id: su.id,
+                                    username: su.username,
+                                    badge_no: su.badge_no,
+                                    full_name: su.full_name,
+                                    rank: su.rank,
+                                    rank_name: rankDisplay,
+                                    role: su.role,
+                                    position: su.position || (su.role === 'admin' ? 'ผู้ดูแลระบบสูงสุด (Super Admin)' : (su.role === 'inquiry' ? 'พนักงานสอบสวน สภ.บางพลี' : 'ฝ่ายสืบสวน สภ.บางพลี')),
+                                    department: su.department || (su.role === 'inquiry' ? 'งานสอบสวน' : 'ฝ่ายสืบสวน'),
+                                    status: su.status || 'active',
+                                    source: 'supabase_rpc'
+                                };
+                                setAuthToken('supa_rpc_session_' + Date.now() + '_' + su.badge_no, loggedUser);
+                                currentAuthUser = loggedUser;
+                                appendLocalAuditLog(loggedUser, 'LOGIN_SUCCESS', 'AUTH', loggedUser.badge_no, `เข้าสู่ระบบสำเร็จผ่าน Supabase RPC (${loggedUser.rank_name})`);
+                                closeModal('policeLoginModal');
+                                updateAuthUI();
+                                checkBackendStatus();
+                                resetSessionIdleTimer();
+                                toast(`🔐 ยินดีต้อนรับ ${loggedUser.rank_name} เข้าสู่ระบบ สภ.บางพลี`);
+                                warnWeakDefaultPasswordIfUsed();
+                                return;
+                            } else {
+                                appendLocalAuditLog({ badge_no: username, rank_name: username, role: 'guest' }, 'LOGIN_FAILED', 'AUTH', username, 'รหัสผ่านไม่ถูกต้อง (Supabase RPC Auth)');
+                                showLoginError('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+                                return;
+                            }
+                        }
+                    } catch (_) {}
+
+                    // 3b. Legacy public.users select (เฉพาะกรณีฐานข้อมูลยังไม่ได้รัน SQL Hardening)
                     try {
                         const { data: supaUsers, error: sErr } = await supabase
                             .from('users')
@@ -13269,92 +13424,26 @@ ${currentDocPrintHtml}
                                         status: 'active',
                                         source: 'supabase'
                                     };
-
-                                    const zkToken = 'supa_session_' + Date.now() + '_' + supaUser.badge_no;
-                                    setAuthToken(zkToken, loggedUser);
+                                    setAuthToken('supa_session_' + Date.now() + '_' + supaUser.badge_no, loggedUser);
                                     currentAuthUser = loggedUser;
                                     appendLocalAuditLog(loggedUser, 'LOGIN_SUCCESS', 'AUTH', loggedUser.badge_no, `เข้าสู่ระบบสำเร็จผ่าน Supabase Cloud (${loggedUser.rank_name})`);
-                                    if (typeof syncAuditLogToSupabaseZeroKnowledge === 'function') {
-                                        syncAuditLogToSupabaseZeroKnowledge('LOGIN_SUCCESS', 'AUTH', loggedUser.badge_no, `เข้าสู่ระบบสำเร็จ (${loggedUser.rank_name})`);
-                                    }
                                     closeModal('policeLoginModal');
                                     updateAuthUI();
                                     checkBackendStatus();
                                     resetSessionIdleTimer();
                                     toast(`🔐 ยินดีต้อนรับ ${loggedUser.rank_name} เข้าสู่ระบบ สภ.บางพลี (Supabase Cloud)`);
-                                    setTimeout(autoSyncLocalUsersToSupabase, 1500);
-                                    return;
-                                } else {
-                                    appendLocalAuditLog({ badge_no: username, rank_name: username, role: 'guest' }, 'LOGIN_FAILED', 'AUTH', username, 'รหัสผ่านไม่ถูกต้อง (Supabase Auth)');
-                                    if (errEl) {
-                                        errEl.textContent = 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง';
-                                        errEl.classList.remove('hidden');
-                                    } else {
-                                        toast('⚠️ ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
-                                    }
+                                    warnWeakDefaultPasswordIfUsed();
                                     return;
                                 }
                             }
                         }
                     } catch (supaEx) {
-                        console.warn('[SUPABASE LOGIN CHECK FAILED, FALLING BACK]', supaEx);
+                        console.warn('[SUPABASE LOGIN CHECK FAILED]', supaEx);
                     }
                 }
 
-                // 2. ตรวจสอบกับ Backend API /api/auth/login (กรณีรันบน Node server.js)
-                const result = await safeApiFetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-
-                if (!result._staticCloudMode && result.data) {
-                    const data = result.data;
-                    if (data.success && data.token) {
-                        setAuthToken(data.token, data.user);
-                        currentAuthUser = data.user;
-                        closeModal('policeLoginModal');
-                        updateAuthUI();
-                        await syncArrestRecordsFromSecureBackend();
-                        checkBackendStatus();
-                        resetSessionIdleTimer();
-                        toast(`🔐 ยินดีต้อนรับ ${data.user.rank_name} เข้าสู่ระบบ สภ.บางพลี`);
-                        setTimeout(autoSyncLocalUsersToSupabase, 1500);
-                        return;
-                    }
-                }
-
-                // 3. ตรวจสอบในระบบ Zero-Knowledge Client Auth (Fallback สำหรับ LocalStorage)
-                const users = getLocalUsersStore();
-                const foundUser = users.find(u =>
-                    (u.username.toLowerCase() === username.toLowerCase() || u.badge_no === username) &&
-                    u.status !== 'suspended'
-                );
-
-                const expectedPass = foundUser?.pass || 'Police@2569';
-                if (foundUser && password === expectedPass) {
-                    const zkToken = 'zk_session_' + Date.now() + '_' + foundUser.badge_no;
-                    setAuthToken(zkToken, foundUser);
-                    currentAuthUser = foundUser;
-                    appendLocalAuditLog(foundUser, 'LOGIN_SUCCESS', 'AUTH', foundUser.badge_no, `เข้าสู่ระบบสำเร็จในตำแหน่ง ${foundUser.position} (Zero-Knowledge Cloud)`);
-                    if (typeof syncAuditLogToSupabaseZeroKnowledge === 'function') {
-                        syncAuditLogToSupabaseZeroKnowledge('LOGIN_SUCCESS', 'AUTH', foundUser.badge_no, `เข้าสู่ระบบสำเร็จ (${foundUser.rank_name})`);
-                    }
-                    closeModal('policeLoginModal');
-                    updateAuthUI();
-                    checkBackendStatus();
-                    resetSessionIdleTimer();
-                    toast(`🔐 ยินดีต้อนรับ ${foundUser.rank_name} เข้าสู่ระบบ สภ.บางพลี`);
-                    setTimeout(autoSyncLocalUsersToSupabase, 1500);
-                } else {
-                    appendLocalAuditLog({ badge_no: username, rank_name: username, role: 'guest' }, 'LOGIN_FAILED', 'AUTH', username, 'ระบุชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
-                    if (errEl) {
-                        errEl.textContent = 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง';
-                        errEl.classList.remove('hidden');
-                    } else {
-                        toast('⚠️ ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
-                    }
-                }
+                appendLocalAuditLog({ badge_no: username, rank_name: username, role: 'guest' }, 'LOGIN_FAILED', 'AUTH', username, 'ระบุชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+                showLoginError('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -13376,12 +13465,6 @@ ${currentDocPrintHtml}
             }
         }
 
-        function quickLoginAs(username) {
-            document.getElementById('loginUsernameInput').value = username;
-            document.getElementById('loginPasswordInput').value = 'Police@2569';
-            handleOfficerLogin();
-        }
-
         async function handleOfficerLogout() {
             isSessionLocked = false;
             if (sessionIdleTimer) clearTimeout(sessionIdleTimer);
@@ -13396,6 +13479,16 @@ ${currentDocPrintHtml}
                     method: 'POST',
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
+            }
+            try {
+                const sb = typeof getActiveSupabaseClient === 'function' ? getActiveSupabaseClient() : null;
+                if (sb && sb.auth && typeof sb.auth.signOut === 'function') {
+                    await sb.auth.signOut().catch(() => {});
+                }
+            } catch (_) {}
+            if (typeof ZeroKnowledgeCrypto !== 'undefined' && typeof ZeroKnowledgeCrypto.clearSavedMasterKey === 'function') {
+                // ล้าง key ใน memory/sessionStorage เมื่อออกจากระบบ (ยกเว้นกรณีผู้ใช้บันทึกไว้บนเครื่องสถานีอย่างชัดเจน)
+                try { if (!localStorage.getItem('cyber_zk_station_master_key')) ZeroKnowledgeCrypto.clearSavedMasterKey(); } catch (_) {}
             }
             setAuthToken('');
             currentAuthUser = null;
@@ -13480,32 +13573,57 @@ ${currentDocPrintHtml}
             }
 
             let isPasswordCorrect = false;
+            const uname = String(currentAuthUser?.username || currentAuthUser?.badge_no || '').trim();
 
-            // 1. ตรวจสอบกับ Supabase public.users ผ่าน PBKDF2-SHA512 (100,000 รอบ)
-            try {
-                const supabase = getActiveSupabaseClient();
-                if (supabase && currentAuthUser?.username) {
-                    const { data: supaUsers } = await supabase
-                        .from('users')
-                        .select('password_hash, salt')
-                        .eq('username', currentAuthUser.username)
-                        .limit(1);
+            // 1. ตรวจสอบกับ Backend API /api/auth/login (กรณีรันผ่าน server.js)
+            if (uname) {
+                try {
+                    const apiChk = await safeApiFetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: uname, password })
+                    });
+                    if (!apiChk._staticCloudMode && apiChk.status === 200 && apiChk.data?.success) {
+                        isPasswordCorrect = true;
+                        if (apiChk.data.token) setAuthToken(apiChk.data.token, apiChk.data.user || currentAuthUser);
+                    }
+                } catch (_) {}
+            }
 
-                    if (supaUsers && supaUsers.length > 0 && supaUsers[0].salt && supaUsers[0].password_hash) {
-                        const { hash: computedHash } = await hashPasswordPBKDF2_SHA512(password, supaUsers[0].salt);
-                        if (computedHash === supaUsers[0].password_hash) {
-                            isPasswordCorrect = true;
+            // 2. ตรวจสอบกับ Supabase Auth / RPC Challenge / public.users (PBKDF2-SHA512 100,000 รอบ)
+            if (!isPasswordCorrect && uname) {
+                try {
+                    const supabase = getActiveSupabaseClient();
+                    if (supabase) {
+                        if (currentAuthUser?._supabaseAuthActive && supabase.auth && typeof supabase.auth.signInWithPassword === 'function') {
+                            const emailGuess = uname.includes('@') ? uname : `${uname}@bangphli.police.local`;
+                            const { error: authErr } = await supabase.auth.signInWithPassword({ email: emailGuess, password });
+                            if (!authErr) isPasswordCorrect = true;
+                        }
+                        if (!isPasswordCorrect) {
+                            const { data: ch } = await supabase.rpc('get_officer_login_challenge', { p_identifier: uname }).catch(() => ({ data: null }));
+                            if (ch && ch.found && ch.salt) {
+                                const { hash: computedHash } = await hashPasswordPBKDF2_SHA512(password, ch.salt);
+                                const { data: vRes } = await supabase.rpc('verify_officer_login', { p_identifier: uname, p_password_hash: computedHash }).catch(() => ({ data: null }));
+                                if (vRes && vRes.success) isPasswordCorrect = true;
+                            }
+                        }
+                        if (!isPasswordCorrect) {
+                            const { data: supaUsers } = await supabase
+                                .from('users')
+                                .select('password_hash, salt')
+                                .eq('username', uname)
+                                .limit(1);
+
+                            if (supaUsers && supaUsers.length > 0 && supaUsers[0].salt && supaUsers[0].password_hash) {
+                                const { hash: computedHash } = await hashPasswordPBKDF2_SHA512(password, supaUsers[0].salt);
+                                if (computedHash === supaUsers[0].password_hash) {
+                                    isPasswordCorrect = true;
+                                }
+                            }
                         }
                     }
-                }
-            } catch (_) {}
-
-            // 2. Fallback ตรวจสอบกับรหัสผ่านใน LocalStore
-            if (!isPasswordCorrect) {
-                const expected = currentAuthUser?.pass || 'Police@2569';
-                if (password === expected) {
-                    isPasswordCorrect = true;
-                }
+                } catch (_) {}
             }
 
             if (isPasswordCorrect) {
@@ -13676,20 +13794,20 @@ ${currentDocPrintHtml}
 
                 return `
                     <tr class="hover:bg-slate-800/40 transition">
-                        <td class="p-3 font-mono text-slate-400 whitespace-nowrap">${dStr} ${tStr}</td>
+                        <td class="p-3 font-mono text-slate-400 whitespace-nowrap">${escapeHtml(dStr)} ${escapeHtml(tStr)}</td>
                         <td class="p-3">
-                            <div class="font-bold text-white">${l.user_name || '-'}</div>
-                            <div class="text-[10px] text-slate-400 font-mono">รหัส ${l.user_badge || '-'}</div>
+                            <div class="font-bold text-white">${escapeHtml(l.user_name || '-')}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">รหัส ${escapeHtml(l.user_badge || '-')}</div>
                         </td>
                         <td class="p-3">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-800 text-slate-300 border border-slate-700">${l.user_role || '-'}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-800 text-slate-300 border border-slate-700">${escapeHtml(l.user_role || '-')}</span>
                         </td>
                         <td class="p-3">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeClass}">${l.action}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeClass}">${escapeHtml(l.action)}</span>
                         </td>
-                        <td class="p-3 font-mono text-slate-300">${l.target_id || '-'}</td>
-                        <td class="p-3 text-slate-300 max-w-xs break-words">${l.details || '-'}</td>
-                        <td class="p-3 text-right font-mono text-slate-400 text-[11px]">${l.ip_address || '-'}</td>
+                        <td class="p-3 font-mono text-slate-300">${escapeHtml(l.target_id || '-')}</td>
+                        <td class="p-3 text-slate-300 max-w-xs break-words">${escapeHtml(l.details || '-')}</td>
+                        <td class="p-3 text-right font-mono text-slate-400 text-[11px]">${escapeHtml(l.ip_address || '-')}</td>
                     </tr>
                 `;
             }).join('');
@@ -13867,6 +13985,7 @@ ${currentDocPrintHtml}
         async function loadUsersFromApi(options = {}) {
             const silent = Boolean(options && options.silent);
             const token = (typeof getAuthToken === 'function') ? getAuthToken() : '';
+            if (!token) return;
 
             const tbody = document.getElementById('usersTableBody');
             if (tbody && !silent) tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400">⏳ กำลังเรียกข้อมูลเจ้าหน้าที่ตำรวจ...</td></tr>';
@@ -13990,27 +14109,29 @@ ${currentDocPrintHtml}
                 const canEdit = isAdmin;
                 const isSelf = currentAuthUser && (String(currentAuthUser.id) === String(u.id) || currentAuthUser.username === u.username);
 
+                const safeUid = escapeHtml(String(u.id || '').replace(/['"\\]/g, ''));
+                const safeRankJs = escapeHtml(String(u.rank_name || '').replace(/['"\\]/g, ''));
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                         <td class="p-3.5">
-                            <div class="font-bold text-slate-900 dark:text-white">${u.rank_name}</div>
+                            <div class="font-bold text-slate-900 dark:text-white">${escapeHtml(u.rank_name)}</div>
                             ${isSelf ? '<span class="text-[9px] text-amber-500 font-bold">(บัญชีปัจจุบันของคุณ)</span>' : ''}
                         </td>
                         <td class="p-3.5 font-mono text-slate-600 dark:text-slate-300">
-                            <div>${u.username}</div>
-                            <div class="text-[10px] text-slate-400">รหัส ${u.badge_no}</div>
+                            <div>${escapeHtml(u.username)}</div>
+                            <div class="text-[10px] text-slate-400">รหัส ${escapeHtml(u.badge_no)}</div>
                         </td>
-                        <td class="p-3.5 text-slate-700 dark:text-slate-300 font-medium">${u.position || '-'}</td>
-                        <td class="p-3.5 text-slate-600 dark:text-slate-400">${u.department || '-'}</td>
-                        <td class="p-3.5">${roleBadges[u.role] || u.role}</td>
+                        <td class="p-3.5 text-slate-700 dark:text-slate-300 font-medium">${escapeHtml(u.position || '-')}</td>
+                        <td class="p-3.5 text-slate-600 dark:text-slate-400">${escapeHtml(u.department || '-')}</td>
+                        <td class="p-3.5">${roleBadges[u.role] || escapeHtml(u.role)}</td>
                         <td class="p-3.5 text-center">${statusBadge}</td>
                         <td class="p-3.5 text-center">
                             <div class="flex items-center justify-center gap-1.5">
-                                <button type="button" onclick="openEditUserModal('${u.id}')" class="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500 text-blue-500 hover:text-white text-xs transition" title="แก้ไขข้อมูล/สิทธิ์">
+                                <button type="button" onclick="openEditUserModal('${safeUid}')" class="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500 text-blue-500 hover:text-white text-xs transition" title="แก้ไขข้อมูล/สิทธิ์">
                                     ✏️
                                 </button>
                                 ${!isSelf && canEdit ? `
-                                <button type="button" onclick="deleteUserAccount('${u.id}', '${u.rank_name}')" class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white text-xs transition" title="ลบบัญชีผู้ใช้งาน">
+                                <button type="button" onclick="deleteUserAccount('${safeUid}', '${safeRankJs}')" class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white text-xs transition" title="ลบบัญชีผู้ใช้งาน">
                                     🗑️
                                 </button>` : ''}
                             </div>
@@ -14046,6 +14167,22 @@ ${currentDocPrintHtml}
             renderUsersTable(filtered);
         }
 
+        function generateRandomNewUserPassword() {
+            const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+            const bytes = new Uint8Array(12);
+            (window.crypto || crypto).getRandomValues(bytes);
+            const pwd = Array.from(bytes, b => charset[b % charset.length]).join('');
+            const el = document.getElementById('newPassword');
+            if (el) {
+                el.value = pwd;
+                el.type = 'text';
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(pwd).catch(() => {});
+            }
+            toast('🎲 สร้างรหัสผ่านปลอดภัยและคัดลอกลง Clipboard แล้ว (กรุณาแจ้งเจ้าหน้าที่เจ้าของบัญชี)');
+        }
+
         function openAddUserModal() {
             const isAdmin = currentAuthUser && (currentAuthUser.role === 'admin' || currentAuthUser.position.includes('ผกก'));
             if (!isAdmin) {
@@ -14059,7 +14196,8 @@ ${currentDocPrintHtml}
             document.getElementById('newPosition').value = '';
             document.getElementById('newDepartment').value = 'ฝ่ายสืบสวน';
             document.getElementById('newRole').value = 'detective';
-            document.getElementById('newPassword').value = 'Police@2569';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('newPassword').type = 'password';
             const errEl = document.getElementById('addUserErrorMsg');
             if (errEl) errEl.classList.add('hidden');
             if (typeof syncCustomSelectUI === 'function') {
@@ -14081,10 +14219,21 @@ ${currentDocPrintHtml}
             const position = document.getElementById('newPosition').value.trim();
             const department = document.getElementById('newDepartment').value;
             const role = document.getElementById('newRole').value;
-            const password = document.getElementById('newPassword').value.trim() || 'Police@2569';
+            const password = document.getElementById('newPassword').value.trim();
 
             const errEl = document.getElementById('addUserErrorMsg');
             if (errEl) errEl.classList.add('hidden');
+
+            if (!password || password.length < 8) {
+                const msg = 'กรุณากำหนดรหัสผ่านอย่างน้อย 8 ตัวอักษร (ห้ามใช้ค่าว่างหรือรหัสผ่านอ่อนแอ)';
+                if (errEl) {
+                    errEl.textContent = msg;
+                    errEl.classList.remove('hidden');
+                } else {
+                    toast('⚠️ ' + msg);
+                }
+                return;
+            }
 
             const submitBtn = e.target ? e.target.querySelector('button[type="submit"]') : null;
             const origTxt = submitBtn ? submitBtn.innerHTML : '';
@@ -14167,8 +14316,7 @@ ${currentDocPrintHtml}
                     position: position || 'เจ้าหน้าที่ตำรวจ สภ.บางพลี',
                     department: department || 'ฝ่ายสืบสวน',
                     role: role || 'detective',
-                    status: 'active',
-                    pass: password
+                    status: 'active'
                 };
                 users.push(newUser);
                 saveLocalUsersStore(users);
@@ -14283,7 +14431,7 @@ ${currentDocPrintHtml}
                 users[idx].department = department || users[idx].department;
                 users[idx].role = role || users[idx].role;
                 users[idx].status = status || users[idx].status;
-                if (password) users[idx].pass = password;
+                if ('pass' in users[idx]) delete users[idx].pass;
                 saveLocalUsersStore(users);
                 if (typeof saveUserMetaOverride === 'function') saveUserMetaOverride(users[idx]);
                 recordClientAuditLog('UPDATE_USER', 'USER', users[idx].username, `แก้ไขข้อมูลผู้ใช้งาน: ${rank_name} (ฝ่าย: ${department})`);
@@ -14363,17 +14511,21 @@ ${currentDocPrintHtml}
             const savedStation = localStorage.getItem('cyber_zk_station_code') || DEFAULT_STATION_CODE;
             const savedMasterKey = (typeof ZeroKnowledgeCrypto !== 'undefined')
                 ? ZeroKnowledgeCrypto.getSavedMasterKey()
-                : 'BANGPHLI-ZK-MASTER-KEY-2569';
+                : '';
 
             const urlEl = document.getElementById('zkEndpointUrl');
             const keyEl = document.getElementById('zkSupabaseAnonKey');
             const stnEl = document.getElementById('zkStationCode');
             const mkEl = document.getElementById('zkMasterKeyInput');
+            const remEl = document.getElementById('zkRememberMasterKeyChk');
 
             if (urlEl) urlEl.value = savedUrl;
             if (keyEl) keyEl.value = savedKey;
             if (stnEl) stnEl.value = savedStation;
             if (mkEl) mkEl.value = savedMasterKey;
+            if (remEl) {
+                try { remEl.checked = Boolean(localStorage.getItem('cyber_zk_station_master_key')); } catch (_) {}
+            }
 
             await updateZkFingerprintDisplay();
         }
@@ -14387,9 +14539,20 @@ ${currentDocPrintHtml}
 
             const pass = mkEl ? mkEl.value.trim() : ZeroKnowledgeCrypto.getSavedMasterKey();
             const stn = stnEl ? stnEl.value.trim() : DEFAULT_STATION_CODE;
+            if (!pass) {
+                badge.textContent = '● ยังไม่ตั้งค่า Master Key (แนะนำตั้งรหัสผ่าน >= 12 ตัวอักษร)';
+                badge.className = 'text-amber-400 font-mono font-bold text-[10px] bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30';
+                return;
+            }
             try {
                 const fp = await ZeroKnowledgeCrypto.getKeyFingerprint(pass, stn);
-                badge.textContent = `● AES-256-GCM Active (${fp})`;
+                if (typeof ZeroKnowledgeCrypto.isLegacyDefaultKey === 'function' && ZeroKnowledgeCrypto.isLegacyDefaultKey(pass)) {
+                    badge.textContent = `⚠️ ใช้รหัสผ่านเก่า (${fp}) กรุณาเปลี่ยนใหม่`;
+                    badge.className = 'text-rose-400 font-mono font-bold text-[10px] bg-rose-500/15 px-2 py-0.5 rounded border border-rose-500/40';
+                } else {
+                    badge.textContent = `● AES-256-GCM Active (${fp})`;
+                    badge.className = 'text-emerald-400 font-mono font-bold text-[10px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30';
+                }
             } catch (_) {}
         }
 
@@ -14423,16 +14586,24 @@ ${currentDocPrintHtml}
             const url = (document.getElementById('zkEndpointUrl')?.value || DEFAULT_SUPABASE_URL).trim();
             const anonKey = (document.getElementById('zkSupabaseAnonKey')?.value || DEFAULT_SUPABASE_ANON_KEY).trim();
             const stationCode = (document.getElementById('zkStationCode')?.value || DEFAULT_STATION_CODE).trim();
-            const masterKey = (document.getElementById('zkMasterKeyInput')?.value || 'BANGPHLI-ZK-MASTER-KEY-2569').trim();
+            const masterKey = (document.getElementById('zkMasterKeyInput')?.value || (typeof ZeroKnowledgeCrypto !== 'undefined' ? ZeroKnowledgeCrypto.getSavedMasterKey() : '') || '').trim();
+            const persistLocal = Boolean(document.getElementById('zkRememberMasterKeyChk')?.checked);
 
             const resEl = document.getElementById('zkTestResult');
             if (!resEl) return;
+
+            if (!masterKey || masterKey.length < 8) {
+                resEl.classList.remove('hidden');
+                resEl.className = 'p-3.5 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs';
+                resEl.textContent = '⚠️ กรุณากรอก Station Master Key อย่างน้อย 8 ตัวอักษร (ห้ามเว้นว่างหรือใช้ค่าเริ่มต้น) ก่อนทดสอบ Zero-Knowledge Handshake';
+                return;
+            }
 
             resEl.classList.remove('hidden');
             resEl.className = 'p-3.5 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-200 text-xs space-y-2 max-h-64 overflow-y-auto';
             resEl.innerHTML = `
                 <div class="font-bold flex items-center gap-2 text-indigo-300">
-                    <span>⏳</span> <span>กำลังยิงทดสอบการเชื่อมต่อจริงไปยัง Supabase (${url}) และทดสอบเข้ารหัส Web Crypto API...</span>
+                    <span>⏳</span> <span>กำลังยิงทดสอบการเชื่อมต่อจริงไปยัง Supabase (${escapeHtml(url)}) และทดสอบเข้ารหัส Web Crypto API...</span>
                 </div>
             `;
 
@@ -14441,7 +14612,7 @@ ${currentDocPrintHtml}
                 if (typeof ZeroKnowledgeCrypto === 'undefined') {
                     throw new Error('ไม่พบโมดูล ZeroKnowledgeCrypto (js/zk-crypto.js)');
                 }
-                ZeroKnowledgeCrypto.setSavedMasterKey(masterKey);
+                ZeroKnowledgeCrypto.setSavedMasterKey(masterKey, persistLocal);
 
                 const sampleSubject = await ZeroKnowledgeCrypto.encryptSubjectForSupabase({
                     caseId: 'CASE-ZK-TEST',
@@ -14535,14 +14706,28 @@ ${currentDocPrintHtml}
             const url = (document.getElementById('zkEndpointUrl')?.value || DEFAULT_SUPABASE_URL).trim();
             const anonKey = (document.getElementById('zkSupabaseAnonKey')?.value || DEFAULT_SUPABASE_ANON_KEY).trim();
             const stationCode = (document.getElementById('zkStationCode')?.value || DEFAULT_STATION_CODE).trim();
-            const masterKey = (document.getElementById('zkMasterKeyInput')?.value || 'BANGPHLI-ZK-MASTER-KEY-2569').trim();
+            const masterKey = (document.getElementById('zkMasterKeyInput')?.value || '').trim();
+            const persistLocal = Boolean(document.getElementById('zkRememberMasterKeyChk')?.checked);
+
+            if (masterKey && masterKey.length < 8) {
+                toast('⚠️ Station Master Key ต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
+                return;
+            }
+            if (typeof ZeroKnowledgeCrypto !== 'undefined' && typeof ZeroKnowledgeCrypto.isLegacyDefaultKey === 'function' && ZeroKnowledgeCrypto.isLegacyDefaultKey(masterKey)) {
+                toast('⚠️ ห้ามใช้รหัสผ่าน Master Key ค่าเริ่มต้นเดิม กรุณาตั้งรหัสผ่านใหม่เฉพาะสถานี');
+                return;
+            }
 
             try {
                 localStorage.setItem('cyber_zk_supabase_url', url);
                 localStorage.setItem('cyber_zk_supabase_key', anonKey);
                 localStorage.setItem('cyber_zk_station_code', stationCode);
                 if (typeof ZeroKnowledgeCrypto !== 'undefined') {
-                    ZeroKnowledgeCrypto.setSavedMasterKey(masterKey);
+                    if (masterKey) {
+                        ZeroKnowledgeCrypto.setSavedMasterKey(masterKey, persistLocal);
+                    } else if (!persistLocal && typeof ZeroKnowledgeCrypto.clearSavedMasterKey === 'function') {
+                        ZeroKnowledgeCrypto.clearSavedMasterKey();
+                    }
                 }
             } catch (_) {}
             closeModal('zkCloudModal');
@@ -14568,6 +14753,11 @@ ${currentDocPrintHtml}
 
                 const stationCode = localStorage.getItem('cyber_zk_station_code') || DEFAULT_STATION_CODE;
                 const masterKey = ZeroKnowledgeCrypto.getSavedMasterKey();
+                if (!masterKey) {
+                    console.warn('[ZK-Supabase Sync Arrest] Skipped cloud PII upload: Station Master Key not configured.');
+                    return;
+                }
+                const hasMasterKey = Boolean(masterKey);
 
                 const rawVictim = String(caseItem.victim || '');
                 const victimPhoneMatch = rawVictim.match(/0\d{8,9}/);
@@ -14576,22 +14766,40 @@ ${currentDocPrintHtml}
                 const cleanCaseNo = String(caseItem.caseNo || '').trim().toUpperCase();
                 const nowIso = new Date().toISOString();
 
-                const encryptedCase = await ZeroKnowledgeCrypto.encryptCaseForSupabase({
-                    id: String(caseItem.id || cleanCaseNo),
-                    caseNo: cleanCaseNo,
-                    caseType: 'คดีออนไลน์',
-                    fraudCategory: caseItem.type,
-                    status: caseItem.status,
-                    damageAmount: caseItem.amount,
-                    investigatorName: caseItem.investigator,
-                    detectiveName: caseItem.detective,
-                    victimName: victimCleanName,
-                    victimPhone: victimPhone,
-                    incidentDate: caseItem.date || '',
-                    muleAccounts: Array.isArray(caseItem.accounts) ? caseItem.accounts : [],
-                    summary: `ผู้เสียหาย: ${caseItem.victim || '-'} | บัญชีคนร้าย: ${(caseItem.accounts || []).join(', ')}`,
-                    createdBy: currentAuthUser?.rank_name || caseItem.investigator || 'OFFICER'
-                }, masterKey, stationCode);
+                const encryptedCase = hasMasterKey
+                    ? await ZeroKnowledgeCrypto.encryptCaseForSupabase({
+                        id: String(caseItem.id || cleanCaseNo),
+                        caseNo: cleanCaseNo,
+                        caseType: 'คดีออนไลน์',
+                        fraudCategory: caseItem.type,
+                        status: caseItem.status,
+                        damageAmount: caseItem.amount,
+                        investigatorName: caseItem.investigator,
+                        detectiveName: caseItem.detective,
+                        victimName: victimCleanName,
+                        victimPhone: victimPhone,
+                        incidentDate: caseItem.date || '',
+                        muleAccounts: Array.isArray(caseItem.accounts) ? caseItem.accounts : [],
+                        summary: `ผู้เสียหาย: ${caseItem.victim || '-'} | บัญชีคนร้าย: ${(caseItem.accounts || []).join(', ')}`,
+                        createdBy: currentAuthUser?.rank_name || caseItem.investigator || 'OFFICER'
+                    }, masterKey, stationCode)
+                    : {
+                        id: String(caseItem.id || cleanCaseNo),
+                        case_no: cleanCaseNo,
+                        station_code: stationCode,
+                        case_type: 'คดีออนไลน์',
+                        fraud_category: caseItem.type || '1. หลอกลวงซื้อขายสินค้าออนไลน์',
+                        status: caseItem.status || 'พบพงส.',
+                        damage_amount: Number(caseItem.amount || 0),
+                        investigator_name: caseItem.investigator || null,
+                        detective_name: caseItem.detective || null,
+                        victim_name: victimCleanName,
+                        victim_phone: victimPhone,
+                        incident_date: caseItem.date || '',
+                        mule_accounts: Array.isArray(caseItem.accounts) ? caseItem.accounts : [],
+                        encryption_algo: 'AES-256-GCM-WebCrypto',
+                        created_by: currentAuthUser?.rank_name || caseItem.investigator || 'OFFICER'
+                    };
 
                 // 1. Upsert ลงตาราง public.cases ตาม id
                 const { error: upsertErr } = await sb.from('cases').upsert([encryptedCase], { onConflict: 'id' });
@@ -14612,10 +14820,11 @@ ${currentDocPrintHtml}
                         victim_phone: victimPhone,
                         incident_date: caseItem.date || '',
                         mule_accounts: Array.isArray(caseItem.accounts) ? caseItem.accounts : [],
-                        summary_enc: encryptedCase.summary_enc,
-                        metadata_enc: encryptedCase.metadata_enc,
                         updated_at: nowIso
                     };
+                    if (hasMasterKey && encryptedCase.summary_enc) commonUpdate.summary_enc = encryptedCase.summary_enc;
+                    if (hasMasterKey && encryptedCase.metadata_enc) commonUpdate.metadata_enc = encryptedCase.metadata_enc;
+
                     const { error: updAllErr } = await sb.from('cases').update(commonUpdate).ilike('case_no', cleanCaseNo);
                     if (updAllErr && (updAllErr.message?.includes('detective_name') || updAllErr.code === '42703')) {
                         const { detective_name, ...fallbackCommon } = commonUpdate;
@@ -14623,17 +14832,19 @@ ${currentDocPrintHtml}
                     }
                 }
 
-                const encryptedSubject = await ZeroKnowledgeCrypto.encryptSubjectForSupabase({
-                    caseId: encryptedCase.id,
-                    role: 'victim',
-                    displayAlias: `ผู้เสียหายคดี ${cleanCaseNo}`,
-                    fullName: caseItem.victim || 'ผู้เสียหาย',
-                    phone: victimPhone,
-                    bankAccount: (caseItem.accounts || []).join(' | '),
-                    createdBy: currentAuthUser?.rank_name || 'OFFICER'
-                }, masterKey, stationCode);
+                if (hasMasterKey) {
+                    const encryptedSubject = await ZeroKnowledgeCrypto.encryptSubjectForSupabase({
+                        caseId: encryptedCase.id,
+                        role: 'victim',
+                        displayAlias: `ผู้เสียหายคดี ${cleanCaseNo}`,
+                        fullName: caseItem.victim || 'ผู้เสียหาย',
+                        phone: victimPhone,
+                        bankAccount: (caseItem.accounts || []).join(' | '),
+                        createdBy: currentAuthUser?.rank_name || 'OFFICER'
+                    }, masterKey, stationCode);
 
-                await sb.from('subjects').insert([encryptedSubject]);
+                    await sb.from('subjects').insert([encryptedSubject]);
+                }
 
                 // 3. ซิงค์เข้าตาราง cyber_details ใน Supabase เพื่อให้ชื่อ พงส. และสืบสวนผู้รับผิดชอบ ตรงกันทั้งสองตาราง
                 if (cleanCaseNo && !window._supaCyberDetailsPermissionDenied) {
@@ -14672,6 +14883,10 @@ ${currentDocPrintHtml}
 
                 const stationCode = localStorage.getItem('cyber_zk_station_code') || DEFAULT_STATION_CODE;
                 const masterKey = ZeroKnowledgeCrypto.getSavedMasterKey();
+                if (!masterKey) {
+                    console.warn('[ZK-Supabase Sync Arrest] Skipped cloud PII upload: Station Master Key not configured.');
+                    return;
+                }
 
                 const encryptedCase = await ZeroKnowledgeCrypto.encryptCaseForSupabase({
                     id: String(arrestRec.id),
@@ -14833,16 +15048,18 @@ ${currentDocPrintHtml}
 
         async function refreshNewPoliceRequestsData(showToast = true) {
             const token = getAuthToken();
+            if (!token) {
+                renderNewPoliceUsersUI();
+                return;
+            }
             let loaded = null;
 
-            // 1. ดึงจาก Local Backend API (Admin หรือ External Endpoint)
-            if (token) {
-                const res = await safeApiFetch('/api/admin/newpolice/requests', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                if (!res._staticCloudMode && res.data && res.data.success && Array.isArray(res.data.requests)) {
-                    loaded = res.data.requests;
-                }
+            // 1. ดึงจาก Local Backend API (ต้องมี Token เจ้าหน้าที่แล้วเท่านั้น)
+            const res = await safeApiFetch('/api/admin/newpolice/requests', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res._staticCloudMode && res.data && res.data.success && Array.isArray(res.data.requests)) {
+                loaded = res.data.requests;
             }
 
             if (!loaded) {
@@ -15010,19 +15227,19 @@ ${currentDocPrintHtml}
                         return `
                             <tr class="hover:bg-slate-900/60 transition">
                                 <td class="p-3">
-                                    <div class="font-mono font-bold text-amber-400 text-xs">${r.request_code || 'REQ-' + r.id}</div>
-                                    <div class="text-[10px] text-slate-400">${dateStr}</div>
+                                    <div class="font-mono font-bold text-amber-400 text-xs">${escapeHtml(r.request_code || 'REQ-' + r.id)}</div>
+                                    <div class="text-[10px] text-slate-400">${escapeHtml(dateStr)}</div>
                                 </td>
                                 <td class="p-3">
-                                    <div class="font-bold text-white text-xs">${r.rank_name}</div>
-                                    <div class="text-[10px] text-slate-400">${r.position} (${r.badge_no})</div>
+                                    <div class="font-bold text-white text-xs">${escapeHtml(r.rank_name)}</div>
+                                    <div class="text-[10px] text-slate-400">${escapeHtml(r.position)} (${escapeHtml(r.badge_no)})</div>
                                 </td>
                                 <td class="p-3">
-                                    <div class="text-slate-200 text-[11px] font-medium">${r.agency}</div>
-                                    <div class="text-[10px] text-slate-400 font-mono">${r.phone || '-'} (IP: ${r.ip_address || '-'})</div>
+                                    <div class="text-slate-200 text-[11px] font-medium">${escapeHtml(r.agency)}</div>
+                                    <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(r.phone || '-')} (IP: ${escapeHtml(r.ip_address || '-')})</div>
                                 </td>
                                 <td class="p-3 max-w-xs">
-                                    <p class="text-slate-300 text-[11px] line-clamp-2" title="${r.purpose || ''}">${r.purpose || '-'}</p>
+                                    <p class="text-slate-300 text-[11px] line-clamp-2" title="${escapeHtml(r.purpose || '')}">${escapeHtml(r.purpose || '-')}</p>
                                 </td>
                                 <td class="p-3">
                                     ${statusBadge}
@@ -16574,7 +16791,12 @@ ${currentDocPrintHtml}
         }
 
         function escapeHtml(str) {
-            return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            return String(str === null || str === undefined ? '' : str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         function updateInterrogationField(idx, field, val) {

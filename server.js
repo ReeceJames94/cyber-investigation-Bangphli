@@ -420,11 +420,24 @@ if (countCyberDetails === 0) {
     console.log('[SECURITY] Pre-seeded 4 cyber_details cases for สภ.บางพลี.');
 }
 
-// Pre-seed police users if empty
+// Initial user accounts seeding (NO hardcoded weak password in source; uses INITIAL_ADMIN_PASSWORD or generated 16-char secret)
+function getBootstrapInitialPassword() {
+    if (process.env.INITIAL_ADMIN_PASSWORD && String(process.env.INITIAL_ADMIN_PASSWORD).trim().length >= 8) {
+        return String(process.env.INITIAL_ADMIN_PASSWORD).trim();
+    }
+    const generated = crypto.randomBytes(12).toString('base64url');
+    if (!process.env._BOOTSTRAP_PWD_LOGGED) {
+        process.env._BOOTSTRAP_PWD_LOGGED = '1';
+        console.warn('⚠️ [SECURITY] Generated one-time bootstrap password for newly seeded SQLite accounts:', generated);
+        console.warn('⚠️ [SECURITY] Set INITIAL_ADMIN_PASSWORD in .env or change passwords immediately after login.');
+    }
+    return generated;
+}
+
 const countUsers = db.prepare('SELECT COUNT(*) as count FROM users;').get().count;
 if (countUsers === 0) {
     console.log('[SECURITY] Seeding default police personnel for สภ.บางพลี...');
-    const defaultPassword = 'Police@2569';
+    const defaultPassword = getBootstrapInitialPassword();
     const seedUsers = [
         {
             username: 'admin_bangphli',
@@ -481,20 +494,20 @@ if (countUsers === 0) {
     console.log('[SECURITY] Pre-seeded police accounts with AES & PBKDF2 security.');
 }
 
-// Ensure 'thanakrit' account always exists
+// Ensure 'thanakrit' account always exists on fresh DB
 const hasThanakrit = db.prepare("SELECT id FROM users WHERE username = 'thanakrit';").get();
 if (!hasThanakrit) {
-    const { hash, salt } = hashPassword('Police@2569');
+    const { hash, salt } = hashPassword(getBootstrapInitialPassword());
     db.prepare(`
         INSERT INTO users (username, badge_no, rank_name, position, department, role, password_hash, salt, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
     `).run('thanakrit', '10000', 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล', 'รอง สว.(สส.) สภ.บางพลี (Admin)', 'ฝ่ายสืบสวน', 'admin', hash, salt, new Date().toISOString());
 }
 
-// Ensure 'theeradej' (พ.ต.ต.ธีรเดช สุขเกษม) inquiry account always exists
+// Ensure 'theeradej' (พ.ต.ต.ธีรเดช สุขเกษม) inquiry account always exists on fresh DB
 const hasTheeradej = db.prepare("SELECT id FROM users WHERE username = 'theeradej';").get();
 if (!hasTheeradej) {
-    const { hash, salt } = hashPassword('Police@2569');
+    const { hash, salt } = hashPassword(getBootstrapInitialPassword());
     db.prepare(`
         INSERT INTO users (username, badge_no, rank_name, position, department, role, password_hash, salt, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
@@ -699,7 +712,7 @@ setInterval(() => {
 }, 60000);
 
 // =========================================================================
-// 3. HTTP SERVER & REST API
+// 3. HTTP SERVER & REST API (SECURITY HARDENED: STRICT AUTH, CORS, RATE LIMIT)
 // =========================================================================
 const MIME_TYPES = {
     '.html': 'text/html; charset=utf-8',
@@ -712,9 +725,71 @@ const MIME_TYPES = {
     '.svg': 'image/svg+xml',
     '.ico': 'image/x-icon',
     '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    '.pdf': 'application/pdf',
-    '.sql': 'text/plain; charset=utf-8'
+    '.pdf': 'application/pdf'
 };
+
+// Sliding-window Rate Limiter for Login & Public Victim Endpoints
+const rateLimitStore = new Map();
+setInterval(() => {
+    const now = Date.now();
+    for (const [k, entry] of rateLimitStore.entries()) {
+        if (!entry || entry.resetAt <= now) rateLimitStore.delete(k);
+    }
+}, 5 * 60 * 1000);
+
+function getClientIp(req) {
+    const xff = req.headers['x-forwarded-for'];
+    if (xff) return String(xff).split(',')[0].trim();
+    return req.socket?.remoteAddress || '127.0.0.1';
+}
+
+function checkRateLimit(bucket, key, limit, windowMs) {
+    const now = Date.now();
+    const storeKey = `${bucket}:${key}`;
+    let entry = rateLimitStore.get(storeKey);
+    if (!entry || entry.resetAt <= now) {
+        entry = { count: 0, resetAt: now + windowMs };
+    }
+    entry.count += 1;
+    rateLimitStore.set(storeKey, entry);
+    return {
+        allowed: entry.count <= limit,
+        remaining: Math.max(0, limit - entry.count),
+        retryAfterSec: Math.ceil((entry.resetAt - now) / 1000)
+    };
+}
+
+// Strict CORS Origin Allowlist (No blind wildcard *)
+const CONFIGURED_ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+function isAllowedOrigin(origin, hostHeader) {
+    if (!origin) return false;
+    if (CONFIGURED_ALLOWED_ORIGINS.includes(origin)) return true;
+    try {
+        const u = new URL(origin);
+        if (hostHeader && u.host === hostHeader) return true;
+        if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') return true;
+    } catch (_) {}
+    return false;
+}
+
+function applySecurityHeaders(res, req) {
+    const origin = req?.headers?.origin;
+    if (origin && isAllowedOrigin(origin, req?.headers?.host)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Vary', 'Origin');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Auth-Token, X-Newpolice-Token, x-newpolice-token');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
+}
 
 function sendJson(res, statusCode, data) {
     res.writeHead(statusCode, {
@@ -746,38 +821,36 @@ function readBody(req) {
     });
 }
 
+// STRICT Session Verification: NO zk_session_ / dev_token_ bypass!
 function authenticateReq(req) {
     const authHeader = req.headers['authorization'];
     let token = null;
     if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7).trim();
     } else if (req.headers['x-auth-token']) {
-        token = req.headers['x-auth-token'].trim();
+        token = String(req.headers['x-auth-token']).trim();
     }
-    const session = getSession(token);
-    if (session) return session;
-    // Support Zero-Knowledge client sessions for thanakrit / admin
-    if (token && (token.startsWith('zk_session_') || token.startsWith('dev_token_'))) {
-        return {
-            user_id: 1,
-            username: 'thanakrit',
-            badge_no: '10000',
-            rank_name: 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล',
-            role: 'admin',
-            position: 'รอง สว.(สส.) สภ.บางพลี (Super Admin)',
-            department: 'ฝ่ายสืบสวน'
-        };
-    }
-    return null;
+    if (!token) return null;
+    return getSession(token);
+}
+
+function verifyApprovedNewpoliceToken(req) {
+    const npToken = req.headers['x-newpolice-token'] || req.headers['X-Newpolice-Token'] ||
+        (req.headers['authorization'] ? String(req.headers['authorization']).replace(/^Bearer\s+/i, '').trim() : '');
+    if (!npToken) return null;
+    return db.prepare("SELECT * FROM newpolice_user_requests WHERE access_token = ? AND status = 'approved';").get(npToken) || null;
 }
 
 const server = http.createServer(async (req, res) => {
-    // CORS headers for local development if needed
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Auth-Token, X-Newpolice-Token, x-newpolice-token');
+    applySecurityHeaders(res, req);
 
     if (req.method === 'OPTIONS') {
+        const origin = req.headers.origin;
+        if (origin && !isAllowedOrigin(origin, req.headers.host)) {
+            res.writeHead(403);
+            res.end();
+            return;
+        }
         res.writeHead(204);
         res.end();
         return;
@@ -791,10 +864,21 @@ const server = http.createServer(async (req, res) => {
         // API ROUTES
         // =====================================================================
         if (pathname.startsWith('/api/')) {
-            // 1. AUTH: LOGIN
+            // 1. AUTH: LOGIN (WITH RATE LIMITING)
             if (pathname === '/api/auth/login' && req.method === 'POST') {
                 const body = await readBody(req);
-                const { username, password } = body;
+                const username = String(body.username || '').trim();
+                const password = String(body.password || '');
+                const clientIp = getClientIp(req);
+
+                const rl = checkRateLimit('login', `${clientIp}:${username.toLowerCase()}`, 10, 15 * 60 * 1000);
+                if (!rl.allowed) {
+                    recordAuditLog(null, 'LOGIN_RATE_LIMITED', 'AUTH', username || clientIp, `ล็อกการเข้าสู่ระบบชั่วคราว (${rl.retryAfterSec} วินาที)`, req);
+                    return sendJson(res, 429, {
+                        success: false,
+                        error: `พยายามเข้าสู่ระบบผิดเกินกำหนด กรุณารอ ${Math.ceil(rl.retryAfterSec / 60)} นาทีแล้วลองใหม่`
+                    });
+                }
 
                 if (!username || !password) {
                     return sendJson(res, 400, { success: false, error: 'กรุณาระบุชื่อผู้ใช้งานและรหัสผ่าน' });
@@ -860,17 +944,24 @@ const server = http.createServer(async (req, res) => {
                 return sendJson(res, 200, { success: true, message: 'ออกจากระบบเรียบร้อย' });
             }
 
-            // 4. SYSTEM STATUS
+            // 4. SYSTEM STATUS (DETAILS ONLY WHEN AUTHENTICATED)
             if (pathname === '/api/system/status' && req.method === 'GET') {
+                const session = authenticateReq(req);
+                const baseStatus = {
+                    success: true,
+                    status: 'online',
+                    station: 'สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑'
+                };
+                if (!session) {
+                    return sendJson(res, 200, baseStatus);
+                }
                 const userCount = db.prepare('SELECT COUNT(*) as c FROM users;').get().c;
                 const arrestCount = db.prepare('SELECT COUNT(*) as c FROM arrest_records;').get().c;
                 const logCount = db.prepare('SELECT COUNT(*) as c FROM audit_logs;').get().c;
                 const activeSessions = db.prepare('SELECT COUNT(*) as c FROM sessions WHERE expires_at > ?;').get(new Date().toISOString()).c;
 
                 return sendJson(res, 200, {
-                    success: true,
-                    status: 'online',
-                    station: 'สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑',
+                    ...baseStatus,
                     security: {
                         database: 'SQLite (Encrypted Fields at Rest)',
                         encryptionAlgorithm: 'AES-256-GCM (Authenticated Encryption)',
@@ -887,7 +978,7 @@ const server = http.createServer(async (req, res) => {
                 });
             }
 
-            // 4b. SUPABASE ENV CONFIG (FOR ZERO-KNOWLEDGE CLIENT)
+            // 4b. SUPABASE ENV CONFIG (PUBLIC URL & PUBLISHABLE KEY ONLY)
             if (pathname === '/api/config/supabase' && req.method === 'GET') {
                 return sendJson(res, 200, {
                     success: true,
@@ -897,33 +988,18 @@ const server = http.createServer(async (req, res) => {
                 });
             }
 
-            // 4c. NEWPOLICE: LIST CONNECTION REQUESTS (PUBLIC / EXTERNAL CHECK)
+            // 4c. NEWPOLICE: LIST CONNECTION REQUESTS (OFFICER AUTH REQUIRED)
             if (pathname === '/api/external/newpolice/requests' && req.method === 'GET') {
+                const session = authenticateReq(req);
+                if (!session) {
+                    return sendJson(res, 401, { success: false, error: 'โปรดเข้าสู่ระบบเจ้าหน้าที่ตำรวจก่อนดูคำขอเชื่อมต่อ (401 Unauthorized)' });
+                }
                 const requests = db.prepare("SELECT id, request_code, badge_no, rank_name, position, agency, purpose, status, access_token, ip_address, requested_at, reviewed_by_name, reviewed_at FROM newpolice_user_requests ORDER BY id DESC;").all();
                 return sendJson(res, 200, {
                     success: true,
                     requests,
                     pendingCount: requests.filter(r => r.status === 'pending').length
                 });
-            }
-
-            // 4c-2. NEWPOLICE: SIMULATE ADMIN APPROVE (TEST & DEMO)
-            if (pathname === '/api/external/newpolice/simulate-approve' && req.method === 'POST') {
-                const body = await readBody(req);
-                const code = body.requestCode || 'REQ-NP-1794889712288';
-                const accessToken = body.accessToken || ('NP-ACC-' + crypto.randomBytes(8).toString('hex').toUpperCase());
-                const now = new Date().toISOString();
-                db.prepare(`
-                    UPDATE newpolice_user_requests
-                    SET status = 'approved',
-                        access_token = ?,
-                        reviewed_by = 'NP-10001',
-                        reviewed_by_name = 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล',
-                        reviewed_at = ?
-                    WHERE request_code = ?;
-                `).run(accessToken, now, code);
-                const updated = db.prepare("SELECT * FROM newpolice_user_requests WHERE request_code = ?;").get(code);
-                return sendJson(res, 200, { success: true, request: updated, accessToken });
             }
 
             // 4c-3. NEWPOLICE MASTER UPDATE SERVER (SERVE VERSION INFO & INSTALLER EXE TO CLIENT PCS)
@@ -989,8 +1065,12 @@ const server = http.createServer(async (req, res) => {
                 }
             }
 
-            // 4d. NEWPOLICE: USER SUBMITS ACCESS REQUEST TO CYBER INVEST
+            // 4d. NEWPOLICE: USER SUBMITS ACCESS REQUEST TO CYBER INVEST (WITH RATE LIMITING)
             if (pathname === '/api/external/newpolice/request-access' && req.method === 'POST') {
+                const rl = checkRateLimit('np_request', getClientIp(req), 10, 15 * 60 * 1000);
+                if (!rl.allowed) {
+                    return sendJson(res, 429, { success: false, error: 'ส่งคำขอบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่' });
+                }
                 const body = await readBody(req);
                 const { badge_no, rank_name, position, agency, phone, purpose } = body;
                 if (!badge_no || !rank_name || !purpose) {
@@ -1107,8 +1187,13 @@ const server = http.createServer(async (req, res) => {
                 });
             }
 
-            // 4f. NEWPOLICE: LIST CYBER INVEST CASES (OPEN ENDPOINT MATCHING CYBER INVEST PORTAL)
+            // 4f. NEWPOLICE: LIST CYBER INVEST CASES (REQUIRES OFFICER SESSION OR APPROVED NEWPOLICE TOKEN)
             if (pathname === '/api/external/newpolice/cases' && (req.method === 'GET' || req.method === 'HEAD')) {
+                const officerSession = authenticateReq(req);
+                const approvedNp = officerSession ? null : verifyApprovedNewpoliceToken(req);
+                if (!officerSession && !approvedNp) {
+                    return sendJson(res, 401, { success: false, error: 'โปรดเข้าสู่ระบบเจ้าหน้าที่ตำรวจ หรือระบุ Token โครงการ newpolice ที่ได้รับอนุมัติแล้ว (401 Unauthorized)' });
+                }
                 const urlObj = new URL(req.url, 'http://localhost');
                 const requestedInvestigator = (urlObj.searchParams.get('investigator') || '').trim();
                 const requestedCaseNo = (urlObj.searchParams.get('caseNo') || '').trim();
@@ -1205,6 +1290,10 @@ const server = http.createServer(async (req, res) => {
             }
 
             if (pathname === '/api/external/newpolice/cases' && req.method === 'POST') {
+                const officerSession = authenticateReq(req);
+                if (!officerSession) {
+                    return sendJson(res, 401, { success: false, error: 'โปรดเข้าสู่ระบบเจ้าหน้าที่ตำรวจก่อนบันทึก/แก้ไขข้อมูลคดี (401 Unauthorized)' });
+                }
                 const body = await readBody(req);
                 const cleanCaseNo = String(body.caseNo || body.case_no || '').trim().toUpperCase();
                 if (!cleanCaseNo) {
@@ -1274,6 +1363,10 @@ const server = http.createServer(async (req, res) => {
             }
 
             if (pathname === '/api/external/newpolice/cases' && req.method === 'DELETE') {
+                const officerSession = authenticateReq(req);
+                if (!officerSession) {
+                    return sendJson(res, 401, { success: false, error: 'โปรดเข้าสู่ระบบเจ้าหน้าที่ตำรวจก่อนลบข้อมูลคดี (401 Unauthorized)' });
+                }
                 const urlObj = new URL(req.url, 'http://localhost');
                 let targetCaseNo = (urlObj.searchParams.get('caseNo') || '').trim().toUpperCase();
                 let targetId = (urlObj.searchParams.get('id') || '').trim();
@@ -1303,13 +1396,33 @@ const server = http.createServer(async (req, res) => {
                 }
             }
 
-            // 4e. VICTIM PRE-FILL INQUIRY SUBMISSIONS (NEWPOLICE INTEGRATION)
+            // 4e. VICTIM PRE-FILL INQUIRY SUBMISSIONS (REQUIRES OFFICER SESSION OR VERIFIED PHONE MATCH)
             if (pathname === '/api/external/newpolice/victim-inquiry' && req.method === 'POST') {
+                const rl = checkRateLimit('victim_submit', getClientIp(req), 15, 10 * 60 * 1000);
+                if (!rl.allowed) {
+                    return sendJson(res, 429, { success: false, error: 'ส่งข้อมูลบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่' });
+                }
+                const officerSession = authenticateReq(req);
                 const body = await readBody(req);
                 const id = body.id || ('sub-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7));
-                const caseNumber = body.caseNumber || '';
+                const caseNumber = String(body.caseNumber || '').trim();
+                const cleanCaseNo = caseNumber.toUpperCase();
                 const victimName = body.victimName || '';
-                const victimPhone = body.victimPhone || '';
+                const victimPhone = String(body.victimPhone || '').replace(/\D/g, '');
+                if (!officerSession) {
+                    if (!cleanCaseNo || victimPhone.length < 9) {
+                        return sendJson(res, 401, { success: false, error: 'ต้องระบุเลข Case ID และเบอร์โทรศัพท์ให้ตรงกับข้อมูลในระบบ' });
+                    }
+                    const caseRow = db.prepare('SELECT victim_phone, victim_name FROM cyber_details WHERE UPPER(case_no) = ?;').get(cleanCaseNo);
+                    if (!caseRow) {
+                        return sendJson(res, 404, { success: false, error: 'ไม่พบเลขคดีในระบบ' });
+                    }
+                    const cands = [(caseRow.victim_phone || '').replace(/\D/g, ''), (caseRow.victim_name || '').replace(/\D/g, '')].filter(p => p.length >= 9);
+                    const okPhone = cands.some(p => p.endsWith(victimPhone) || victimPhone.endsWith(p));
+                    if (!okPhone) {
+                        return sendJson(res, 401, { success: false, error: 'หมายเลขโทรศัพท์ไม่ตรงกับข้อมูลคดี' });
+                    }
+                }
                 const victimIdCard = body.victimIdCard || '';
                 const victimAddress = body.victimAddress || '';
                 const categoryId = body.categoryId || 'cat_1';
@@ -1342,6 +1455,10 @@ const server = http.createServer(async (req, res) => {
             }
 
             if (pathname === '/api/external/newpolice/victim-inquiries' && req.method === 'GET') {
+                const officerSession = authenticateReq(req);
+                if (!officerSession) {
+                    return sendJson(res, 401, { success: false, error: 'โปรดเข้าสู่ระบบเจ้าหน้าที่ตำรวจก่อนเข้าดูข้อมูลผู้เสียหาย (401 Unauthorized)' });
+                }
                 const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
                 const caseNo = urlObj.searchParams.get('caseNo') || '';
 
@@ -1386,29 +1503,25 @@ const server = http.createServer(async (req, res) => {
                 const requestedBadge = (urlObj.searchParams.get('badge') || '').trim();
                 const requestedCaseNo = (urlObj.searchParams.get('caseNo') || '').trim();
 
-                // ตรวจสอบสิทธิ์ผ่าน Session (ถ้ามีการส่ง Authorization Bearer Token)
+                // บังคับต้องเข้าสู่ระบบเจ้าหน้าที่ตำรวจก่อนทุกครั้ง (ห้ามดึงโดยไม่ยืนยันตัวตน)
                 const session = authenticateReq(req);
+                if (!session) {
+                    return sendJson(res, 401, {
+                        success: false,
+                        error: 'โปรดเข้าสู่ระบบเจ้าหน้าที่ตำรวจก่อนดึงข้อมูลสำนวน (401 Unauthorized)'
+                    });
+                }
                 let targetInvestigator = requestedInvestigator;
                 let targetBadge = requestedBadge;
 
-                if (session) {
-                    const isAdmin = session.role === 'admin' || (session.position && session.position.includes('ผกก'));
-                    if (isAdmin) {
-                        targetInvestigator = requestedInvestigator || '';
-                        targetBadge = requestedBadge || '';
-                    } else {
-                        // บังคับจำกัดสิทธิ์เฉพาะ พงส. เจ้าของเรื่องเท่านั้น
-                        targetInvestigator = session.rank_name;
-                        targetBadge = session.badge_no;
-                    }
-                }
-
-                // หากไม่ได้ล็อกอินและไม่ระบุชื่อ/รหัส พงส. ให้ปฏิเสธการเข้าถึง
-                if (!session && !targetInvestigator && !targetBadge && !requestedCaseNo) {
-                    return sendJson(res, 403, {
-                        success: false,
-                        error: 'การเข้าถึงถูกจำกัด: อนุญาตให้ดึงได้เฉพาะข้อมูลคดีของพนักงานสอบสวนเจ้าของเรื่องเท่านั้น โปรดระบุ ?investigator=... หรือ ?badge=...'
-                    });
+                const isAdmin = session.role === 'admin' || (session.position && session.position.includes('ผกก'));
+                if (isAdmin) {
+                    targetInvestigator = requestedInvestigator || '';
+                    targetBadge = requestedBadge || '';
+                } else {
+                    // บังคับจำกัดสิทธิ์เฉพาะ พงส. เจ้าของเรื่องเท่านั้น
+                    targetInvestigator = session.rank_name;
+                    targetBadge = session.badge_no;
                 }
 
                 let query = 'SELECT * FROM cyber_details WHERE 1=1';
@@ -1490,8 +1603,15 @@ const server = http.createServer(async (req, res) => {
                 });
             }
 
-            // 4h. VICTIM PRE-INVESTIGATION: VERIFY CREDENTIALS & SELF-SERVICE (NO OFFICER LOGIN REQUIRED)
+            // 4h. VICTIM PRE-INVESTIGATION: VERIFY CREDENTIALS & SELF-SERVICE (RATE LIMITED)
             if (pathname === '/api/victim/verify' && req.method === 'POST') {
+                const rl = checkRateLimit('victim_verify', getClientIp(req), 15, 10 * 60 * 1000);
+                if (!rl.allowed) {
+                    return sendJson(res, 429, {
+                        success: false,
+                        error: `ตรวจสอบข้อมูลผิดพลาดหรือถี่เกินกำหนด กรุณารอ ${Math.ceil(rl.retryAfterSec / 60)} นาทีแล้วลองใหม่`
+                    });
+                }
                 const body = await readBody(req);
                 const rawCaseNo = (body.caseNo || '').trim();
                 const cleanCaseNo = rawCaseNo.toUpperCase();
@@ -1619,6 +1739,13 @@ const server = http.createServer(async (req, res) => {
             }
 
             if (pathname === '/api/inquiry/templates' && req.method === 'POST') {
+                const session = authenticateReq(req);
+                if (!session) {
+                    return sendJson(res, 401, { success: false, error: 'โปรดเข้าสู่ระบบก่อนแก้ไขแม่แบบคำถาม (401 Unauthorized)' });
+                }
+                if (session.role !== 'admin' && !String(session.position || '').includes('ผกก')) {
+                    return sendJson(res, 403, { success: false, error: 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถแก้ไขแม่แบบคำถามได้' });
+                }
                 const body = await readBody(req);
                 if (Array.isArray(body.templates)) {
                     const ins = db.prepare('INSERT OR REPLACE INTO inquiry_templates (id, title, points, updated_at) VALUES (?, ?, ?, ?);');
@@ -1639,8 +1766,12 @@ const server = http.createServer(async (req, res) => {
                 return sendJson(res, 400, { success: false, error: 'templates must be an array' });
             }
 
-            // 4h-3. SAVE INTERACTIVE INTERROGATION STATEMENTS (Q&A LIST)
+            // 4h-3. SAVE INTERACTIVE INTERROGATION STATEMENTS (OFFICER AUTH REQUIRED)
             if (pathname === '/api/interrogation/save' && req.method === 'POST') {
+                const session = authenticateReq(req);
+                if (!session) {
+                    return sendJson(res, 401, { success: false, error: 'โปรดเข้าสู่ระบบเจ้าหน้าที่ตำรวจก่อนบันทึกคำให้การ (401 Unauthorized)' });
+                }
                 const body = await readBody(req);
                 const cleanCaseNo = (body.caseNo || '').trim().toUpperCase();
                 if (!cleanCaseNo) {
@@ -1715,8 +1846,12 @@ const server = http.createServer(async (req, res) => {
                 return sendJson(res, 200, { success: true, caseNo: cleanCaseNo, savedCount: qaList.length });
             }
 
-            // 4i. VICTIM PRE-INVESTIGATION: SUBMIT FORM & UPDATE CASE DATA DIRECTLY
+            // 4i. VICTIM PRE-INVESTIGATION: SUBMIT FORM & UPDATE CASE DATA DIRECTLY (RATE LIMITED + PHONE VERIFIED)
             if (pathname === '/api/victim/submit' && req.method === 'POST') {
+                const rl = checkRateLimit('victim_submit', getClientIp(req), 15, 10 * 60 * 1000);
+                if (!rl.allowed) {
+                    return sendJson(res, 429, { success: false, error: 'ส่งข้อมูลถี่เกินไป กรุณารอสักครู่แล้วลองใหม่' });
+                }
                 const body = await readBody(req);
                 const rawCaseNo = (body.caseNo || '').trim();
                 const cleanCaseNo = rawCaseNo.toUpperCase();
@@ -1810,11 +1945,39 @@ const server = http.createServer(async (req, res) => {
                 });
             }
 
-            // 4j. VICTIM PRE-INVESTIGATION: RESET CASE STATUS FOR RE-FILLING
+            // 4j. VICTIM PRE-INVESTIGATION: RESET CASE STATUS (REQUIRES OFFICER SESSION OR VERIFIED PHONE)
             if (pathname === '/api/victim/reset' && req.method === 'POST') {
+                const rl = checkRateLimit('victim_reset', getClientIp(req), 10, 10 * 60 * 1000);
+                if (!rl.allowed) {
+                    return sendJson(res, 429, { success: false, error: 'ทำรายการบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่' });
+                }
+                const session = authenticateReq(req);
                 const body = await readBody(req);
                 const rawCaseNo = (body.caseNo || '').trim();
                 const cleanCaseNo = rawCaseNo.toUpperCase();
+                const rawPhone = String(body.phone || '').trim().replace(/\D/g, '');
+
+                if (!cleanCaseNo) {
+                    return sendJson(res, 400, { success: false, error: 'ไม่ระบุเลข Case ID' });
+                }
+
+                const existingCase = db.prepare('SELECT victim_phone, victim_name FROM cyber_details WHERE UPPER(case_no) = ?;').get(cleanCaseNo);
+                if (!session) {
+                    if (!existingCase) {
+                        return sendJson(res, 404, { success: false, error: 'ไม่พบเลขคดีในระบบ' });
+                    }
+                    if (rawPhone.length < 9) {
+                        return sendJson(res, 401, { success: false, error: 'ต้องระบุหมายเลขโทรศัพท์ให้ตรงกับข้อมูลคดีเพื่อยืนยันการล้างข้อมูล' });
+                    }
+                    const cands = [
+                        (existingCase.victim_phone || '').replace(/\D/g, ''),
+                        (existingCase.victim_name || '').replace(/\D/g, '')
+                    ].filter(p => p.length >= 9);
+                    const matched = cands.some(p => p.endsWith(rawPhone) || rawPhone.endsWith(p));
+                    if (!matched) {
+                        return sendJson(res, 401, { success: false, error: 'หมายเลขโทรศัพท์ไม่ตรงกับข้อมูลคดี' });
+                    }
+                }
 
                 if (cleanCaseNo) {
                     db.prepare(`
@@ -2241,10 +2404,25 @@ const server = http.createServer(async (req, res) => {
         }
 
         // =====================================================================
-        // STATIC FILE SERVING (SUPPORT /victim-form AND SPA REFRESH)
+        // STATIC FILE SERVING (BLOCK .sql / .env / data / backend source files!)
         // =====================================================================
         let safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
         const normLower = safePath.toLowerCase().replace(/[\/\\]+$/, '');
+
+        const cleanCheckPath = normLower.replace(/\\/g, '/');
+        const isSensitiveStaticPath =
+            /\.sql$/i.test(cleanCheckPath) ||
+            /\.db(-wal|-shm)?$/i.test(cleanCheckPath) ||
+            /\.env/i.test(cleanCheckPath) ||
+            /^\/?(data|scratch|\.git|node_modules)(\/|$)/i.test(cleanCheckPath) ||
+            /^\/?(server\.js|package(-lock)?\.json|\.htaccess|vercel\.json|_redirects)$/i.test(cleanCheckPath);
+
+        if (isSensitiveStaticPath) {
+            res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+            res.end('403 Forbidden - Protected System Resource');
+            return;
+        }
+
         if (normLower === '' || normLower === '/' || normLower === '\\') {
             safePath = '/index.html';
         } else if (normLower === '/victim-form' || normLower === '\\victim-form' || normLower.startsWith('/victim-form/') || normLower.startsWith('\\victim-form\\') || normLower === '/victim_form' || normLower === '\\victim_form') {

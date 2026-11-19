@@ -45,8 +45,8 @@ window.CyberConfig = (function() {
             if (!supabaseClient || supabaseClient._currentUrl !== targetUrl || supabaseClient._currentKey !== targetKey) {
                 supabaseClient = window.supabase.createClient(targetUrl, targetKey, {
                     auth: {
-                        persistSession: false,
-                        autoRefreshToken: false,
+                        persistSession: true,
+                        autoRefreshToken: true,
                         detectSessionInUrl: false
                     },
                     global: {

@@ -402,7 +402,15 @@
         const SUPABASE_URL = 'https://yofvfkfjyndjctoyvgpe.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_MC3Z6VYA-wFAhAZLfikxDA_DM1W_J4K';
         const STATION_CODE = 'POLICE-STN-BANGPHLI-001';
-        const DEFAULT_MASTER_PASSPHRASE = 'BANGPHLI-ZK-MASTER-KEY-2569';
+
+        function escapeHtml(val) {
+            return String(val === null || val === undefined ? '' : val)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
 
         let _victimSupabaseClient = null;
 
@@ -508,36 +516,19 @@
         }
 
         /**
-         * ฟังก์ชันถอดรหัส/เข้ารหัส Zero-Knowledge (AES-256-GCM) รองรับทั้งจาก js/zk-crypto.js และ WebCrypto ในตัว
+         * ฟังก์ชันถอดรหัส/เข้ารหัส Zero-Knowledge (AES-256-GCM) โดยใช้ Station Master Key ที่ตั้งค่าในเครื่องเท่านั้น (ไม่มี Hardcoded Key)
          */
         async function decryptZkText(cipherText) {
             if (!cipherText || typeof cipherText !== 'string') return '';
             if (!cipherText.startsWith('zk:v1:')) return cipherText;
             try {
-                if (typeof window.ZeroKnowledgeCrypto !== 'undefined' && typeof window.ZeroKnowledgeCrypto.decryptField === 'function') {
-                    return await window.ZeroKnowledgeCrypto.decryptField(cipherText, DEFAULT_MASTER_PASSPHRASE, STATION_CODE);
+                if (typeof window.ZeroKnowledgeCrypto !== 'undefined' && window.ZeroKnowledgeCrypto.hasConfiguredMasterKey()) {
+                    return await window.ZeroKnowledgeCrypto.decryptField(cipherText, window.ZeroKnowledgeCrypto.getSavedMasterKey(), STATION_CODE);
                 }
-                // Inline WebCrypto Fallback
-                const raw = cipherText.slice(6);
-                const parts = raw.split(':');
-                if (parts.length !== 2) return '';
-                const iv = Uint8Array.from(atob(parts[0]), c => c.charCodeAt(0));
-                const cipherBytes = Uint8Array.from(atob(parts[1]), c => c.charCodeAt(0));
-                const enc = new TextEncoder();
-                const keyMat = await window.crypto.subtle.importKey('raw', enc.encode(DEFAULT_MASTER_PASSPHRASE), { name: 'PBKDF2' }, false, ['deriveKey']);
-                const key = await window.crypto.subtle.deriveKey(
-                    { name: 'PBKDF2', salt: enc.encode('ZK-SALT-V1-' + STATION_CODE), iterations: 100000, hash: 'SHA-256' },
-                    keyMat,
-                    { name: 'AES-GCM', length: 256 },
-                    false,
-                    ['decrypt']
-                );
-                const decBuf = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv, tagLength: 128 }, key, cipherBytes);
-                return new TextDecoder().decode(decBuf);
             } catch (e) {
                 console.warn('[ZK Decrypt Warning]', e.message);
-                return '';
             }
+            return '';
         }
 
         async function encryptZkText(plainText) {
@@ -545,29 +536,11 @@
             const str = typeof plainText === 'string' ? plainText : JSON.stringify(plainText);
             if (str.startsWith('zk:v1:')) return str;
             try {
-                if (typeof window.ZeroKnowledgeCrypto !== 'undefined' && typeof window.ZeroKnowledgeCrypto.encryptField === 'function') {
-                    return await window.ZeroKnowledgeCrypto.encryptField(str, DEFAULT_MASTER_PASSPHRASE, STATION_CODE);
+                if (typeof window.ZeroKnowledgeCrypto !== 'undefined' && window.ZeroKnowledgeCrypto.hasConfiguredMasterKey()) {
+                    return await window.ZeroKnowledgeCrypto.encryptField(str, window.ZeroKnowledgeCrypto.getSavedMasterKey(), STATION_CODE);
                 }
-                const enc = new TextEncoder();
-                const iv = window.crypto.getRandomValues(new Uint8Array(12));
-                const keyMat = await window.crypto.subtle.importKey('raw', enc.encode(DEFAULT_MASTER_PASSPHRASE), { name: 'PBKDF2' }, false, ['deriveKey']);
-                const key = await window.crypto.subtle.deriveKey(
-                    { name: 'PBKDF2', salt: enc.encode('ZK-SALT-V1-' + STATION_CODE), iterations: 100000, hash: 'SHA-256' },
-                    keyMat,
-                    { name: 'AES-GCM', length: 256 },
-                    false,
-                    ['encrypt']
-                );
-                const cipherBuf = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv, tagLength: 128 }, key, enc.encode(str));
-                const b64 = (bytes) => {
-                    let bin = '';
-                    for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
-                    return btoa(bin);
-                };
-                return 'zk:v1:' + b64(iv) + ':' + b64(new Uint8Array(cipherBuf));
-            } catch (e) {
-                return '';
-            }
+            } catch (e) {}
+            return '';
         }
 
         /**
@@ -1401,7 +1374,7 @@
                 banner.innerHTML = `
                     <div class="flex items-center gap-2">
                         <span>ℹ️</span>
-                        <span>คดีนี้เคยบันทึกส่งข้อมูลแล้วเมื่อ <strong>${caseData.victimSubmittedAt ? new Date(caseData.victimSubmittedAt).toLocaleString('th-TH') : ''}</strong> (ท่านสามารถตรวจสอบ แก้ไขข้อมูล และกดส่งบันทึกใหม่ได้)</span>
+                        <span>คดีนี้เคยบันทึกส่งข้อมูลแล้วเมื่อ <strong>${escapeHtml(caseData.victimSubmittedAt ? new Date(caseData.victimSubmittedAt).toLocaleString('th-TH') : '')}</strong> (ท่านสามารถตรวจสอบ แก้ไขข้อมูล และกดส่งบันทึกใหม่ได้)</span>
                     </div>
                     <button type="button" onclick="showSubmissionTicket(activeCase)" class="text-[11px] underline font-bold text-emerald-400 hover:text-emerald-300 shrink-0">
                         ดูใบรับข้อมูล (Receipt)
@@ -1425,31 +1398,28 @@
             if (!activeCase || !activeCase.caseNo) return;
             if (!confirm('ยืนยันล้างข้อมูลที่เคยบันทึกไว้ของคดีนี้ เพื่อเริ่มต้นกรอกใหม่ตั้งแต่ต้นใช่หรือไม่?')) return;
 
-            const phoneVal = document.getElementById('inputPhone')?.value.trim().replace(/\D/g, '') || '';
+            const phoneVal = (document.getElementById('inputPhone')?.value.trim().replace(/\D/g, '') || activeCase.verifiedPhone || '').trim();
 
-            // 1. ล้างข้อมูลผ่าน Supabase Client โดยตรง (RPC + ตาราง)
+            // 1. ล้างข้อมูลผ่าน Supabase SECURITY DEFINER RPC (ตรวจสอบ Case ID + เบอร์โทรผู้เสียหายก่อนทุกครั้ง)
             try {
                 const supabase = getVictimSupabaseClient();
                 if (supabase) {
-                    await supabase.rpc('reset_victim_case', {
+                    const { data: rpcRes, error: rpcErr } = await supabase.rpc('reset_victim_case', {
                         p_case_id: activeCase.caseNo,
                         p_phone: phoneVal
-                    }).catch(() => {});
-
-                    await supabase
-                        .from('cases')
-                        .update({ status: 'พบพงส.', updated_at: new Date().toISOString() })
-                        .ilike('case_no', activeCase.caseNo)
-                        .catch(() => {});
+                    });
+                    if (rpcErr || (rpcRes && rpcRes.success === false)) {
+                        console.warn('[reset_victim_case note]', rpcErr || rpcRes);
+                    }
                 }
             } catch (e) {}
 
-            // 2. หากเป็น Localhost ให้ซิงค์กับ Local API อย่างปลอดภัย
+            // 2. หากเป็น Localhost ให้ซิงค์กับ Local API อย่างปลอดภัย (ส่ง phone เพื่อยืนยันสิทธิ์)
             if (isLocalBackendEnvironment()) {
                 await safeLocalApiFetch('/api/victim/reset', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ caseNo: activeCase.caseNo })
+                    body: JSON.stringify({ caseNo: activeCase.caseNo, phone: phoneVal })
                 });
             }
 
@@ -1520,14 +1490,14 @@
                 row.innerHTML = `
                     <div class="flex items-center justify-between">
                         <label class="block text-xs font-semibold text-amber-400">
-                            ประเด็นที่ ${idx + 1}: ${point}
+                            ประเด็นที่ ${idx + 1}: ${escapeHtml(point)}
                         </label>
                         <span class="text-[10px] font-medium text-slate-400 bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-800">
                             (ไม่บังคับ)
                         </span>
                     </div>
                     <textarea id="inqAnswer_${idx}" oninput="autoSaveForm()" rows="3" placeholder="พิมพ์ข้อเท็จจริงและรายละเอียดของท่าน (หากไม่ทราบสามารถเว้นว่างไว้ได้)..."
-                        class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500 transition">${restoredVal}</textarea>
+                        class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500 transition">${escapeHtml(restoredVal)}</textarea>
                 `;
                 container.appendChild(row);
             });
@@ -1575,15 +1545,15 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                             <label class="block text-[11px] text-slate-400 mb-1">วันที่โอนตามสลิป <span class="text-rose-500">*</span></label>
-                            <input type="date" class="tf-date w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" onchange="calcTransferTotals(); autoSaveForm();" required value="${data?.transferDate || ''}">
+                            <input type="date" class="tf-date w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" onchange="calcTransferTotals(); autoSaveForm();" required value="${escapeHtml(data?.transferDate || '')}">
                         </div>
                         <div>
                             <label class="block text-[11px] text-slate-400 mb-1">เวลาที่โอนตามสลิป <span class="text-rose-500">*</span></label>
-                            <input type="time" class="tf-time w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" onchange="autoSaveForm();" required value="${data?.transferTime || ''}">
+                            <input type="time" class="tf-time w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" onchange="autoSaveForm();" required value="${escapeHtml(data?.transferTime || '')}">
                         </div>
                         <div>
                             <label class="block text-[11px] text-slate-400 mb-1">ยอดเงินโอน (บาท) <span class="text-rose-500">*</span></label>
-                            <input type="number" step="0.01" min="0" class="tf-amount w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-rose-400 focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="calcTransferTotals(); autoSaveForm();" placeholder="0.00" required value="${data?.amount || ''}">
+                            <input type="number" step="0.01" min="0" class="tf-amount w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-rose-400 focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="calcTransferTotals(); autoSaveForm();" placeholder="0.00" required value="${escapeHtml(data?.amount || '')}">
                         </div>
                     </div>
                 </div>
@@ -1597,15 +1567,15 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                             <label class="block text-[11px] text-slate-400 mb-1">ธนาคารผู้เสียหาย <span class="text-rose-500">*</span></label>
-                            <input type="text" class="tf-fromBank w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="this.dataset.manual='1'; autoSaveForm();" placeholder="เช่น กสิกรไทย" required value="${initFromBank}">
+                            <input type="text" class="tf-fromBank w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="this.dataset.manual='1'; autoSaveForm();" placeholder="เช่น กสิกรไทย" required value="${escapeHtml(initFromBank)}">
                         </div>
                         <div>
                             <label class="block text-[11px] text-slate-400 mb-1">เลขบัญชีผู้เสียหาย <span class="text-rose-500">*</span></label>
-                            <input type="text" class="tf-fromAccNo w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="this.dataset.manual='1'; autoSaveForm();" placeholder="เลขที่บัญชี" required value="${initFromAccNo}">
+                            <input type="text" class="tf-fromAccNo w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="this.dataset.manual='1'; autoSaveForm();" placeholder="เลขที่บัญชี" required value="${escapeHtml(initFromAccNo)}">
                         </div>
                         <div>
                             <label class="block text-[11px] text-slate-400 mb-1">ชื่อบัญชีผู้เสียหาย <span class="text-rose-500">*</span></label>
-                            <input type="text" class="tf-fromAccName w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="this.dataset.manual='1'; autoSaveForm();" placeholder="ชื่อ-นามสกุล" required value="${initFromAccName}">
+                            <input type="text" class="tf-fromAccName w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="this.dataset.manual='1'; autoSaveForm();" placeholder="ชื่อ-นามสกุล" required value="${escapeHtml(initFromAccName)}">
                         </div>
                     </div>
                 </div>
@@ -1618,15 +1588,15 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                             <label class="block text-[11px] text-slate-400 mb-1">ธนาคารคนร้าย / Wallet <span class="text-rose-500">*</span></label>
-                            <input type="text" class="tf-toBank w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="เช่น ธนาคาร, พร้อมเพย์, TrueMoney" required value="${initToBank}">
+                            <input type="text" class="tf-toBank w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="เช่น ธนาคาร, พร้อมเพย์, TrueMoney" required value="${escapeHtml(initToBank)}">
                         </div>
                         <div>
                             <label class="block text-[11px] text-slate-400 mb-1">เลขบัญชีคนร้าย / พร้อมเพย์ <span class="text-rose-500">*</span></label>
-                            <input type="text" class="tf-toAccNo w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="เลขบัญชีรับโอน / เบอร์พร้อมเพย์" required value="${initToAccNo}">
+                            <input type="text" class="tf-toAccNo w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="เลขบัญชีรับโอน / เบอร์พร้อมเพย์" required value="${escapeHtml(initToAccNo)}">
                         </div>
                         <div>
                             <label class="block text-[11px] text-slate-400 mb-1">ชื่อบัญชีคนร้าย <span class="text-rose-500">*</span></label>
-                            <input type="text" class="tf-toAccName w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="ชื่อ-นามสกุล ผู้รับโอนตามสลิป" required value="${initToAccName}">
+                            <input type="text" class="tf-toAccName w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500" oninput="autoSaveForm();" placeholder="ชื่อ-นามสกุล ผู้รับโอนตามสลิป" required value="${escapeHtml(initToAccName)}">
                         </div>
                     </div>
                 </div>
@@ -1806,9 +1776,10 @@
                 // 1. บันทึกผ่าน Supabase Client โดยตรง (ทั้ง RPC submit_victim_case และตาราง cases / cyber_details)
                 const supabase = getVictimSupabaseClient();
                 if (supabase) {
-                    // 1.1 เรียก RPC submit_victim_case (SECURITY DEFINER)
+                    // 1.1 เรียก RPC submit_victim_case (SECURITY DEFINER - ตรวจสอบเบอร์โทรใน DB ก่อนบันทึก)
+                    let rpcSubmittedOk = false;
                     try {
-                        await supabase.rpc('submit_victim_case', {
+                        const { data: rpcRes, error: rpcSubErr } = await supabase.rpc('submit_victim_case', {
                             p_case_id: activeCase.caseNo,
                             p_phone: phoneVal,
                             p_victim_profile: null,
@@ -1816,66 +1787,72 @@
                             p_inquiry_answers: payload.inquiryAnswers,
                             p_investigator_name: invName
                         });
+                        if (!rpcSubErr && rpcRes && rpcRes.success) {
+                            rpcSubmittedOk = true;
+                        } else if (rpcRes && rpcRes.success === false) {
+                            throw new Error(rpcRes.error || 'ไม่สามารถยืนยันตัวตนในการส่งข้อมูลได้');
+                        }
                     } catch (rpcSubErr) {
+                        if (rpcSubErr && rpcSubErr.message && rpcSubErr.message.includes('ไม่สามารถยืนยันตัวตน')) {
+                            throw rpcSubErr;
+                        }
                         console.warn('[Supabase RPC submit_victim_case note]', rpcSubErr);
                     }
 
-                    // 1.2 อัปเดตตาราง cases พร้อมทั้งคอลัมน์ transfer_records / inquiry_answers และ metadata_enc
-                    try {
-                        const encryptedMeta = await encryptZkText({
-                            unit: 'สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑',
-                            victimDraft: {
-                                victimProfile: null,
-                                freezeInfo: null,
-                                transferRecords: payload.transferRecords,
-                                inquiryAnswers: payload.inquiryAnswers,
-                                victimSubmittedAt: nowIso
-                            }
-                        });
+                    // 1.2 Fallback เฉพาะกรณีฐานข้อมูลยังไม่ได้สร้าง RPC (และมีสิทธิ์อัปเดตชั่วคราวระหว่าง Transition)
+                    if (!rpcSubmittedOk) {
+                        try {
+                            const encryptedMeta = await encryptZkText({
+                                unit: 'สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑',
+                                victimDraft: {
+                                    victimProfile: null,
+                                    freezeInfo: null,
+                                    transferRecords: payload.transferRecords,
+                                    inquiryAnswers: payload.inquiryAnswers,
+                                    victimSubmittedAt: nowIso
+                                }
+                            });
 
-                        const updateCasesPayload = {
-                            status: 'ผู้เสียหายกรอกข้อมูลแล้ว',
-                            investigator_name: invName,
-                            transfer_records: payload.transferRecords,
-                            inquiry_answers: payload.inquiryAnswers,
-                            victim_submitted_at: nowIso,
-                            updated_at: nowIso
-                        };
-                        if (encryptedMeta) {
-                            updateCasesPayload.metadata_enc = encryptedMeta;
-                        }
-
-                        const { error: updErr } = await supabase
-                            .from('cases')
-                            .update(updateCasesPayload)
-                            .ilike('case_no', activeCase.caseNo);
-                        if (updErr) {
-                            // Fallback เผื่อบางคอลัมน์ยังไม่ถูกสร้างบนตาราง cases
-                            const minimalPayload = {
+                            const updateCasesPayload = {
                                 status: 'ผู้เสียหายกรอกข้อมูลแล้ว',
                                 investigator_name: invName,
-                                updated_at: nowIso
-                            };
-                            if (encryptedMeta) minimalPayload.metadata_enc = encryptedMeta;
-                            await supabase.from('cases').update(minimalPayload).ilike('case_no', activeCase.caseNo);
-                        }
-                    } catch (caseUpdErr) {
-                        console.warn('[Supabase cases update note]', caseUpdErr);
-                    }
-
-                    // 1.3 อัปเดตตาราง cyber_details (ถ้ามีตารางนี้ใน Supabase)
-                    try {
-                        await supabase
-                            .from('cyber_details')
-                            .update({
                                 transfer_records: payload.transferRecords,
                                 inquiry_answers: payload.inquiryAnswers,
-                                status: 'ผู้เสียหายกรอกข้อมูลแล้ว',
                                 victim_submitted_at: nowIso,
                                 updated_at: nowIso
-                            })
-                            .ilike('case_no', activeCase.caseNo);
-                    } catch (_) {}
+                            };
+                            if (encryptedMeta) {
+                                updateCasesPayload.metadata_enc = encryptedMeta;
+                            }
+
+                            const { error: updErr } = await supabase
+                                .from('cases')
+                                .update(updateCasesPayload)
+                                .ilike('case_no', activeCase.caseNo);
+                            if (updErr && updErr.code !== '42501') {
+                                const minimalPayload = {
+                                    status: 'ผู้เสียหายกรอกข้อมูลแล้ว',
+                                    investigator_name: invName,
+                                    updated_at: nowIso
+                                };
+                                if (encryptedMeta) minimalPayload.metadata_enc = encryptedMeta;
+                                await supabase.from('cases').update(minimalPayload).ilike('case_no', activeCase.caseNo);
+                            }
+
+                            await supabase
+                                .from('cyber_details')
+                                .update({
+                                    transfer_records: payload.transferRecords,
+                                    inquiry_answers: payload.inquiryAnswers,
+                                    status: 'ผู้เสียหายกรอกข้อมูลแล้ว',
+                                    victim_submitted_at: nowIso,
+                                    updated_at: nowIso
+                                })
+                                .ilike('case_no', activeCase.caseNo);
+                        } catch (caseUpdErr) {
+                            console.warn('[Supabase fallback update note]', caseUpdErr);
+                        }
+                    }
                 }
 
                 // 2. หากเปิดบน Localhost (On-Premise Server) ให้บันทึกเข้า SQLite ด้วยอย่างปลอดภัย

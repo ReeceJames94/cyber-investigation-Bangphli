@@ -395,6 +395,7 @@ GRANT EXECUTE ON FUNCTION public.verify_victim_case(TEXT, TEXT) TO anon, authent
 -- =========================================================================================
 -- 5. SUPABASE RPC FUNCTION (SECURITY DEFINER): submit_victim_case(...)
 -- อนุญาตให้ผู้เสียหายส่งแบบฟอร์มและพยานหลักฐานบันทึกเข้าสู่ฐานข้อมูลโดยตรงอย่างปลอดภัย
+-- (ตรวจสอบ Case ID + เบอร์โทรศัพท์ให้ตรงกับข้อมูลคดีก่อนอนุญาตอัปเดตทุกครั้ง)
 -- =========================================================================================
 CREATE OR REPLACE FUNCTION public.submit_victim_case(
     p_case_id TEXT,
@@ -413,7 +414,11 @@ DECLARE
     v_case_no TEXT;
     v_phone TEXT;
     v_now TIMESTAMPTZ := NOW();
+    v_cd RECORD;
+    v_case RECORD;
+    v_db_phone TEXT;
     v_full_name TEXT;
+    v_phone_ok BOOLEAN := FALSE;
 BEGIN
     v_case_no := UPPER(TRIM(COALESCE(p_case_id, '')));
     v_phone := regexp_replace(COALESCE(p_phone, ''), '[^0-9]', '', 'g');
@@ -421,8 +426,63 @@ BEGIN
     IF v_case_no = '' OR length(v_phone) < 9 THEN
         RETURN jsonb_build_object(
             'success', false,
+            'error_code', 'INVALID_INPUT',
             'error', 'ข้อมูลระบุตัวตน Case ID หรือหมายเลขโทรศัพท์ไม่สมบูรณ์'
         );
+    END IF;
+
+    -- ตรวจสอบเบอร์โทรศัพท์กับข้อมูลคดีใน cyber_details หรือ cases ก่อนอนุญาตบันทึก
+    SELECT * INTO v_cd
+    FROM public.cyber_details
+    WHERE UPPER(TRIM(case_no)) = v_case_no
+    ORDER BY updated_at DESC
+    LIMIT 1;
+
+    IF FOUND THEN
+        v_db_phone := regexp_replace(COALESCE(v_cd.victim_phone, '') || ' ' || COALESCE(v_cd.victim_name, ''), '[^0-9]', '', 'g');
+        IF length(v_db_phone) >= 9 THEN
+            IF right(v_db_phone, 9) <> right(v_phone, 9) AND position(right(v_phone, 9) IN v_db_phone) = 0 THEN
+                RETURN jsonb_build_object(
+                    'success', false,
+                    'error_code', 'PHONE_MISMATCH',
+                    'error', 'หมายเลขโทรศัพท์ไม่ตรงกับข้อมูลผู้เสียหายในสารบบคดี'
+                );
+            END IF;
+            v_phone_ok := TRUE;
+        END IF;
+    END IF;
+
+    SELECT * INTO v_case
+    FROM public.cases
+    WHERE UPPER(TRIM(case_no)) = v_case_no
+    ORDER BY updated_at DESC
+    LIMIT 1;
+
+    IF NOT v_phone_ok THEN
+        IF NOT FOUND THEN
+            RETURN jsonb_build_object(
+                'success', false,
+                'error_code', 'CASE_NOT_FOUND',
+                'error', 'ไม่พบข้อมูลเลข Case ID นี้ในสารบบ สภ.บางพลี'
+            );
+        END IF;
+        v_db_phone := regexp_replace(COALESCE(v_case.victim_phone, '') || ' ' || COALESCE(v_case.victim_name, ''), '[^0-9]', '', 'g');
+        IF length(v_db_phone) >= 9 THEN
+            IF right(v_db_phone, 9) <> right(v_phone, 9) AND position(right(v_phone, 9) IN v_db_phone) = 0 THEN
+                RETURN jsonb_build_object(
+                    'success', false,
+                    'error_code', 'PHONE_MISMATCH',
+                    'error', 'หมายเลขโทรศัพท์ไม่ตรงกับข้อมูลผู้เสียหายในสารบบคดี'
+                );
+            END IF;
+            v_phone_ok := TRUE;
+        ELSE
+            RETURN jsonb_build_object(
+                'success', false,
+                'error_code', 'PHONE_UNVERIFIED',
+                'error', 'ไม่สามารถยืนยันเบอร์โทรศัพท์กับคดีนี้ได้ กรุณาติดต่อพนักงานสอบสวน'
+            );
+        END IF;
     END IF;
 
     v_full_name := TRIM(COALESCE(p_victim_profile->>'prefix', '') || ' ' || COALESCE(p_victim_profile->>'firstName', '') || ' ' || COALESCE(p_victim_profile->>'lastName', ''));
@@ -450,8 +510,8 @@ BEGIN
         SELECT
             c.case_no,
             COALESCE(c.incident_date, to_char(c.created_at, 'DD/MM/YYYY')),
-            v_full_name,
-            v_phone,
+            COALESCE(NULLIF(c.victim_name, ''), v_full_name),
+            COALESCE(NULLIF(c.victim_phone, ''), v_phone),
             COALESCE(c.damage_amount, 0),
             COALESCE(c.fraud_category, '1. หลอกลวงซื้อขายสินค้าออนไลน์'),
             COALESCE(p_investigator_name, c.investigator_name, 'พ.ต.ต.ธีรเดช สุขเกษม'),
@@ -465,7 +525,7 @@ BEGIN
         ORDER BY c.updated_at DESC
         LIMIT 1
         ON CONFLICT (case_no) DO UPDATE
-        SET victim_profile = EXCLUDED.victim_profile,
+        SET victim_profile = COALESCE(EXCLUDED.victim_profile, public.cyber_details.victim_profile),
             transfer_records = EXCLUDED.transfer_records,
             inquiry_answers = EXCLUDED.inquiry_answers,
             status = 'ผู้เสียหายกรอกข้อมูลแล้ว',
@@ -497,6 +557,7 @@ GRANT EXECUTE ON FUNCTION public.submit_victim_case(TEXT, TEXT, JSONB, JSONB, JS
 
 -- =========================================================================================
 -- 6. SUPABASE RPC FUNCTION (SECURITY DEFINER): reset_victim_case(p_case_id, p_phone)
+-- (บังคับยืนยันหมายเลขโทรศัพท์ให้ตรงกับข้อมูลคดี หรือเป็นผู้ใช้งาน authenticated ก่อนอนุญาตล้างข้อมูล)
 -- =========================================================================================
 CREATE OR REPLACE FUNCTION public.reset_victim_case(
     p_case_id TEXT,
@@ -509,10 +570,55 @@ SET search_path = public
 AS $$
 DECLARE
     v_case_no TEXT;
+    v_phone TEXT;
+    v_db_phone TEXT;
+    v_cd RECORD;
+    v_case RECORD;
+    v_verified BOOLEAN := (auth.uid() IS NOT NULL);
 BEGIN
     v_case_no := UPPER(TRIM(COALESCE(p_case_id, '')));
+    v_phone := regexp_replace(COALESCE(p_phone, ''), '[^0-9]', '', 'g');
+
     IF v_case_no = '' THEN
         RETURN jsonb_build_object('success', false, 'error', 'ไม่ระบุเลข Case ID');
+    END IF;
+
+    IF NOT v_verified THEN
+        IF length(v_phone) < 9 THEN
+            RETURN jsonb_build_object('success', false, 'error', 'กรุณาระบุหมายเลขโทรศัพท์เพื่อยืนยันสิทธิ์ในการล้างข้อมูล');
+        END IF;
+
+        SELECT victim_phone, victim_name INTO v_cd
+        FROM public.cyber_details
+        WHERE UPPER(TRIM(case_no)) = v_case_no
+        ORDER BY updated_at DESC
+        LIMIT 1;
+
+        IF FOUND THEN
+            v_db_phone := regexp_replace(COALESCE(v_cd.victim_phone, '') || ' ' || COALESCE(v_cd.victim_name, ''), '[^0-9]', '', 'g');
+            IF length(v_db_phone) >= 9 AND (right(v_db_phone, 9) = right(v_phone, 9) OR position(right(v_phone, 9) IN v_db_phone) > 0) THEN
+                v_verified := TRUE;
+            END IF;
+        END IF;
+
+        IF NOT v_verified THEN
+            SELECT victim_phone, victim_name INTO v_case
+            FROM public.cases
+            WHERE UPPER(TRIM(case_no)) = v_case_no
+            ORDER BY updated_at DESC
+            LIMIT 1;
+
+            IF FOUND THEN
+                v_db_phone := regexp_replace(COALESCE(v_case.victim_phone, '') || ' ' || COALESCE(v_case.victim_name, ''), '[^0-9]', '', 'g');
+                IF length(v_db_phone) >= 9 AND (right(v_db_phone, 9) = right(v_phone, 9) OR position(right(v_phone, 9) IN v_db_phone) > 0) THEN
+                    v_verified := TRUE;
+                END IF;
+            END IF;
+        END IF;
+
+        IF NOT v_verified THEN
+            RETURN jsonb_build_object('success', false, 'error', 'หมายเลขโทรศัพท์ไม่ตรงกับข้อมูลคดี ไม่ได้รับอนุญาตให้ล้างข้อมูล');
+        END IF;
     END IF;
 
     UPDATE public.cyber_details
@@ -540,6 +646,79 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.reset_victim_case(TEXT, TEXT) TO anon, authenticated;
+
+-- =========================================================================================
+-- 6b. SECURE OFFICER LOGIN CHALLENGE / VERIFICATION RPCs (ไม่เปิดเผย password_hash ให้ anon)
+-- =========================================================================================
+CREATE OR REPLACE FUNCTION public.get_officer_login_challenge(p_identifier TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_ident TEXT := TRIM(COALESCE(p_identifier, ''));
+    v_u RECORD;
+BEGIN
+    IF v_ident = '' THEN
+        RETURN jsonb_build_object('found', false);
+    END IF;
+    SELECT username, salt INTO v_u
+    FROM public.users
+    WHERE (LOWER(username) = LOWER(v_ident) OR badge_no = v_ident)
+      AND COALESCE(status, 'active') <> 'suspended'
+    LIMIT 1;
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('found', false);
+    END IF;
+    RETURN jsonb_build_object('found', true, 'username', v_u.username, 'salt', v_u.salt);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.verify_officer_login(p_identifier TEXT, p_password_hash TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_ident TEXT := TRIM(COALESCE(p_identifier, ''));
+    v_hash TEXT := LOWER(TRIM(COALESCE(p_password_hash, '')));
+    v_u RECORD;
+BEGIN
+    IF v_ident = '' OR length(v_hash) < 64 THEN
+        RETURN jsonb_build_object('success', false, 'error', 'ข้อมูลยืนยันตัวตนไม่ถูกต้อง');
+    END IF;
+    SELECT id, username, full_name, rank, badge_no, role, position, department, status, password_hash
+    INTO v_u
+    FROM public.users
+    WHERE (LOWER(username) = LOWER(v_ident) OR badge_no = v_ident)
+      AND COALESCE(status, 'active') <> 'suspended'
+    LIMIT 1;
+
+    IF NOT FOUND OR LOWER(v_u.password_hash) <> v_hash THEN
+        RETURN jsonb_build_object('success', false, 'error', 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+    END IF;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'user', jsonb_build_object(
+            'id', v_u.id,
+            'username', v_u.username,
+            'full_name', v_u.full_name,
+            'rank', v_u.rank,
+            'badge_no', v_u.badge_no,
+            'role', v_u.role,
+            'position', COALESCE(v_u.position, ''),
+            'department', COALESCE(v_u.department, ''),
+            'status', COALESCE(v_u.status, 'active')
+        )
+    );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_officer_login_challenge(TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.verify_officer_login(TEXT, TEXT) TO anon, authenticated;
 
 -- =========================================================================================
 -- 7. สร้างตาราง public.newpolice_user_requests (หากยังไม่มี) และเปิดสิทธิ์ GRANT ครบทุกตาราง
