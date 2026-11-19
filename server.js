@@ -1273,6 +1273,36 @@ const server = http.createServer(async (req, res) => {
                 }
             }
 
+            if (pathname === '/api/external/newpolice/cases' && req.method === 'DELETE') {
+                const urlObj = new URL(req.url, 'http://localhost');
+                let targetCaseNo = (urlObj.searchParams.get('caseNo') || '').trim().toUpperCase();
+                let targetId = (urlObj.searchParams.get('id') || '').trim();
+                if (!targetCaseNo && !targetId) {
+                    try {
+                        const body = await readBody(req);
+                        targetCaseNo = String(body.caseNo || body.case_no || '').trim().toUpperCase();
+                        targetId = String(body.id || '').trim();
+                    } catch (_) {}
+                }
+                if (!targetCaseNo && !targetId) {
+                    return sendJson(res, 400, { success: false, error: 'Missing caseNo or id' });
+                }
+                try {
+                    let changes = 0;
+                    if (targetCaseNo) {
+                        const info = db.prepare('DELETE FROM cyber_details WHERE UPPER(TRIM(case_no)) = ?;').run(targetCaseNo);
+                        changes += info.changes || 0;
+                    }
+                    if (targetId && /^\d+$/.test(targetId)) {
+                        const info2 = db.prepare('DELETE FROM cyber_details WHERE id = ?;').run(Number(targetId));
+                        changes += info2.changes || 0;
+                    }
+                    return sendJson(res, 200, { success: true, deletedCount: changes, caseNo: targetCaseNo, id: targetId });
+                } catch (dbErr) {
+                    return sendJson(res, 500, { success: false, error: dbErr.message });
+                }
+            }
+
             // 4e. VICTIM PRE-FILL INQUIRY SUBMISSIONS (NEWPOLICE INTEGRATION)
             if (pathname === '/api/external/newpolice/victim-inquiry' && req.method === 'POST') {
                 const body = await readBody(req);

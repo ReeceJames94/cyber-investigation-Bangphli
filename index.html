@@ -3765,13 +3765,56 @@
             }
         ];
 
+        // ระบบติดตามรายการคดีที่ถูกลบแล้ว เพื่อป้องกันไม่ให้ Auto-sync หรือ Seed Mock Data ดึงกลับมาสร้างใหม่
+        function getDeletedCaseKeys() {
+            try {
+                const raw = localStorage.getItem('cyber_deleted_cases');
+                const arr = raw ? JSON.parse(raw) : [];
+                return Array.isArray(arr) ? arr : [];
+            } catch (_) {
+                return [];
+            }
+        }
+
+        function markCaseAsDeleted(caseNo, id) {
+            try {
+                const keys = new Set(getDeletedCaseKeys());
+                const cleanNo = String(caseNo || '').trim().toUpperCase();
+                const cleanId = String(id || '').trim();
+                if (cleanNo) keys.add('CASE:' + cleanNo);
+                if (cleanId) keys.add('ID:' + cleanId);
+                localStorage.setItem('cyber_deleted_cases', JSON.stringify(Array.from(keys)));
+            } catch (_) {}
+        }
+
+        function unmarkCaseAsDeleted(caseNo, id) {
+            try {
+                const cleanNo = String(caseNo || '').trim().toUpperCase();
+                const cleanId = String(id || '').trim();
+                const next = getDeletedCaseKeys().filter(k =>
+                    (!cleanNo || k !== 'CASE:' + cleanNo) &&
+                    (!cleanId || k !== 'ID:' + cleanId)
+                );
+                localStorage.setItem('cyber_deleted_cases', JSON.stringify(next));
+            } catch (_) {}
+        }
+
+        function isCaseDeleted(caseNo, id) {
+            const keys = getDeletedCaseKeys();
+            if (keys.length === 0) return false;
+            const cleanNo = String(caseNo || '').trim().toUpperCase();
+            const cleanId = String(id || '').trim();
+            return (cleanNo && keys.includes('CASE:' + cleanNo)) || (cleanId && keys.includes('ID:' + cleanId));
+        }
+
         // คืนค่าข้อมูลคดีจาก LocalStorage (ถ้ามี) พร้อม Auto-migrate โครงสร้างความเร่งด่วนและ Warroom ให้สมบูรณ์
         try {
             const savedCyberCases = localStorage.getItem('cyber_cases');
             if (savedCyberCases) {
                 const parsedCases = JSON.parse(savedCyberCases);
-                if (Array.isArray(parsedCases) && parsedCases.length > 0) {
-                    parsedCases.forEach(c => {
+                if (Array.isArray(parsedCases)) {
+                    const filteredCases = parsedCases.filter(c => !isCaseDeleted(c.caseNo, c.id));
+                    filteredCases.forEach(c => {
                         if (!Array.isArray(c.urgency)) {
                             c.urgency = c.urgency ? [c.urgency] : [];
                         }
@@ -3791,9 +3834,11 @@
                         }
                         if (!c.detective) c.detective = 'ร.ต.ต.ธนกฤต ไทยกมล';
                     });
-                    mockCases = parsedCases;
+                    mockCases = filteredCases;
                     localStorage.setItem('cyber_cases', JSON.stringify(mockCases));
                 }
+            } else {
+                mockCases = mockCases.filter(c => !isCaseDeleted(c.caseNo, c.id));
             }
         } catch(e) {}
 
@@ -4424,6 +4469,7 @@
                     summons2Pdf: s2File ? s2File.name : '',
                     warrantPdf: wFile ? wFile.name : ''
                 };
+                if (typeof unmarkCaseAsDeleted === 'function') unmarkCaseAsDeleted(newCase.caseNo, newCase.id);
                 mockCases.unshift(newCase);
                 if (wCheck) syncCaseToWarrants(newCase);
                 if (typeof syncCaseToSupabaseZeroKnowledge === 'function') syncCaseToSupabaseZeroKnowledge(newCase);
@@ -4916,7 +4962,7 @@
                                 <button onclick="openEditPreviewModal('${c.id}')" class="text-amber-500 hover:text-amber-600 p-1.5 rounded-lg hover:bg-amber-500/10 transition" title="แก้ไขเคสนี้">
                                     ✏️
                                 </button>
-                                <button onclick="deleteMockCase('${c.id}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-500/10 transition" title="ลบเคส">
+                                <button type="button" onclick="deleteMockCase('${String(c.id || '').replace(/'/g, "\\'")}', '${String(c.caseNo || '').replace(/'/g, "\\'")}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-500/10 transition" title="ลบเคส">
                                     🗑️
                                 </button>
                             </div>
@@ -4943,10 +4989,122 @@
             toast('ล้างตัวกรองทั้งหมดแล้ว');
         }
 
-        function deleteMockCase(id) {
-            mockCases = mockCases.filter(c => c.id !== id);
+        async function deleteMockCase(id, caseNoArg) {
+            const targetCase = mockCases.find(c =>
+                (id && String(c.id) === String(id)) ||
+                (caseNoArg && c.caseNo && c.caseNo.toUpperCase() === String(caseNoArg).trim().toUpperCase())
+            );
+            const targetId = targetCase?.id || id || '';
+            const targetCaseNo = String(targetCase?.caseNo || caseNoArg || '').trim();
+            const label = targetCaseNo || targetId || 'คดีนี้';
+
+            if (!confirm(`ยืนยันการลบคดี "${label}" ออกจากระบบและฐานข้อมูล Supabase หรือไม่?\n\n⚠️ ข้อมูลคดีในตาราง cases และ cyber_details จะถูกลบถาวร`)) {
+                return;
+            }
+
+            // 1. สั่งลบข้อมูลออกจาก Supabase ทั้ง 2 ตารางพร้อมกัน (cyber_details และ cases) โดยอ้างอิงจาก case_no และ id
+            const supaErrors = [];
+            let casesDeleteOk = true;
+            let cyberDetailsDeleteOk = true;
+
+            try {
+                const sb = (typeof getActiveSupabaseClient === 'function') ? getActiveSupabaseClient() : null;
+                if (sb) {
+                    const deleteOps = [];
+
+                    if (targetCaseNo) {
+                        deleteOps.push(
+                            sb.from('cyber_details').delete().eq('case_no', targetCaseNo).select()
+                                .then(res => ({ table: 'cyber_details', mode: 'case_no', res }))
+                        );
+                        deleteOps.push(
+                            sb.from('cases').delete().eq('case_no', targetCaseNo).select()
+                                .then(res => ({ table: 'cases', mode: 'case_no', res }))
+                        );
+                        // กรณีมีตัวพิมพ์เล็ก-ใหญ่ต่างกันใน case_no ให้ลบแบบ ilike ควบคู่กันด้วย
+                        if (targetCaseNo.toUpperCase() !== targetCaseNo) {
+                            deleteOps.push(
+                                sb.from('cyber_details').delete().ilike('case_no', targetCaseNo).select()
+                                    .then(res => ({ table: 'cyber_details', mode: 'case_no_ilike', res }))
+                            );
+                            deleteOps.push(
+                                sb.from('cases').delete().ilike('case_no', targetCaseNo).select()
+                                    .then(res => ({ table: 'cases', mode: 'case_no_ilike', res }))
+                            );
+                        }
+                    }
+
+                    if (targetId) {
+                        deleteOps.push(
+                            sb.from('cases').delete().eq('id', String(targetId)).select()
+                                .then(res => ({ table: 'cases', mode: 'id', res }))
+                        );
+                        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetId))) {
+                            deleteOps.push(
+                                sb.from('cyber_details').delete().eq('id', String(targetId)).select()
+                                    .then(res => ({ table: 'cyber_details', mode: 'id', res }))
+                            );
+                        }
+                    }
+
+                    const settled = await Promise.all(deleteOps);
+                    for (const item of settled) {
+                        const { error, status } = item.res || {};
+                        if (error) {
+                            if (item.table === 'cases') casesDeleteOk = false;
+                            if (item.table === 'cyber_details') cyberDetailsDeleteOk = false;
+                            const hint42501 = (error.code === '42501' || status === 401 || status === 403)
+                                ? ' (ติดสิทธิ์ GRANT/RLS Policy: กรุณารันไฟล์ supabase_victim_rpc.sql ใน Supabase SQL Editor)'
+                                : '';
+                            const errMsg = `• ตาราง ${item.table} (${item.mode}): [${error.code || status || 'ERROR'}] ${error.message || 'ลบไม่สำเร็จ'}${hint42501}`;
+                            if (!supaErrors.includes(errMsg)) supaErrors.push(errMsg);
+                        }
+                    }
+                }
+            } catch (err) {
+                casesDeleteOk = false;
+                cyberDetailsDeleteOk = false;
+                supaErrors.push(`• ไม่สามารถเชื่อมต่อ Supabase เพื่อลบข้อมูลได้: ${err.message || err}`);
+            }
+
+            // 2. เช็กผลลัพธ์การลบจาก Supabase: หากเกิด Error ให้ Alert แจ้งสาเหตุทันที
+            if (supaErrors.length > 0) {
+                alert(`❌ เกิดข้อผิดพลาดในการลบคดี "${label}" บน Supabase:\n\n${supaErrors.join('\n')}`);
+                if (!casesDeleteOk) {
+                    return;
+                }
+                if (!cyberDetailsDeleteOk && !confirm(`ตาราง cases ถูกลบแล้ว แต่ตาราง cyber_details แจ้งข้อผิดพลาดข้างต้น\n\nต้องการลบคดี "${label}" ออกจากหน้าจอและ LocalStorage ด้วยหรือไม่?`)) {
+                    return;
+                }
+            }
+
+            // 3. สั่งลบจาก Local Backend SQLite (กรณีรันผ่าน server.js ในเครื่อง)
+            try {
+                const params = new URLSearchParams();
+                if (targetCaseNo) params.set('caseNo', targetCaseNo);
+                if (targetId) params.set('id', String(targetId));
+                if (typeof safeApiFetch === 'function') {
+                    await safeApiFetch(`/api/external/newpolice/cases?${params.toString()}`, { method: 'DELETE' });
+                }
+            } catch (_) {}
+
+            // 4. ลบออกจาก State หน้าจอ, ลบออกจาก localStorage, และบันทึกลงรายการ blocklist ป้องกันซิงก์กลับมาใหม่
+            const cleanTargetNo = targetCaseNo.toUpperCase();
+            mockCases = mockCases.filter(c => {
+                const matchId = targetId && String(c.id) === String(targetId);
+                const matchNo = cleanTargetNo && c.caseNo && c.caseNo.trim().toUpperCase() === cleanTargetNo;
+                return !matchId && !matchNo;
+            });
+
+            if (typeof markCaseAsDeleted === 'function') {
+                markCaseAsDeleted(targetCaseNo, targetId);
+            }
+            try {
+                localStorage.setItem('cyber_cases', JSON.stringify(mockCases));
+            } catch (_) {}
+
             renderCases();
-            toast('ลบเคสเรียบร้อยแล้ว');
+            toast(`🗑️ ลบคดี ${label} ออกจากระบบและฐานข้อมูลเรียบร้อยแล้ว`);
         }
 
         // =========================================================================
@@ -5395,6 +5553,7 @@
                 const res = await safeApiFetch('/api/external/newpolice/cases');
                 if (res && res.data && Array.isArray(res.data.cases) && res.data.cases.length > 0) {
                     res.data.cases.forEach(remoteCase => {
+                        if (typeof isCaseDeleted === 'function' && isCaseDeleted(remoteCase.caseNo, remoteCase.id)) return;
                         const existing = mockCases.find(c => 
                             (c.caseNo && remoteCase.caseNo && c.caseNo.toUpperCase() === remoteCase.caseNo.toUpperCase()) || 
                             (c.id && remoteCase.id && String(c.id) === String(remoteCase.id))
@@ -5432,6 +5591,7 @@
                                 window._supaCyberDetailsPermissionDenied = true;
                             } else if (!cdErr && Array.isArray(cdCases) && cdCases.length > 0) {
                                 cdCases.forEach(cd => {
+                                    if (typeof isCaseDeleted === 'function' && isCaseDeleted(cd.case_no, cd.id)) return;
                                     const existing = mockCases.find(c =>
                                         (c.caseNo && cd.case_no && c.caseNo.toUpperCase() === cd.case_no.toUpperCase())
                                     );
@@ -5468,6 +5628,7 @@
                     const { data: supaCases, error } = await supa.from('cases').select('*').order('updated_at', { ascending: true });
                     if (!error && Array.isArray(supaCases) && supaCases.length > 0) {
                         for (const sc of supaCases) {
+                            if (typeof isCaseDeleted === 'function' && isCaseDeleted(sc.case_no, sc.id)) continue;
                             const existing = mockCases.find(c => 
                                 (c.caseNo && sc.case_no && c.caseNo.toUpperCase() === sc.case_no.toUpperCase()) ||
                                 (c.id && sc.id && String(c.id) === String(sc.id))
@@ -5581,6 +5742,9 @@
             }
 
             if (updated) {
+                if (typeof isCaseDeleted === 'function') {
+                    mockCases = mockCases.filter(c => !isCaseDeleted(c.caseNo, c.id));
+                }
                 mockCases.forEach(c => {
                     if (c.investigator && typeof investigatorsList !== 'undefined' && !investigatorsList.includes(c.investigator)) {
                         investigatorsList.push(c.investigator);

@@ -395,6 +395,12 @@ TO anon, authenticated
 USING (true)
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "cyber_details_delete_officer" ON public.cyber_details;
+CREATE POLICY "cyber_details_delete_officer"
+ON public.cyber_details FOR DELETE
+TO anon, authenticated
+USING (true);
+
 -- เพิ่มคอลัมน์รองรับข้อมูลฟอร์มผู้เสียหายในตาราง public.cases
 ALTER TABLE public.cases ADD COLUMN IF NOT EXISTS incident_date TEXT;
 ALTER TABLE public.cases ADD COLUMN IF NOT EXISTS victim_name TEXT;

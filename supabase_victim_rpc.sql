@@ -96,6 +96,12 @@ TO anon, authenticated
 USING (true)
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "cyber_details_delete_officer" ON public.cyber_details;
+CREATE POLICY "cyber_details_delete_officer"
+ON public.cyber_details FOR DELETE
+TO anon, authenticated
+USING (true);
+
 -- Pre-seed ข้อมูลคดีหลักลงใน public.cyber_details
 INSERT INTO public.cyber_details (
     case_no, incident_date, victim_name, victim_phone, damage_amount, fraud_category,
