@@ -24,6 +24,26 @@ const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL |
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MC3Z6VYA-wFAhAZLfikxDA_DM1W_J4K';
 const STATION_CODE = process.env.STATION_CODE || 'POLICE-STN-BANGPHLI-001';
 
+let APP_VERSION_INFO = {
+    version: '2.6.0',
+    buildDate: '2026-11-19',
+    buildDateThai: '19 พ.ย. 2569',
+    highlights: []
+};
+try {
+    const verJsonPath = path.join(__dirname, 'version.json');
+    if (fs.existsSync(verJsonPath)) {
+        const parsed = JSON.parse(fs.readFileSync(verJsonPath, 'utf8'));
+        if (parsed && parsed.version) APP_VERSION_INFO = { ...APP_VERSION_INFO, ...parsed };
+    } else {
+        const pkgPath = path.join(__dirname, 'package.json');
+        if (fs.existsSync(pkgPath)) {
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+            if (pkg && pkg.version) APP_VERSION_INFO.version = pkg.version;
+        }
+    }
+} catch (_) {}
+
 const PORT = process.env.PORT || 8000;
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) {
@@ -950,6 +970,9 @@ const server = http.createServer(async (req, res) => {
                 const baseStatus = {
                     success: true,
                     status: 'online',
+                    version: APP_VERSION_INFO.version,
+                    buildDate: APP_VERSION_INFO.buildDate,
+                    buildDateThai: APP_VERSION_INFO.buildDateThai,
                     station: 'สภ.บางพลี ภ.จว.สมุทรปราการ ภ.๑'
                 };
                 if (!session) {
@@ -2502,7 +2525,8 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
     console.log('======================================================================');
-    console.log(`🛡️ CYBER INVESTIGATION BANGPHLI - SECURE POLICE SERVER`);
+    console.log(`🛡️ CYBER INVESTIGATION BANGPHLI - SECURE POLICE SERVER (v${APP_VERSION_INFO.version})`);
+    console.log(`📦 Build: ${APP_VERSION_INFO.buildDate} (${APP_VERSION_INFO.buildDateThai})`);
     console.log(`🔒 Encryption: AES-256-GCM (Active) | Master Key Protected`);
     console.log(`💾 Database: SQLite (WAL Mode) at ${DB_PATH}`);
     console.log(`📋 Audit Logging: Enabled (PDPA & Police Code Compliant)`);
