@@ -2213,36 +2213,52 @@ const server = http.createServer(async (req, res) => {
                 });
             }
 
-            // 12. USER MANAGEMENT: UPDATE USER (ADMIN ONLY)
+            // 12. USER MANAGEMENT: UPDATE USER (ADMIN OR SELF)
             if (pathname.startsWith('/api/users/') && req.method === 'PUT') {
-                if (session.role !== 'admin' && !session.position.includes('ผกก')) {
-                    return sendJson(res, 403, { success: false, error: 'เฉพาะผู้ดูแลระบบเท่านั้นที่สามารถแก้ไขข้อมูลผู้ใช้งานได้' });
-                }
-
-                const userId = parseInt(pathname.replace('/api/users/', ''), 10);
+                const rawTargetId = decodeURIComponent(pathname.replace('/api/users/', ''));
+                const userId = parseInt(rawTargetId, 10);
                 const body = await readBody(req);
-                const { rank_name, position, department, role, status, password } = body;
+                const { badge_no, username, rank_name, position, department, role, status, password } = body;
 
-                const targetUser = db.prepare('SELECT * FROM users WHERE id = ?;').get(userId);
+                let targetUser = Number.isFinite(userId)
+                    ? db.prepare('SELECT * FROM users WHERE id = ?;').get(userId)
+                    : null;
+                if (!targetUser && rawTargetId) {
+                    targetUser = db.prepare('SELECT * FROM users WHERE username = ?;').get(rawTargetId);
+                }
+                if (!targetUser && username) {
+                    targetUser = db.prepare('SELECT * FROM users WHERE username = ?;').get(username);
+                }
                 if (!targetUser) {
                     return sendJson(res, 404, { success: false, error: 'ไม่พบผู้ใช้งานนี้ในระบบ' });
                 }
+
+                const isSelf = Number(session.user_id) === Number(targetUser.id) || String(session.username || '') === String(targetUser.username || '');
+                const isAdmin = session.role === 'admin' || String(session.position || '').includes('ผกก');
+                if (!isAdmin && !isSelf) {
+                    return sendJson(res, 403, { success: false, error: 'คุณสามารถแก้ไขได้เฉพาะโปรไฟล์ของตัวเองเท่านั้น' });
+                }
+
+                const nextRole = isAdmin ? (role || targetUser.role) : ((role && role !== 'admin') ? role : targetUser.role);
+                const nextStatus = isAdmin ? (status || targetUser.status) : targetUser.status;
+                const nextBadgeNo = badge_no || targetUser.badge_no;
+                const nextUsername = username || targetUser.username;
 
                 if (password && password.trim().length >= 6) {
                     const { hash, salt } = hashPassword(password.trim());
                     db.prepare(`
                         UPDATE users
-                        SET rank_name = ?, position = ?, department = ?, role = ?, status = ?, password_hash = ?, salt = ?
+                        SET username = ?, badge_no = ?, rank_name = ?, position = ?, department = ?, role = ?, status = ?, password_hash = ?, salt = ?
                         WHERE id = ?;
-                    `).run(rank_name || targetUser.rank_name, position || targetUser.position, department || targetUser.department, role || targetUser.role, status || targetUser.status, hash, salt, userId);
-                    recordAuditLog(session, 'UPDATE_USER', 'USER', targetUser.username, `แก้ไขข้อมูลและรีเซ็ตรหัสผ่านของ: ${targetUser.rank_name}`, req);
+                    `).run(nextUsername, nextBadgeNo, rank_name || targetUser.rank_name, position || targetUser.position, department || targetUser.department, nextRole, nextStatus, hash, salt, targetUser.id);
+                    recordAuditLog(session, 'UPDATE_USER', 'USER', nextUsername, `แก้ไขข้อมูลและรีเซ็ตรหัสผ่านของ: ${rank_name || targetUser.rank_name}`, req);
                 } else {
                     db.prepare(`
                         UPDATE users
-                        SET rank_name = ?, position = ?, department = ?, role = ?, status = ?
+                        SET username = ?, badge_no = ?, rank_name = ?, position = ?, department = ?, role = ?, status = ?
                         WHERE id = ?;
-                    `).run(rank_name || targetUser.rank_name, position || targetUser.position, department || targetUser.department, role || targetUser.role, status || targetUser.status, userId);
-                    recordAuditLog(session, 'UPDATE_USER', 'USER', targetUser.username, `แก้ไขข้อมูลของ: ${targetUser.rank_name} (${role || targetUser.role})`, req);
+                    `).run(nextUsername, nextBadgeNo, rank_name || targetUser.rank_name, position || targetUser.position, department || targetUser.department, nextRole, nextStatus, targetUser.id);
+                    recordAuditLog(session, 'UPDATE_USER', 'USER', nextUsername, `แก้ไขข้อมูลของ: ${rank_name || targetUser.rank_name} (${nextRole})`, req);
                 }
 
                 return sendJson(res, 200, { success: true, message: 'ปรับปรุงข้อมูลผู้ใช้สำเร็จ' });
