@@ -1786,15 +1786,22 @@ const server = http.createServer(async (req, res) => {
             // 4h-2. INQUIRY TEMPLATES (14 กลโกง DYNAMIC ENDPOINT)
             if (pathname === '/api/inquiry/templates' && (req.method === 'GET' || req.method === 'HEAD')) {
                 let templates = [];
+                let maxUpdatedAt = null;
                 try {
-                    const rows = db.prepare('SELECT id, title, points FROM inquiry_templates ORDER BY id ASC;').all();
-                    templates = rows.map(r => ({
-                        id: r.id,
-                        title: r.title,
-                        points: JSON.parse(r.points || '[]')
-                    }));
+                    const rows = db.prepare('SELECT id, title, points, updated_at FROM inquiry_templates ORDER BY id ASC;').all();
+                    templates = rows.map(r => {
+                        if (r.updated_at && (!maxUpdatedAt || r.updated_at > maxUpdatedAt)) {
+                            maxUpdatedAt = r.updated_at;
+                        }
+                        return {
+                            id: r.id,
+                            title: r.title,
+                            points: JSON.parse(r.points || '[]'),
+                            updatedAt: r.updated_at || null
+                        };
+                    });
                 } catch(e) {}
-                return sendJson(res, 200, { success: true, templates });
+                return sendJson(res, 200, { success: true, templates, updatedAt: maxUpdatedAt });
             }
 
             if (pathname === '/api/inquiry/templates' && req.method === 'POST') {
@@ -1813,14 +1820,14 @@ const server = http.createServer(async (req, res) => {
                     try {
                         db.exec('DELETE FROM inquiry_templates;');
                         body.templates.forEach((t, idx) => {
-                            ins.run(idx + 1, t.title, JSON.stringify(t.points || []), now);
+                            ins.run(Number(t.id) || (idx + 1), t.title, JSON.stringify(t.points || []), now);
                         });
                         db.exec('COMMIT;');
                     } catch(e) {
                         db.exec('ROLLBACK;');
                         return sendJson(res, 500, { success: false, error: e.message });
                     }
-                    return sendJson(res, 200, { success: true, count: body.templates.length });
+                    return sendJson(res, 200, { success: true, count: body.templates.length, updatedAt: now });
                 }
                 return sendJson(res, 400, { success: false, error: 'templates must be an array' });
             }

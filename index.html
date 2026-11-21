@@ -1106,7 +1106,7 @@
                         <h1 class="font-bold text-sm tracking-wide text-white leading-tight truncate">CYBER PORTAL</h1>
                         <div class="flex items-center gap-1.5 mt-0.5">
                             <p class="text-[11px] theme-accent-text font-medium truncate">สภ.บางพลี • งานสืบสวน</p>
-                            <button type="button" onclick="openPortalVersionModal()" id="sidebarVersionBadge" class="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition shrink-0" title="คลิกเพื่อดูรายละเอียดเวอร์ชันและตรวจสอบการอัปเดต">v2.6.0</button>
+                            <button type="button" onclick="openPortalVersionModal()" id="sidebarVersionBadge" class="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition shrink-0" title="คลิกเพื่อดูรายละเอียดเวอร์ชันและตรวจสอบการอัปเดต">v2.6.1</button>
                         </div>
                     </div>
                 </div>
@@ -1268,6 +1268,18 @@
                             <button onclick="openModal('addCaseModal')" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 px-5 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-md">
                                 <span>➕</span> <span>บันทึกคดีใหม่</span>
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Sync Diagnostics / Cloud Warning Banner -->
+                    <div id="casesSyncWarningBanner" class="hidden p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/40 text-amber-300 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div class="flex items-start gap-2.5">
+                            <span class="text-base shrink-0">⚠️</span>
+                            <div id="casesSyncWarningText" class="leading-relaxed"></div>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 shrink-0">
+                            <button type="button" onclick="openZkCloudModal()" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500 text-amber-200 hover:text-slate-950 border border-amber-500/40 font-bold text-[11px] transition">🔑 ตั้งค่า Cloud / Master Key</button>
+                            <button type="button" onclick="forceFullResyncFromUi()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold text-[11px] transition">🔄 ซิงก์ข้อมูลอีกครั้ง</button>
                         </div>
                     </div>
 
@@ -1596,6 +1608,14 @@
                         <div id="inquiryAdminNotice" class="text-xs shrink-0 flex items-center gap-2">
                             <!-- Dynamic Admin notice / Reset button -->
                         </div>
+                    </div>
+
+                    <div id="inquirySyncWarningBanner" class="hidden p-3 rounded-2xl bg-amber-500/10 border border-amber-500/40 text-amber-300 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+                        <div class="flex items-start gap-2">
+                            <span class="shrink-0">⚠️</span>
+                            <div id="inquirySyncWarningText" class="leading-relaxed"></div>
+                        </div>
+                        <button type="button" onclick="forceSyncInquiryFromUi()" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500 text-amber-200 hover:text-slate-950 border border-amber-500/40 font-bold text-[11px] transition shrink-0">🔄 ซิงก์ประเด็นสอบสวน</button>
                     </div>
 
                     <div id="inquiryGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2806,7 +2826,7 @@
                             <p class="text-xs text-amber-400 font-semibold">สถานีตำรวจภูธรบางพลี ภ.จว.สมุทรปราการ ภ.๑</p>
                             <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold mt-1">
                                 <span>🔒</span> <span>ฐานข้อมูลเข้ารหัสลับ AES-256-GCM | มาตรฐาน PDPA</span>
-                                <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold" id="loginVersionPill">v2.6.0</span>
+                                <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold" id="loginVersionPill">v2.6.1</span>
                             </div>
                         </div>
 
@@ -2857,7 +2877,7 @@
                                 <div>
                                     <h2 class="text-base font-bold text-white flex items-center gap-2">
                                         <span>ข้อมูลเวอร์ชันระบบ (System Version)</span>
-                                        <span id="modalCurrentVersionBadge" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">v2.6.0</span>
+                                        <span id="modalCurrentVersionBadge" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">v2.6.1</span>
                                     </h2>
                                     <p class="text-[11px] text-slate-400">Cyber Investigation Portal • สถานีตำรวจภูธรบางพลี</p>
                                 </div>
@@ -2868,8 +2888,8 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                                 <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">เวอร์ชันบนหน้าจอปัจจุบัน</div>
-                                <div id="versionLocalDisplay" class="text-sm font-bold text-emerald-400">v2.6.0</div>
-                                <div id="versionBuildDateDisplay" class="text-[11px] text-slate-400">อัปเดตล่าสุด: 19 พ.ย. 2569</div>
+                                <div id="versionLocalDisplay" class="text-sm font-bold text-emerald-400">v2.6.1</div>
+                                <div id="versionBuildDateDisplay" class="text-[11px] text-slate-400">อัปเดตล่าสุด: 21 พ.ย. 2569</div>
                             </div>
                             <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                                 <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">เวอร์ชันล่าสุดบนเซิร์ฟเวอร์</div>
@@ -2880,7 +2900,7 @@
 
                         <div class="p-4 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-2">
                             <div class="font-bold text-amber-400 text-xs flex items-center gap-1.5">
-                                <span>✨</span> <span>สรุปการอัปเดตเวอร์ชัน v2.6.0</span>
+                                <span>✨</span> <span>สรุปการอัปเดตเวอร์ชัน v2.6.1</span>
                             </div>
                             <ul id="versionChangelogList" class="space-y-1.5 text-[11px] text-slate-300 list-disc pl-4 leading-relaxed">
                                 <li>เพิ่มช่องติ๊ก "ตัดเลขแล้ว" กรอก "เลขคดี" ต่อท้าย และสถานะ "ส่งสำนวนอัยการแล้ว / ยังไม่ส่งสำนวน" พร้อมตัวกรองแยกขั้นตอนและรายงานส่งออก</li>
@@ -4472,6 +4492,8 @@
             const activeBtn = document.getElementById('nav-' + name);
             if (activeBtn) activeBtn.className = 'nav-btn active flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 shadow-md';
             if (name === 'registry') renderRegistry();
+            if (name === 'inquiry' && typeof renderInquiry === 'function') renderInquiry();
+            if (name === 'cases' && typeof updateCloudSyncDiagnosticBanner === 'function') updateCloudSyncDiagnosticBanner();
             if (name === 'arrest' && typeof renderArrestModule === 'function') renderArrestModule();
             if (name === 'officers' && typeof renderOfficersDirectory === 'function') renderOfficersDirectory();
             if (name === 'users' && typeof loadUsersFromApi === 'function') loadUsersFromApi();
@@ -5297,7 +5319,7 @@
         }
 
         function toggleCaseUrgencyDirect(caseId, urgencyName) {
-            const item = mockCases.find(c => c.id === caseId);
+            const item = mockCases.find(c => String(c.id) === String(caseId));
             if (!item) return;
             if (!Array.isArray(item.urgency)) item.urgency = item.urgency ? [item.urgency] : [];
             const idx = item.urgency.indexOf(urgencyName);
@@ -5309,11 +5331,12 @@
                 toast(`✅ กำหนด ${urgencyName} คดี ${item.caseNo}`);
             }
             try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(e) {}
+            if (typeof syncCaseToSupabaseZeroKnowledge === 'function') syncCaseToSupabaseZeroKnowledge(item);
             renderCases();
         }
 
         function toggleCaseWarroomDirect(caseId) {
-            const item = mockCases.find(c => c.id === caseId);
+            const item = mockCases.find(c => String(c.id) === String(caseId));
             if (!item) return;
             if (item.status === 'warroom') {
                 item.status = 'พบพงส.';
@@ -5323,6 +5346,7 @@
                 toast(`🚨 นำคดี ${item.caseNo} เข้าสู่สถานะ Warroom เรียบร้อยแล้ว`);
             }
             try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(e) {}
+            if (typeof syncCaseToSupabaseZeroKnowledge === 'function') syncCaseToSupabaseZeroKnowledge(item);
             renderCases();
         }
 
@@ -5549,15 +5573,21 @@
 
             tbody.innerHTML = '';
             if (filtered.length === 0) {
+                const showAllHintBtn = (currentCaseQuickFilter === 'my_cases' && totalCount > 0)
+                    ? `<button type="button" onclick="setCaseFilterQuick('all')" class="mt-3 px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition shadow-sm">📁 แสดงคดีทั้งหมดในสถานี (${totalCount} คดี)</button>`
+                    : '';
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="9" class="p-12 text-center text-slate-400">
                             <div class="text-3xl mb-2">🔍</div>
                             <div class="font-semibold text-sm">ไม่พบคดีตามเงื่อนไขตัวกรองที่กำหนด</div>
                             <div class="text-xs text-slate-500 mt-1">ลองเปลี่ยนคำค้นหา หรือกดปุ่ม "ล้างตัวกรอง" เพื่อแสดงคดีทั้งหมด</div>
-                            <button type="button" onclick="resetFilters()" class="mt-3 px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-xs font-semibold transition">
-                                🔄 ล้างตัวกรอง
-                            </button>
+                            <div class="flex flex-wrap justify-center gap-2">
+                                ${showAllHintBtn}
+                                <button type="button" onclick="resetFilters()" class="mt-3 px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-xs font-semibold transition">
+                                    🔄 ล้างตัวกรอง
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -6308,43 +6338,120 @@
             }
         }
 
+        window._portalSyncDiagnostics = {
+            sqliteStatus: 'idle',
+            sqliteCasesCount: 0,
+            supaCasesStatus: 'idle',
+            supaCasesCount: 0,
+            supaCdStatus: 'idle',
+            supaCdCount: 0,
+            supaAuthActive: false,
+            masterKeyConfigured: false,
+            lastSaveWarning: ''
+        };
+
+        function updateCloudSyncDiagnosticBanner() {
+            const banner = document.getElementById('casesSyncWarningBanner');
+            const textEl = document.getElementById('casesSyncWarningText');
+            if (!banner || !textEl) return;
+
+            const diag = window._portalSyncDiagnostics || {};
+            const hasMaster = (typeof ZeroKnowledgeCrypto !== 'undefined' && typeof ZeroKnowledgeCrypto.hasConfiguredMasterKey === 'function')
+                ? ZeroKnowledgeCrypto.hasConfiguredMasterKey()
+                : false;
+            diag.masterKeyConfigured = hasMaster;
+
+            const warnings = [];
+            if (diag.supaCasesStatus === 'rls_denied' || diag.supaCdStatus === 'rls_denied') {
+                warnings.push('ยังไม่สามารถดึง/ซิงก์คดีจากฐานข้อมูลกลาง <strong>Supabase Cloud</strong> ได้ (สิทธิ์ RLS ปฏิเสธ HTTP 401 — บัญชีที่เข้าสู่ระบบยังไม่มี <strong>Supabase Auth Session</strong> ใน <code>Authentication &rarr; Users</code> รูปแบบ <code>username@bangphli.police.local</code> จึงมองเห็นเฉพาะคดีที่เก็บไว้ในเครื่องนี้เท่านั้น)');
+            } else if (diag.supaCasesStatus === 'error') {
+                warnings.push(`เชื่อมต่อตาราง <code>cases</code> บน Supabase ขัดข้อง (${escapeHtml(diag.supaCasesErrorMsg || 'Error')})`);
+            }
+            if (diag.sqliteStatus === 'unauthorized') {
+                warnings.push('เซสชันปัจจุบันยังไม่ได้ยืนยันตัวตนกับ <strong>SQLite Server ในเครื่อง</strong> (หากเข้าสู่ระบบด้วยบัญชี Supabase-only ระบบจะบันทึกที่เครื่องนี้เฉพาะ <code>localStorage</code>)');
+            }
+            if (!hasMaster) {
+                warnings.push('ยังไม่ได้ตั้งค่า <strong>Station Master Key</strong> — คดีที่เพิ่ม/แก้ไขใหม่จะบันทึกเฉพาะในเครื่องนี้และยังไม่ถูกเข้ารหัสอัปโหลดขึ้น Supabase Cloud');
+            }
+            if (diag.lastSaveWarning) {
+                warnings.push(escapeHtml(diag.lastSaveWarning));
+            }
+
+            if (warnings.length === 0) {
+                banner.classList.add('hidden');
+                banner.classList.remove('flex');
+                return;
+            }
+
+            textEl.innerHTML = warnings.join('<br>• ');
+            if (warnings.length > 1) textEl.innerHTML = '• ' + textEl.innerHTML;
+            banner.classList.remove('hidden');
+            banner.classList.add('flex');
+        }
+
+        async function forceFullResyncFromUi() {
+            window._supaCyberDetailsPermissionDenied = false;
+            window._supaInquiryTemplatesPermissionDenied = false;
+            if (window._portalSyncDiagnostics) window._portalSyncDiagnostics.lastSaveWarning = '';
+            toast('⏳ กำลังตรวจสอบและซิงก์ข้อมูลคดี + ประเด็นสอบสวนล่าสุด...');
+            await syncCyberCasesFromBackend();
+            if (typeof loadInquiryTemplatesFromBackend === 'function') {
+                await loadInquiryTemplatesFromBackend();
+            }
+            const diag = window._portalSyncDiagnostics || {};
+            toast(`🔄 ซิงก์เสร็จสิ้น (SQLite: ${diag.sqliteCasesCount || 0} | Supabase: ${diag.supaCasesCount || 0} | รวมในจอ: ${mockCases.length} คดี)`);
+        }
+
         // ฟังก์ชันดึงและซิงก์ข้อมูล Cyber Cases ล่าสุดจาก Backend และฐานข้อมูลกลาง Supabase (พงส. ตามจริง)
         async function syncCyberCasesFromBackend() {
             const authToken = (typeof getAuthToken === 'function') ? getAuthToken() : '';
             if (!authToken) return;
             let updated = false;
+            const diag = window._portalSyncDiagnostics = window._portalSyncDiagnostics || {};
+            diag.masterKeyConfigured = (typeof ZeroKnowledgeCrypto !== 'undefined' && typeof ZeroKnowledgeCrypto.hasConfiguredMasterKey === 'function')
+                ? ZeroKnowledgeCrypto.hasConfiguredMasterKey()
+                : false;
 
             // 1. ซิงก์จาก Local Backend API (SQLite cyber_details)
             try {
                 const res = await safeApiFetch('/api/external/newpolice/cases');
-                if (res && res.data && Array.isArray(res.data.cases) && res.data.cases.length > 0) {
-                    res.data.cases.forEach(remoteCase => {
-                        if (typeof isCaseDeleted === 'function' && isCaseDeleted(remoteCase.caseNo, remoteCase.id)) return;
-                        const existing = mockCases.find(c => 
-                            (c.caseNo && remoteCase.caseNo && c.caseNo.toUpperCase() === remoteCase.caseNo.toUpperCase()) || 
-                            (c.id && remoteCase.id && String(c.id) === String(remoteCase.id))
-                        );
-                        if (existing) {
-                            if (remoteCase.investigator) existing.investigator = getActualInvestigator(existing.caseNo || remoteCase.caseNo, remoteCase.investigator);
-                            if (remoteCase.detective) existing.detective = remoteCase.detective;
-                            if (remoteCase.status) existing.status = remoteCase.status;
-                            if (remoteCase.amount) existing.amount = remoteCase.amount;
-                            if (Array.isArray(remoteCase.urgency) && remoteCase.urgency.length > 0) existing.urgency = remoteCase.urgency;
-                            applyLegalActionsToCase(existing, remoteCase);
-                            if (remoteCase.victim_submitted_at) existing.victim_submitted_at = remoteCase.victim_submitted_at;
-                            if (remoteCase.victim_profile) existing.victim_profile = remoteCase.victim_profile;
-                            if (remoteCase.freeze_info) existing.freeze_info = remoteCase.freeze_info;
-                            if (remoteCase.transfer_records) existing.transfer_records = remoteCase.transfer_records;
-                            if (remoteCase.inquiry_answers) existing.inquiry_answers = remoteCase.inquiry_answers;
-                        } else {
-                            if (remoteCase.caseNo) remoteCase.investigator = getActualInvestigator(remoteCase.caseNo, remoteCase.investigator);
-                            applyLegalActionsToCase(remoteCase, remoteCase);
-                            mockCases.push(remoteCase);
-                        }
-                    });
-                    updated = true;
+                if (res && res._staticCloudMode) {
+                    diag.sqliteStatus = 'static';
+                } else if (res && res.status === 401) {
+                    diag.sqliteStatus = 'unauthorized';
+                } else if (res && res.data && Array.isArray(res.data.cases)) {
+                    diag.sqliteStatus = 'ok';
+                    diag.sqliteCasesCount = res.data.cases.length;
+                    if (res.data.cases.length > 0) {
+                        res.data.cases.forEach(remoteCase => {
+                            if (typeof isCaseDeleted === 'function' && isCaseDeleted(remoteCase.caseNo, remoteCase.id)) return;
+                            const existing = mockCases.find(c => 
+                                (c.caseNo && remoteCase.caseNo && c.caseNo.toUpperCase() === remoteCase.caseNo.toUpperCase()) || 
+                                (c.id && remoteCase.id && String(c.id) === String(remoteCase.id))
+                            );
+                            if (existing) {
+                                if (remoteCase.investigator) existing.investigator = getActualInvestigator(existing.caseNo || remoteCase.caseNo, remoteCase.investigator);
+                                if (remoteCase.detective) existing.detective = remoteCase.detective;
+                                if (remoteCase.status) existing.status = remoteCase.status;
+                                if (remoteCase.amount) existing.amount = remoteCase.amount;
+                                if (Array.isArray(remoteCase.urgency) && remoteCase.urgency.length > 0) existing.urgency = remoteCase.urgency;
+                                applyLegalActionsToCase(existing, remoteCase);
+                                if (remoteCase.victim_submitted_at) existing.victim_submitted_at = remoteCase.victim_submitted_at;
+                                if (remoteCase.victim_profile) existing.victim_profile = remoteCase.victim_profile;
+                                if (remoteCase.freeze_info) existing.freeze_info = remoteCase.freeze_info;
+                                if (remoteCase.transfer_records) existing.transfer_records = remoteCase.transfer_records;
+                                if (remoteCase.inquiry_answers) existing.inquiry_answers = remoteCase.inquiry_answers;
+                            } else {
+                                if (remoteCase.caseNo) remoteCase.investigator = getActualInvestigator(remoteCase.caseNo, remoteCase.investigator);
+                                applyLegalActionsToCase(remoteCase, remoteCase);
+                                mockCases.push(remoteCase);
+                            }
+                        });
+                        updated = true;
+                    }
                 }
             } catch(e) {
+                diag.sqliteStatus = 'error';
                 console.warn('[SYNC CYBER CASES BACKEND]', e);
             }
 
@@ -6352,13 +6459,26 @@
             try {
                 const supa = (typeof getActiveSupabaseClient === 'function') ? getActiveSupabaseClient() : null;
                 if (supa) {
-                    // 2.1 ซิงก์จากตาราง cyber_details (ถ้ามีตารางนี้บน Supabase และได้รับสิทธิ์ GRANT แล้ว)
-                    if (!window._supaCyberDetailsPermissionDenied) {
+                    if (supa.auth && typeof supa.auth.getSession === 'function') {
                         try {
-                            const { data: cdCases, error: cdErr, status: cdStatus } = await supa.from('cyber_details').select('*');
-                            if (cdErr && (cdErr.code === '42501' || cdStatus === 401 || cdStatus === 403)) {
-                                window._supaCyberDetailsPermissionDenied = true;
-                            } else if (!cdErr && Array.isArray(cdCases) && cdCases.length > 0) {
+                            const { data: sd } = await supa.auth.getSession();
+                            diag.supaAuthActive = Boolean(sd && sd.session && sd.session.user);
+                        } catch (_) {}
+                    }
+
+                    // 2.1 ซิงก์จากตาราง cyber_details
+                    try {
+                        const { data: cdCases, error: cdErr, status: cdStatus } = await supa.from('cyber_details').select('*');
+                        if (cdErr && (cdErr.code === '42501' || cdStatus === 401 || cdStatus === 403)) {
+                            window._supaCyberDetailsPermissionDenied = true;
+                            diag.supaCdStatus = 'rls_denied';
+                        } else if (cdErr) {
+                            diag.supaCdStatus = 'error';
+                        } else {
+                            window._supaCyberDetailsPermissionDenied = false;
+                            diag.supaCdStatus = 'ok';
+                            diag.supaCdCount = Array.isArray(cdCases) ? cdCases.length : 0;
+                            if (Array.isArray(cdCases) && cdCases.length > 0) {
                                 cdCases.forEach(cd => {
                                     if (typeof isCaseDeleted === 'function' && isCaseDeleted(cd.case_no, cd.id)) return;
                                     const existing = mockCases.find(c =>
@@ -6388,15 +6508,65 @@
                                             existing.victim_submitted_at = cd.victim_submitted_at;
                                         }
                                         if (cd.updated_at) existing._supaUpdatedAt = cd.updated_at;
+                                    } else if (cd.case_no) {
+                                        const newCdCase = {
+                                            id: cd.id || `supa_cd_${cd.case_no}`,
+                                            caseNo: cd.case_no,
+                                            date: cd.incident_date || '',
+                                            victim: cd.victim_name ? `${cd.victim_name} ${cd.victim_phone || ''}`.trim() : 'ผู้เสียหาย (Supabase)',
+                                            type: cd.fraud_category || '1. หลอกลวงซื้อขายสินค้าออนไลน์',
+                                            amount: Number(cd.damage_amount) || 0,
+                                            status: cd.status || 'พบพงส.',
+                                            urgency: Array.isArray(cd.urgency) ? cd.urgency : [],
+                                            accounts: Array.isArray(cd.mule_accounts) ? cd.mule_accounts : [],
+                                            investigator: getActualInvestigator(cd.case_no, cd.investigator_name),
+                                            detective: cd.detective_name || 'ร.ต.ต.ธนกฤต ไทยกมล',
+                                            victimProfile: cd.victim_profile || null,
+                                            victim_profile: cd.victim_profile || null,
+                                            transferRecords: Array.isArray(cd.transfer_records) ? cd.transfer_records : [],
+                                            transfer_records: Array.isArray(cd.transfer_records) ? cd.transfer_records : [],
+                                            inquiryAnswers: Array.isArray(cd.inquiry_answers) ? cd.inquiry_answers : [],
+                                            inquiry_answers: Array.isArray(cd.inquiry_answers) ? cd.inquiry_answers : [],
+                                            victimSubmittedAt: cd.victim_submitted_at || null,
+                                            victim_submitted_at: cd.victim_submitted_at || null,
+                                            summons1: false,
+                                            summons1Date: '',
+                                            summons1Pdf: '',
+                                            summons2: false,
+                                            summons2Date: '',
+                                            summons2Pdf: '',
+                                            warrant: false,
+                                            warrantPdf: '',
+                                            caseNumberAssigned: false,
+                                            criminalCaseNo: '',
+                                            prosecutorSubmitted: false
+                                        };
+                                        if (cd.legal_actions) applyLegalActionsToCase(newCdCase, cd.legal_actions);
+                                        mockCases.push(newCdCase);
                                     }
                                 });
                                 updated = true;
                             }
-                        } catch (_) {}
+                        }
+                    } catch (_) {
+                        diag.supaCdStatus = 'error';
                     }
 
                     // 2.2 ซิงก์จากตาราง cases เรียงตาม updated_at จากเก่าไปใหม่ เพื่อให้รายการที่เพิ่งแก้ไขล่าสุดชนะเสมอ
-                    const { data: supaCases, error } = await supa.from('cases').select('*').order('updated_at', { ascending: true });
+                    const { data: supaCases, error, status: supaStatus } = await supa.from('cases').select('*').order('updated_at', { ascending: true });
+                    if (error) {
+                        if (error.code === '42501' || supaStatus === 401 || supaStatus === 403) {
+                            diag.supaCasesStatus = 'rls_denied';
+                            diag.supaCasesErrorMsg = error.message || 'HTTP 401/42501 RLS Denied';
+                        } else {
+                            diag.supaCasesStatus = 'error';
+                            diag.supaCasesErrorMsg = error.message || `HTTP ${supaStatus || 'ERROR'}`;
+                        }
+                    } else {
+                        diag.supaCasesStatus = 'ok';
+                        diag.supaCasesCount = Array.isArray(supaCases) ? supaCases.length : 0;
+                        diag.supaCasesErrorMsg = '';
+                    }
                     if (!error && Array.isArray(supaCases) && supaCases.length > 0) {
                         for (const sc of supaCases) {
                             if (typeof isCaseDeleted === 'function' && isCaseDeleted(sc.case_no, sc.id)) continue;
@@ -6529,6 +6699,9 @@
                 if (typeof populateCaseInvestigatorFilter === 'function') populateCaseInvestigatorFilter(true);
                 try { localStorage.setItem('cyber_cases', JSON.stringify(mockCases)); } catch(_) {}
                 renderCases();
+            }
+            if (typeof updateCloudSyncDiagnosticBanner === 'function') {
+                updateCloudSyncDiagnosticBanner();
             }
         }
 
@@ -7480,12 +7653,88 @@
             });
         }
 
+        let _inquiryPreviewReadOnly = false;
+        window._inquirySyncStatus = { dirty: false, sqliteOk: null, supaOk: null, supaErr: '' };
+
         function isCurrentUserAdmin() {
-            if (!currentLoggedInUser) return false;
-            if (currentLoggedInUser.isAdmin === true) return true;
-            if (typeof currentLoggedInUser.role === 'string' && currentLoggedInUser.role.toLowerCase().includes('admin')) return true;
-            if (currentLoggedInUser.username === 'thanakrit') return true;
+            const u = (typeof currentAuthUser !== 'undefined' && currentAuthUser) ? currentAuthUser : currentLoggedInUser;
+            if (!u) return false;
+            if (u.isAdmin === true) return true;
+            const role = String(u.role || '').toLowerCase();
+            const pos = String(u.position || '');
+            const uname = String(u.username || '').toLowerCase();
+            if (role === 'admin' || role.includes('admin') || pos.includes('ผกก')) return true;
+            if (uname === 'thanakrit') return true;
             return false;
+        }
+
+        function normalizeInquiryTemplateList(list) {
+            if (!Array.isArray(list)) return [];
+            return list.map((item, idx) => {
+                let pts = item && item.points !== undefined ? item.points : [];
+                if (typeof pts === 'string') {
+                    try { pts = JSON.parse(pts); } catch (_) { pts = []; }
+                }
+                return {
+                    id: Number(item && item.id) || (idx + 1),
+                    title: String((item && item.title) || `กลโกงที่ ${idx + 1}`),
+                    points: Array.isArray(pts) ? pts.map(p => String(p)) : []
+                };
+            });
+        }
+
+        function areInquiryTemplatesEqualToDefault(list) {
+            const normA = normalizeInquiryTemplateList(list).map(x => ({ title: x.title.trim(), points: x.points.map(p => p.trim()) }));
+            const normB = normalizeInquiryTemplateList(defaultInquiryData).map(x => ({ title: x.title.trim(), points: x.points.map(p => p.trim()) }));
+            return JSON.stringify(normA) === JSON.stringify(normB);
+        }
+
+        function updateInquirySyncBanner() {
+            const banner = document.getElementById('inquirySyncWarningBanner');
+            const textEl = document.getElementById('inquirySyncWarningText');
+            if (!banner || !textEl) return;
+
+            let dirty = false;
+            try { dirty = localStorage.getItem('cyber_inquiry_dirty') === 'true'; } catch (_) {}
+            const st = window._inquirySyncStatus || {};
+
+            if (!dirty && st.supaOk !== false && st.sqliteOk !== false) {
+                banner.classList.add('hidden');
+                banner.classList.remove('flex');
+                return;
+            }
+
+            const msgs = [];
+            if (dirty) {
+                msgs.push('มีประเด็นสอบสวนที่แก้ไขไว้ในเครื่องนี้และรอซิงก์ขึ้นฐานข้อมูลกลาง');
+            }
+            if (st.supaErr) {
+                msgs.push(`Supabase Cloud ยังไม่รับการอัปเดตประเด็น (${escapeHtml(st.supaErr)})`);
+            }
+            if (st.sqliteOk === false) {
+                msgs.push('SQLite Server ในเครื่องไม่ได้รับการบันทึก (กรุณาล็อกอินด้วยบัญชีเซิร์ฟเวอร์ในเครื่อง)');
+            }
+            if (msgs.length === 0) {
+                banner.classList.add('hidden');
+                banner.classList.remove('flex');
+                return;
+            }
+            textEl.innerHTML = msgs.join(' • ');
+            banner.classList.remove('hidden');
+            banner.classList.add('flex');
+        }
+
+        async function forceSyncInquiryFromUi() {
+            window._supaInquiryTemplatesPermissionDenied = false;
+            let dirty = false;
+            try { dirty = localStorage.getItem('cyber_inquiry_dirty') === 'true'; } catch (_) {}
+            if (dirty && isCurrentUserAdmin()) {
+                toast('⏳ กำลังซิงก์ประเด็นสอบสวนที่แก้ไขขึ้นเซิร์ฟเวอร์...');
+                await syncInquiryTemplatesToBackend({ silent: false });
+            } else {
+                toast('⏳ กำลังโหลดประเด็นสอบสวนล่าสุด...');
+                await loadInquiryTemplatesFromBackend();
+            }
         }
 
         function renderInquiry() {
@@ -7493,19 +7742,31 @@
             if (!grid) return;
             const searchInput = document.getElementById('inquirySearchInput');
             const query = searchInput ? (searchInput.value || '').trim().toLowerCase() : '';
-            const admin = isCurrentUserAdmin();
+            const actualAdmin = isCurrentUserAdmin();
+            const admin = actualAdmin && !_inquiryPreviewReadOnly;
 
-            // Update Header Role Badge & Quick Switcher
+            // Update Header Role Badge & Preview Toggle (safe authenticated role check)
             const badgeBox = document.getElementById('inquiryRoleBadgeContainer');
             if (badgeBox) {
-                if (admin) {
+                if (actualAdmin && admin) {
                     badgeBox.innerHTML = `
                         <div class="flex flex-wrap items-center gap-2">
                             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
                                 🛡️ สิทธิ์: Admin (สามารถเพิ่ม-ลบได้)
                             </span>
-                            <button type="button" onclick="testSwitchRole('investigator')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-2.5 py-1 rounded-xl border border-slate-700 transition" title="ทดสอบมุมมองพนักงานสอบสวน (ไม่ใช่ Admin)">
-                                🔄 ทดสอบมุมมอง พงส.
+                            <button type="button" onclick="testSwitchRole('investigator')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-2.5 py-1 rounded-xl border border-slate-700 transition" title="ทดสอบมุมมองพนักงานสอบสวน (อ่านอย่างเดียว)">
+                                🔄 มุมมอง พงส.
+                            </button>
+                        </div>
+                    `;
+                } else if (actualAdmin && _inquiryPreviewReadOnly) {
+                    badgeBox.innerHTML = `
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                                👁️ มุมมองทดสอบ: พนักงานสอบสวน (อ่านอย่างเดียว)
+                            </span>
+                            <button type="button" onclick="testSwitchRole('admin')" class="text-[11px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 px-2.5 py-1 rounded-xl border border-amber-500/30 transition" title="กลับสู่โหมดแก้ไขของ Admin">
+                                🛡️ กลับโหมด Admin
                             </button>
                         </div>
                     `;
@@ -7515,9 +7776,6 @@
                             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">
                                 🔒 สิทธิ์: เจ้าหน้าที่ทั่วไป (อ่านอย่างเดียว)
                             </span>
-                            <button type="button" onclick="testSwitchRole('admin')" class="text-[11px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 px-2.5 py-1 rounded-xl border border-amber-500/30 transition" title="สลับบทบาทเป็น Admin">
-                                🛡️ สลับเป็น Admin
-                            </button>
                         </div>
                     `;
                 }
@@ -7541,15 +7799,16 @@
             let matchedCount = 0;
 
             mockInquiry.forEach((item, catIdx) => {
-                const matchCat = item.title.toLowerCase().includes(query) || (item.points || []).some(p => p.toLowerCase().includes(query));
+                const matchCat = (item.title || '').toLowerCase().includes(query) || (item.points || []).some(p => String(p || '').toLowerCase().includes(query));
                 if (query && !matchCat) return;
                 matchedCount++;
 
                 const pointsList = (item.points || []).map((p, ptIdx) => {
+                    const safePoint = escapeHtml(p);
                     if (admin) {
                         return `
                             <li class="flex items-start justify-between gap-2 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 group hover:border-slate-200 dark:hover:border-slate-700 transition">
-                                <span class="flex-1 leading-relaxed break-words">• ${p}</span>
+                                <span class="flex-1 leading-relaxed break-words">• ${safePoint}</span>
                                 <button type="button" onclick="deleteInquiryPoint(${catIdx}, ${ptIdx})" class="text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 p-1 rounded-lg transition shrink-0 opacity-70 group-hover:opacity-100" title="ลบประเด็นนี้ (เฉพาะ Admin)">
                                     🗑️
                                 </button>
@@ -7559,7 +7818,7 @@
                         return `
                             <li class="flex items-start gap-2 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
                                 <span class="text-amber-500 shrink-0">•</span>
-                                <span class="flex-1 break-words">${p}</span>
+                                <span class="flex-1 break-words">${safePoint}</span>
                             </li>
                         `;
                     }
@@ -7580,7 +7839,7 @@
                         <div class="space-y-3">
                             <div class="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
                                 <h4 class="font-bold text-amber-500 text-xs sm:text-sm flex items-center gap-1.5">
-                                    <span>📁</span> <span>${item.title}</span>
+                                    <span>📁</span> <span>${escapeHtml(item.title)}</span>
                                 </h4>
                                 ${headerAction}
                             </div>
@@ -7599,6 +7858,7 @@
                     </div>
                 `;
             }
+            updateInquirySyncBanner();
         }
 
         function openAddInquiryModal(catIndex) {
@@ -7634,16 +7894,49 @@
             } catch(e) {}
         }
 
-        async function syncInquiryTemplatesToBackend() {
-            try {
-                try { localStorage.setItem('cyber_inquiry_data', JSON.stringify(mockInquiry)); } catch(e) {}
-                try { localStorage.setItem('cyber_inquiry_templates', JSON.stringify(mockInquiry)); } catch(e) {}
-                broadcastInquirySync(mockInquiry);
+        let _inquiryMutationSeq = 0;
 
-                // ซิงก์ขึ้นตาราง inquiry_templates ใน Supabase แทนการยิง POST /api/inquiry/templates (ที่ติด 405 บน Vercel)
+        function saveInquiryLocalState(templates, dirtyFlag = false, updatedAtIso = null) {
+            _inquiryMutationSeq++;
+            const ts = updatedAtIso || new Date().toISOString();
+            try { localStorage.setItem('cyber_inquiry_data', JSON.stringify(templates)); } catch(e) {}
+            try { localStorage.setItem('cyber_inquiry_templates', JSON.stringify(templates)); } catch(e) {}
+            try { localStorage.setItem('cyber_inquiry_updated_at', ts); } catch(e) {}
+            try { localStorage.setItem('cyber_inquiry_dirty', dirtyFlag ? 'true' : 'false'); } catch(e) {}
+        }
+
+        async function syncInquiryTemplatesToBackend(options = {}) {
+            const silent = Boolean(options && options.silent);
+            const nowIso = new Date().toISOString();
+            const normalized = normalizeInquiryTemplateList(mockInquiry);
+            mockInquiry = normalized;
+            saveInquiryLocalState(mockInquiry, true, nowIso);
+            broadcastInquirySync(mockInquiry);
+
+            let sqliteOk = null;
+            let supaOk = null;
+            let supaErrMsg = '';
+
+            // 1. บันทึกลง Local SQLite Server (POST /api/inquiry/templates) เมื่อเชื่อมต่อ Node server.js
+            try {
+                if (typeof safeApiFetch === 'function' && typeof getAuthToken === 'function' && getAuthToken()) {
+                    const res = await safeApiFetch('/api/inquiry/templates', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ templates: mockInquiry })
+                    });
+                    if (res && !res._staticCloudMode) {
+                        sqliteOk = Boolean(res.status === 200 && res.data && res.data.success);
+                    }
+                }
+            } catch (_) {
+                sqliteOk = false;
+            }
+
+            // 2. ซิงก์ขึ้น Supabase (inquiry_templates) และตรวจสอบ error จริง (ไม่กลืน error เงียบ)
+            try {
                 const sb = (typeof getActiveSupabaseClient === 'function') ? getActiveSupabaseClient() : null;
-                if (sb && Array.isArray(mockInquiry) && mockInquiry.length > 0 && !window._supaInquiryTemplatesPermissionDenied) {
-                    const nowIso = new Date().toISOString();
+                if (sb && Array.isArray(mockInquiry) && mockInquiry.length > 0) {
                     const rows = mockInquiry.map((t, idx) => ({
                         id: Number(t.id) || (idx + 1),
                         title: t.title || `กลโกงที่ ${idx + 1}`,
@@ -7651,61 +7944,149 @@
                         updated_at: nowIso
                     }));
                     const { error, status } = await sb.from('inquiry_templates').upsert(rows, { onConflict: 'id' });
-                    if (error && (error.code === '42501' || status === 401 || status === 403)) {
-                        window._supaInquiryTemplatesPermissionDenied = true;
+                    if (error) {
+                        supaOk = false;
+                        if (error.code === '42501' || status === 401 || status === 403) {
+                            window._supaInquiryTemplatesPermissionDenied = true;
+                            supaErrMsg = 'สิทธิ์ RLS (ต้องล็อกอิน Supabase Auth)';
+                        } else {
+                            supaErrMsg = error.message || `HTTP ${status || 'ERR'}`;
+                        }
+                    } else {
+                        window._supaInquiryTemplatesPermissionDenied = false;
+                        supaOk = true;
                     }
                 }
             } catch (e) {
+                supaOk = false;
+                supaErrMsg = e.message || 'Network Error';
                 console.warn('[SYNC INQUIRY TEMPLATES SUPABASE]', e);
             }
+
+            const fullySynced = (supaOk === true) || (supaOk === null && sqliteOk === true);
+            if (fullySynced) {
+                try { localStorage.setItem('cyber_inquiry_dirty', 'false'); } catch (_) {}
+            }
+
+            window._inquirySyncStatus = {
+                dirty: !fullySynced,
+                sqliteOk,
+                supaOk,
+                supaErr: supaErrMsg
+            };
+            updateInquirySyncBanner();
+
+            if (!silent && !fullySynced && supaErrMsg) {
+                toast(`⚠️ บันทึกประเด็นในเครื่องแล้ว แต่ยังไม่ขึ้น Supabase Cloud: ${supaErrMsg}`);
+            }
+            return { sqliteOk, supaOk, fullySynced };
         }
 
         async function loadInquiryTemplatesFromBackend() {
+            const loadStartSeq = _inquiryMutationSeq;
+            let localList = null;
+            let localUpdatedAt = '';
+            let isDirty = false;
             try {
-                // 1. โหลดข้อมูลใน localStorage มาแสดงผลก่อนทันที (โดยไม่ยิง POST ขึ้น Backend ตอนเปิดหน้าเว็บ)
                 const localSaved = localStorage.getItem('cyber_inquiry_data') || localStorage.getItem('cyber_inquiry_templates');
                 if (localSaved) {
-                    try {
-                        const parsed = JSON.parse(localSaved);
-                        if (Array.isArray(parsed) && parsed.length > 0) {
-                            mockInquiry = parsed;
-                            renderInquiry();
-                        }
-                    } catch(e) {}
+                    const parsed = JSON.parse(localSaved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        localList = normalizeInquiryTemplateList(parsed);
+                        mockInquiry = localList;
+                        renderInquiry();
+                    }
                 }
+                localUpdatedAt = localStorage.getItem('cyber_inquiry_updated_at') || '';
+                isDirty = localStorage.getItem('cyber_inquiry_dirty') === 'true';
+            } catch (_) {}
 
-                // 2. ดึงข้อมูลประเด็นคำถาม 14 กลโกง จากตาราง inquiry_templates ใน Supabase โดยตรง
+            const localIsCustom = Boolean(localList && !areInquiryTemplatesEqualToDefault(localList));
+
+            // 1. ดึงจาก Local Backend API (SQLite /api/inquiry/templates)
+            let sqliteList = null;
+            let sqliteUpdatedAt = '';
+            try {
+                if (typeof safeApiFetch === 'function') {
+                    const sqlRes = await safeApiFetch('/api/inquiry/templates');
+                    if (sqlRes && !sqlRes._staticCloudMode && sqlRes.data && Array.isArray(sqlRes.data.templates) && sqlRes.data.templates.length > 0) {
+                        sqliteList = normalizeInquiryTemplateList(sqlRes.data.templates);
+                        sqliteUpdatedAt = sqlRes.data.updatedAt || sqliteList.reduce((acc, r) => (r.updatedAt && r.updatedAt > acc ? r.updatedAt : acc), '');
+                    }
+                }
+            } catch (_) {}
+
+            // 2. ดึงจาก Supabase (inquiry_templates) พร้อม updated_at
+            let supaList = null;
+            let supaUpdatedAt = '';
+            try {
                 const sb = (typeof getActiveSupabaseClient === 'function') ? getActiveSupabaseClient() : null;
-                if (sb && !window._supaInquiryTemplatesPermissionDenied) {
+                if (sb) {
                     const { data: rows, error, status } = await sb
                         .from('inquiry_templates')
-                        .select('id, title, points')
+                        .select('id, title, points, updated_at')
                         .order('id', { ascending: true });
 
                     if (error && (error.code === '42501' || status === 401 || status === 403)) {
                         window._supaInquiryTemplatesPermissionDenied = true;
                     } else if (!error && Array.isArray(rows) && rows.length > 0) {
-                        const normalized = rows.map(r => {
-                            let pts = r.points;
-                            if (typeof pts === 'string') {
-                                try { pts = JSON.parse(pts); } catch (_) { pts = []; }
-                            }
-                            return {
-                                id: r.id,
-                                title: r.title,
-                                points: Array.isArray(pts) ? pts : []
-                            };
-                        });
-                        mockInquiry = normalized;
-                        try { localStorage.setItem('cyber_inquiry_data', JSON.stringify(mockInquiry)); } catch(e) {}
-                        try { localStorage.setItem('cyber_inquiry_templates', JSON.stringify(mockInquiry)); } catch(e) {}
-                        broadcastInquirySync(mockInquiry);
-                        renderInquiry();
+                        window._supaInquiryTemplatesPermissionDenied = false;
+                        supaList = normalizeInquiryTemplateList(rows);
+                        supaUpdatedAt = rows.reduce((acc, r) => (r.updated_at && r.updated_at > acc ? r.updated_at : acc), '');
                     }
                 }
-            } catch(e) {
+            } catch (e) {
                 console.warn('[LOAD INQUIRY TEMPLATES SUPABASE]', e);
             }
+
+            // หากมีการแก้ไขจากผู้ใช้ระหว่างรอโหลด ให้คงข้อมูลที่ผู้ใช้แก้ไขล่าสุดไว้เสมอ
+            if (_inquiryMutationSeq !== loadStartSeq) {
+                return;
+            }
+
+            // 3. เลือกแหล่งที่เชื่อถือได้ล่าสุด โดยไม่เอาค่าเริ่มต้นเก่าจาก Supabase/SQLite มาทับของที่ผู้ใช้แก้ไขไว้!
+            if (isDirty && localList) {
+                mockInquiry = localList;
+                if (isCurrentUserAdmin() && typeof getAuthToken === 'function' && getAuthToken()) {
+                    await syncInquiryTemplatesToBackend({ silent: true });
+                }
+            } else {
+                const candidates = [];
+                if (localList) candidates.push({ source: 'local', list: localList, updatedAt: localUpdatedAt, isCustom: localIsCustom });
+                if (sqliteList) candidates.push({ source: 'sqlite', list: sqliteList, updatedAt: sqliteUpdatedAt, isCustom: !areInquiryTemplatesEqualToDefault(sqliteList) });
+                if (supaList) candidates.push({ source: 'supabase', list: supaList, updatedAt: supaUpdatedAt, isCustom: !areInquiryTemplatesEqualToDefault(supaList) });
+
+                let chosen = candidates[0] || null;
+                for (let i = 1; i < candidates.length; i++) {
+                    const cand = candidates[i];
+                    if (!chosen) { chosen = cand; continue; }
+                    // ถ้าของเดิมถูกปรับแต่งแล้ว แต่ของใหม่ที่ดึงมาเป็นค่าเริ่มต้นเดิมและไม่ได้อัปเดตใหม่กว่า -> ห้ามเขียนทับ!
+                    if (chosen.isCustom && !cand.isCustom) {
+                        continue;
+                    }
+                    if (!chosen.isCustom && cand.isCustom) {
+                        chosen = cand;
+                        continue;
+                    }
+                    if (cand.updatedAt && (!chosen.updatedAt || cand.updatedAt > chosen.updatedAt)) {
+                        chosen = cand;
+                    }
+                }
+
+                if (chosen && chosen.list) {
+                    mockInquiry = chosen.list;
+                    saveInquiryLocalState(mockInquiry, false, chosen.updatedAt || localUpdatedAt || new Date().toISOString());
+                    broadcastInquirySync(mockInquiry);
+                }
+            }
+
+            window._inquirySyncStatus = {
+                dirty: (typeof localStorage !== 'undefined' && localStorage.getItem('cyber_inquiry_dirty') === 'true'),
+                sqliteOk: sqliteList ? true : null,
+                supaOk: supaList ? true : null,
+                supaErr: window._supaInquiryTemplatesPermissionDenied ? 'สิทธิ์อ่าน/เขียน Supabase ถูกจำกัด' : ''
+            };
+            renderInquiry();
         }
 
         function saveInquiryPoint() {
@@ -7722,10 +8103,7 @@
             if (mockInquiry[catIndex]) {
                 if (!mockInquiry[catIndex].points) mockInquiry[catIndex].points = [];
                 mockInquiry[catIndex].points.push(text);
-                try {
-                    localStorage.setItem('cyber_inquiry_data', JSON.stringify(mockInquiry));
-                    syncInquiryTemplatesToBackend();
-                } catch (e) {}
+                syncInquiryTemplatesToBackend();
                 closeAddInquiryModal();
                 renderInquiry();
                 toast('✅ เพิ่มประเด็นคำถามในหัวข้อเรียบร้อยแล้ว');
@@ -7743,10 +8121,7 @@
             const targetPoint = cat.points[ptIndex];
             if (confirm(`ยืนยันการลบประเด็นสอบสวนนี้ใช่หรือไม่?\n\n"${targetPoint}"\n\n(สิทธิ์ Admin)`)) {
                 cat.points.splice(ptIndex, 1);
-                try {
-                    localStorage.setItem('cyber_inquiry_data', JSON.stringify(mockInquiry));
-                    syncInquiryTemplatesToBackend();
-                } catch (e) {}
+                syncInquiryTemplatesToBackend();
                 renderInquiry();
                 toast('🗑️ ลบประเด็นสอบสวนเรียบร้อยแล้ว');
             }
@@ -7759,28 +8134,22 @@
             }
             if (confirm('ต้องการคืนค่าประเด็นคำถามสอบสวนเป็นค่าเริ่มต้นทั้ง 14 หมวดหมู่ใช่หรือไม่?')) {
                 mockInquiry = JSON.parse(JSON.stringify(defaultInquiryData));
-                try {
-                    localStorage.removeItem('cyber_inquiry_data');
-                    syncInquiryTemplatesToBackend();
-                } catch (e) {}
+                syncInquiryTemplatesToBackend();
                 renderInquiry();
                 toast('🔄 คืนค่าประเด็นคำถามเริ่มต้นเรียบร้อยแล้ว');
             }
         }
 
         function testSwitchRole(role) {
-            if (role === 'admin') {
-                currentLoggedInUser = validUsers[0];
-                toast('🛡️ สลับเป็นโหมด Admin: มีสิทธิ์เพิ่มและลบประเด็นสอบสวน');
-            } else {
-                currentLoggedInUser = validUsers[1];
-                toast('👤 สลับเป็นโหมด พนักงานสอบสวน: สิทธิ์อ่านอย่างเดียว (ไม่มีปุ่มเพิ่ม/ลบ)');
+            if (!isCurrentUserAdmin()) {
+                toast('🔒 เฉพาะผู้ดูแลระบบ (Admin) ที่ล็อกอินแล้วเท่านั้น');
+                return;
             }
-            const nameEl = document.getElementById('currentUserNameDisplay');
-            const roleEl = document.getElementById('currentUserRoleDisplay');
-            if (nameEl) nameEl.textContent = currentLoggedInUser.name;
-            if (roleEl) roleEl.textContent = currentLoggedInUser.role;
+            _inquiryPreviewReadOnly = (role !== 'admin');
             renderInquiry();
+            toast(_inquiryPreviewReadOnly
+                ? '👁️ สลับเป็นมุมมองทดสอบ พนักงานสอบสวน (อ่านอย่างเดียว)'
+                : '🛡️ กลับสู่มุมมอง Admin (สามารถเพิ่ม-ลบประเด็นได้)');
         }
 
         function genReport() {
@@ -9150,7 +9519,7 @@ ${currentDocPrintHtml}
 
             const data = {
                 app: 'CyberInvestigationPortal_BangPhli',
-                version: `${typeof PORTAL_APP_VERSION !== 'undefined' ? PORTAL_APP_VERSION : '2.6.0'}-pdpa-secure`,
+                version: `${typeof PORTAL_APP_VERSION !== 'undefined' ? PORTAL_APP_VERSION : '2.6.1'}-pdpa-secure`,
                 exportedAt: new Date().toISOString(),
                 exportedDateThai: typeof getTodayThaiFormatted === 'function' ? getTodayThaiFormatted() : '',
                 exportedBy: currentAuthUser ? `${currentAuthUser.rank_name} (${currentAuthUser.badge_no})` : 'ว่าที่ ร.ต.ต.ธนกฤต ไทยกมล (Admin)',
@@ -13486,15 +13855,26 @@ ${currentDocPrintHtml}
                 cmdInput.value = 'พ.ต.อ.ไพโรจน์ เพ็ชรพลอย';
             }
 
-            // ตั้งค่ามุมมองเริ่มต้นเป็น "คดีของฉัน" ทันทีที่เข้าสู่ระบบ
-            setCaseFilterQuick('my_cases');
-            syncCyberCasesFromBackend();
+            window._supaCyberDetailsPermissionDenied = false;
+            window._supaInquiryTemplatesPermissionDenied = false;
+            _inquiryPreviewReadOnly = false;
+
+            // ตั้งค่ามุมมองเริ่มต้นหลังเข้าสู่ระบบ: ผู้ดูแลระบบ/ผกก. เห็นคดีทั้งหมดในสถานีทันที, เจ้าหน้าที่ทั่วไปเห็น "คดีของฉัน" (หากไม่มีคดีที่รับผิดชอบจะเปิดทั้งหมดให้อัตโนมัติ)
+            const initialQuickFilter = isCurrentUserAdmin() ? 'all' : 'my_cases';
+            setCaseFilterQuick(initialQuickFilter);
+            Promise.resolve(syncCyberCasesFromBackend()).then(() => {
+                if (initialQuickFilter === 'my_cases' && mockCases.length > 0 && getFilteredCasesList().length === 0) {
+                    setCaseFilterQuick('all');
+                }
+            }).catch(() => {});
             if (typeof loadUsersFromApi === 'function') loadUsersFromApi({ silent: true });
+            if (typeof loadInquiryTemplatesFromBackend === 'function') loadInquiryTemplatesFromBackend();
+            if (typeof renderInquiry === 'function') renderInquiry();
             if (typeof refreshNewPoliceRequestsData === 'function') refreshNewPoliceRequestsData(false);
         }
 
-        const PORTAL_APP_VERSION = '2.6.0';
-        const PORTAL_BUILD_DATE_TH = '19 พ.ย. 2569';
+        const PORTAL_APP_VERSION = '2.6.1';
+        const PORTAL_BUILD_DATE_TH = '21 พ.ย. 2569';
 
         function compareSemver(a, b) {
             const pa = String(a || '0.0.0').replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
@@ -13668,10 +14048,16 @@ ${currentDocPrintHtml}
                     if (localApiResult.status === 200 && localApiResult.data?.success && localApiResult.data?.token) {
                         setAuthToken(localApiResult.data.token, localApiResult.data.user);
                         currentAuthUser = localApiResult.data.user;
-                        // พยายาม Sign-in Supabase Auth ควบคู่กัน (ถ้าตั้งค่าไว้) เพื่อรับ JWT สำหรับ Strict RLS
+                        // รอ Sign-in Supabase Auth ควบคู่กันก่อนซิงก์คดี เพื่อให้ได้ JWT สำหรับ Strict RLS (จำกัดเวลาสูงสุด 3 วินาที)
                         if (supabase && supabase.auth && typeof supabase.auth.signInWithPassword === 'function') {
                             const emailGuess = username.includes('@') ? username : `${localApiResult.data.user.username}@bangphli.police.local`;
-                            supabase.auth.signInWithPassword({ email: emailGuess, password }).catch(() => {});
+                            try {
+                                const { data: sAuthData } = await Promise.race([
+                                    supabase.auth.signInWithPassword({ email: emailGuess, password }),
+                                    new Promise(resolve => setTimeout(() => resolve({ data: null }), 3000))
+                                ]);
+                                if (sAuthData && sAuthData.session) currentAuthUser._supabaseAuthActive = true;
+                            } catch (_) {}
                         }
                         closeModal('policeLoginModal');
                         updateAuthUI();
@@ -13874,6 +14260,9 @@ ${currentDocPrintHtml}
             }
             setAuthToken('');
             currentAuthUser = null;
+            currentLoggedInUser = null;
+            _inquiryPreviewReadOnly = false;
+            if (typeof renderInquiry === 'function') renderInquiry();
             toast('🚪 ออกจากระบบเรียบร้อยแล้ว');
             openModal('policeLoginModal');
         }
@@ -15120,25 +15509,46 @@ ${currentDocPrintHtml}
          * ซิงค์ข้อมูลคดีและผู้เสียหาย/บัญชีม้า (เข้ารหัส AES-256-GCM ฝั่ง Client) ขึ้น Supabase ทั้งตาราง cases และ cyber_details
          */
         async function syncCaseToSupabaseZeroKnowledge(caseItem) {
+            const diag = window._portalSyncDiagnostics = window._portalSyncDiagnostics || {};
             try {
                 // 0. ซิงค์ลง Local Backend SQLite ด้วย (กรณีรันผ่าน server.js ในเครื่อง)
                 if (typeof safeApiFetch === 'function') {
-                    safeApiFetch('/api/external/newpolice/cases', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(caseItem)
-                    }).catch(() => {});
+                    try {
+                        const localRes = await safeApiFetch('/api/external/newpolice/cases', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(caseItem)
+                        });
+                        if (localRes && !localRes._staticCloudMode) {
+                            if (localRes.status === 200 && localRes.data?.success) {
+                                diag.sqliteStatus = 'ok';
+                            } else if (localRes.status === 401) {
+                                diag.sqliteStatus = 'unauthorized';
+                                diag.lastSaveWarning = `คดี ${caseItem.caseNo || ''} บันทึกในเบราว์เซอร์แล้ว แต่ SQLite ในเครื่องปฏิเสธ (401)`;
+                            } else if (localRes.status >= 400) {
+                                diag.lastSaveWarning = `บันทึก SQLite ไม่สำเร็จ (${localRes.status})`;
+                            }
+                        }
+                    } catch (_) {}
                 }
 
                 const sb = getActiveSupabaseClient();
-                if (!sb || typeof ZeroKnowledgeCrypto === 'undefined') return;
+                if (!sb || typeof ZeroKnowledgeCrypto === 'undefined') {
+                    if (typeof updateCloudSyncDiagnosticBanner === 'function') updateCloudSyncDiagnosticBanner();
+                    return;
+                }
 
                 const stationCode = localStorage.getItem('cyber_zk_station_code') || DEFAULT_STATION_CODE;
                 const masterKey = ZeroKnowledgeCrypto.getSavedMasterKey();
                 if (!masterKey) {
-                    console.warn('[ZK-Supabase Sync Arrest] Skipped cloud PII upload: Station Master Key not configured.');
+                    console.warn('[ZK-Supabase Sync Case] Skipped cloud PII upload: Station Master Key not configured.');
+                    diag.masterKeyConfigured = false;
+                    diag.lastSaveWarning = `คดี ${caseItem.caseNo || ''} ยังไม่ถูกอัปโหลดขึ้น Supabase Cloud เนื่องจากยังไม่ได้ตั้ง Station Master Key`;
+                    if (typeof updateCloudSyncDiagnosticBanner === 'function') updateCloudSyncDiagnosticBanner();
+                    toast('⚠️ บันทึกคดีในเครื่องแล้ว (ตั้ง Station Master Key ก่อนซิงก์ขึ้น Supabase Cloud)');
                     return;
                 }
+                diag.masterKeyConfigured = true;
                 const hasMasterKey = Boolean(masterKey);
 
                 const rawVictim = String(caseItem.victim || '');
@@ -15201,14 +15611,33 @@ ${currentDocPrintHtml}
                     };
 
                 // 1. Upsert ลงตาราง public.cases ตาม id
-                const { error: upsertErr } = await sb.from('cases').upsert([encryptedCase], { onConflict: 'id' });
+                let finalCasesErr = null;
+                let finalCasesStatus = null;
+                const { error: upsertErr, status: upsertStatus } = await sb.from('cases').upsert([encryptedCase], { onConflict: 'id' });
+                finalCasesErr = upsertErr;
+                finalCasesStatus = upsertStatus;
                 if (upsertErr && (upsertErr.message?.includes('detective_name') || upsertErr.code === '42703')) {
                     const { detective_name, ...fallbackCase } = encryptedCase;
-                    await sb.from('cases').upsert([fallbackCase], { onConflict: 'id' });
+                    const fbRes = await sb.from('cases').upsert([fallbackCase], { onConflict: 'id' });
+                    finalCasesErr = fbRes.error;
+                    finalCasesStatus = fbRes.status;
+                }
+
+                if (finalCasesErr) {
+                    if (finalCasesErr.code === '42501' || finalCasesStatus === 401 || finalCasesStatus === 403) {
+                        diag.supaCasesStatus = 'rls_denied';
+                        diag.lastSaveWarning = `บันทึกคดี ${cleanCaseNo || ''} ในเครื่องแล้ว แต่ Supabase Cloud ปฏิเสธสิทธิ์เขียน (401/42501 — บัญชียังไม่มี Supabase Auth JWT)`;
+                    } else {
+                        diag.lastSaveWarning = `ซิงก์คดี ${cleanCaseNo || ''} ขึ้น Supabase Cloud ไม่สำเร็จ (${finalCasesErr.message || finalCasesErr.code})`;
+                    }
+                    toast(`⚠️ ${diag.lastSaveWarning}`);
+                } else {
+                    diag.supaCasesStatus = 'ok';
+                    diag.lastSaveWarning = '';
                 }
 
                 // 2. อัปเดตทุกแถวที่มี case_no เดียวกันใน public.cases เพื่อไม่ให้แถวเก่าที่มีชื่อ พงส./สืบสวน เดิมค้างและเด้งกลับตอนรีเฟรช
-                if (cleanCaseNo) {
+                if (cleanCaseNo && !finalCasesErr) {
                     const commonUpdate = {
                         investigator_name: caseItem.investigator || null,
                         detective_name: caseItem.detective || null,
@@ -15231,7 +15660,7 @@ ${currentDocPrintHtml}
                     }
                 }
 
-                if (hasMasterKey) {
+                if (hasMasterKey && !finalCasesErr) {
                     const encryptedSubject = await ZeroKnowledgeCrypto.encryptSubjectForSupabase({
                         caseId: encryptedCase.id,
                         role: 'victim',
@@ -15273,11 +15702,18 @@ ${currentDocPrintHtml}
                         }
                         if (cdErr && (cdErr.code === '42501' || cdStatus === 401 || cdStatus === 403)) {
                             window._supaCyberDetailsPermissionDenied = true;
+                            diag.supaCdStatus = 'rls_denied';
+                        } else if (!cdErr) {
+                            diag.supaCdStatus = 'ok';
                         }
                     } catch (_) {}
                 }
             } catch (e) {
+                diag.lastSaveWarning = `ซิงก์ขึ้น Supabase Cloud ขัดข้อง: ${e.message || 'Error'}`;
                 console.warn('[ZK-Supabase Sync Case]', e.message);
+            }
+            if (typeof updateCloudSyncDiagnosticBanner === 'function') {
+                updateCloudSyncDiagnosticBanner();
             }
         }
 
@@ -16933,38 +17369,10 @@ ${currentDocPrintHtml}
                 }
             } catch (e) {}
 
-            // 3. ดึงแม่แบบคำถาม 14 กลโกง ล่าสุดจากตาราง inquiry_templates ใน Supabase (แทนการเรียก /api/inquiry/templates)
+            // 3. โหลดแม่แบบคำถาม 14 กลโกง ล่าสุดโดยใช้ระบบเปรียบเทียบ dirty/timestamp ที่ไม่เอาค่าเริ่มต้นมาเขียนทับ
             try {
-                const sb = (typeof getActiveSupabaseClient === 'function') ? getActiveSupabaseClient() : null;
-                if (sb && !window._supaInquiryTemplatesPermissionDenied) {
-                    const { data: tRows, error: tErr, status: tStatus } = await sb
-                        .from('inquiry_templates')
-                        .select('id, title, points')
-                        .order('id', { ascending: true });
-
-                    if (tErr && (tErr.code === '42501' || tStatus === 401 || tStatus === 403)) {
-                        window._supaInquiryTemplatesPermissionDenied = true;
-                    } else if (!tErr && Array.isArray(tRows) && tRows.length > 0) {
-                        const supaTemplates = tRows.map(r => {
-                            let pts = r.points;
-                            if (typeof pts === 'string') {
-                                try { pts = JSON.parse(pts); } catch (_) { pts = []; }
-                            }
-                            return { id: r.id, title: r.title, points: Array.isArray(pts) ? pts : [] };
-                        });
-                        const localSaved = localStorage.getItem('cyber_inquiry_data');
-                        if (!localSaved) {
-                            mockInquiry = supaTemplates;
-                        } else {
-                            supaTemplates.forEach((bt, idx) => {
-                                if (mockInquiry[idx] && Array.isArray(bt.points)) {
-                                    bt.points.forEach(pt => {
-                                        if (!mockInquiry[idx].points.includes(pt)) mockInquiry[idx].points.push(pt);
-                                    });
-                                }
-                            });
-                        }
-                    }
+                if (typeof loadInquiryTemplatesFromBackend === 'function') {
+                    await loadInquiryTemplatesFromBackend();
                 }
             } catch (e) {}
 

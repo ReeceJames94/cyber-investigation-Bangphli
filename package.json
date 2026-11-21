@@ -1,6 +1,6 @@
 {
   "name": "cyber-investigation-bangphli",
-  "version": "2.6.0",
+  "version": "2.6.1",
   "description": "โครงสร้างโปรเจกต์เวอร์ชันแยกโมดูล (Modular Architecture) เพื่อให้พัฒนา แก้ไข และต่อยอดฟีเจอร์ได้ง่าย เป็นระเบียบ ไม่ซับซ้อน",
   "main": "server.js",
   "scripts": {
